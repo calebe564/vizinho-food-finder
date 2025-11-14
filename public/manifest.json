@@ -1,0 +1,24 @@
+{
+  "name": "Comércio Vizinho",
+  "short_name": "ComVizinho",
+  "description": "Encontre estabelecimentos de alimentação próximos a você no Barreiro",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#0057FF",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
