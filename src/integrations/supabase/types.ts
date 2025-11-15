@@ -32,6 +32,51 @@ export type Database = {
         }
         Relationships: []
       }
+      establishment_requests: {
+        Row: {
+          address: string
+          admin_notes: string | null
+          category: Database["public"]["Enums"]["establishment_category"]
+          created_at: string | null
+          description: string | null
+          external_link: string | null
+          id: string
+          name: string
+          neighborhood: string
+          phone: string
+          status: string | null
+          whatsapp: string | null
+        }
+        Insert: {
+          address: string
+          admin_notes?: string | null
+          category: Database["public"]["Enums"]["establishment_category"]
+          created_at?: string | null
+          description?: string | null
+          external_link?: string | null
+          id?: string
+          name: string
+          neighborhood: string
+          phone: string
+          status?: string | null
+          whatsapp?: string | null
+        }
+        Update: {
+          address?: string
+          admin_notes?: string | null
+          category?: Database["public"]["Enums"]["establishment_category"]
+          created_at?: string | null
+          description?: string | null
+          external_link?: string | null
+          id?: string
+          name?: string
+          neighborhood?: string
+          phone?: string
+          status?: string | null
+          whatsapp?: string | null
+        }
+        Relationships: []
+      }
       establishment_statistics: {
         Row: {
           banner_views: number | null
@@ -75,15 +120,18 @@ export type Database = {
           category: Database["public"]["Enums"]["establishment_category"]
           created_at: string | null
           description: string | null
+          external_link: string | null
           id: string
           is_paid: boolean | null
           last_update: string | null
           latitude: number
           longitude: number
           name: string
+          neighborhood: string | null
           phone: string
           profile_image: string | null
           schedule: string
+          whatsapp: string | null
         }
         Insert: {
           active?: boolean | null
@@ -92,15 +140,18 @@ export type Database = {
           category: Database["public"]["Enums"]["establishment_category"]
           created_at?: string | null
           description?: string | null
+          external_link?: string | null
           id?: string
           is_paid?: boolean | null
           last_update?: string | null
           latitude: number
           longitude: number
           name: string
+          neighborhood?: string | null
           phone: string
           profile_image?: string | null
           schedule: string
+          whatsapp?: string | null
         }
         Update: {
           active?: boolean | null
@@ -109,15 +160,18 @@ export type Database = {
           category?: Database["public"]["Enums"]["establishment_category"]
           created_at?: string | null
           description?: string | null
+          external_link?: string | null
           id?: string
           is_paid?: boolean | null
           last_update?: string | null
           latitude?: number
           longitude?: number
           name?: string
+          neighborhood?: string | null
           phone?: string
           profile_image?: string | null
           schedule?: string
+          whatsapp?: string | null
         }
         Relationships: []
       }
