@@ -23,16 +23,33 @@ const sortOptions = [
 ];
 
 interface FilterBarProps {
-  category: string;
-  onCategoryChange: (value: string) => void;
-  sortBy: string;
-  onSortChange: (value: string) => void;
+  category?: string;
+  onCategoryChange?: (value: string) => void;
+  sortBy?: string;
+  onSortChange?: (value: string) => void;
+  selectedCategory?: string;
+  onNeighborhoodChange?: (value: string) => void;
+  selectedNeighborhood?: string;
 }
 
-export function FilterBar({ category, onCategoryChange, sortBy, onSortChange }: FilterBarProps) {
+export function FilterBar({ 
+  category, 
+  onCategoryChange, 
+  sortBy, 
+  onSortChange,
+  selectedCategory,
+  selectedNeighborhood,
+  onNeighborhoodChange 
+}: FilterBarProps) {
+  const actualCategory = selectedCategory || category || "todos";
+  const actualSortBy = sortBy || "distance";
+  
+  const handleCategoryChange = (value: string) => {
+    if (onCategoryChange) onCategoryChange(value);
+  };
   return (
     <div className="flex flex-col sm:flex-row gap-4">
-      <Select value={category} onValueChange={onCategoryChange}>
+      <Select value={actualCategory} onValueChange={handleCategoryChange}>
         <SelectTrigger className="w-full sm:w-[220px]">
           <SelectValue placeholder="Categoria" />
         </SelectTrigger>
@@ -45,18 +62,20 @@ export function FilterBar({ category, onCategoryChange, sortBy, onSortChange }: 
         </SelectContent>
       </Select>
 
-      <Select value={sortBy} onValueChange={onSortChange}>
-        <SelectTrigger className="w-full sm:w-[200px]">
-          <SelectValue placeholder="Ordenar por" />
-        </SelectTrigger>
-        <SelectContent>
-          {sortOptions.map((option) => (
-            <SelectItem key={option.value} value={option.value}>
-              {option.label}
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
+      {onSortChange && (
+        <Select value={actualSortBy} onValueChange={onSortChange}>
+          <SelectTrigger className="w-full sm:w-[200px]">
+            <SelectValue placeholder="Ordenar por" />
+          </SelectTrigger>
+          <SelectContent>
+            {sortOptions.map((option) => (
+              <SelectItem key={option.value} value={option.value}>
+                {option.label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      )}
     </div>
   );
 }

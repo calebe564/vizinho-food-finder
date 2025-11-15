@@ -4,11 +4,11 @@ import { BannerCarousel } from "@/components/BannerCarousel";
 import { SearchBar } from "@/components/SearchBar";
 import { FilterBar } from "@/components/FilterBar";
 import { EstablishmentCard } from "@/components/EstablishmentCard";
-import { ThemeToggle } from "@/components/ThemeToggle";
-import { Link } from "react-router-dom";
-import { Button } from "@/components/ui/button";
+import { Header } from "@/components/Header";
+import { Footer } from "@/components/Footer";
+import { WhatsAppButton } from "@/components/WhatsAppButton";
 import { useGeolocation, calculateDistance } from "@/hooks/useGeolocation";
-import { Lock } from "lucide-react";
+import { useSearchParams } from "react-router-dom";
 
 interface Establishment {
   id: string;
@@ -30,10 +30,11 @@ interface Product {
 }
 
 export default function Home() {
+  const [searchParams] = useSearchParams();
   const [establishments, setEstablishments] = useState<Establishment[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
-  const [category, setCategory] = useState("todos");
+  const [category, setCategory] = useState(searchParams.get("category") || "todos");
   const [sortBy, setSortBy] = useState("distance");
   const { coordinates } = useGeolocation();
 
