@@ -6,8 +6,9 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
-import { Lock } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
 import { z } from "zod";
+import logo from "@/assets/logo.png";
 
 const loginSchema = z.object({
   email: z.string().email({ message: "Email inválido" }),
@@ -90,18 +91,29 @@ export default function AdminLogin() {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-background p-4">
-      <Card className="w-full max-w-md">
-        <CardHeader className="space-y-1">
-          <div className="flex items-center justify-center mb-4">
-            <div className="p-3 rounded-full bg-primary/10">
-              <Lock className="h-8 w-8 text-primary" />
+      <div className="w-full max-w-md">
+        <Button
+          variant="ghost"
+          onClick={() => navigate("/")}
+          className="mb-4 gap-2"
+        >
+          <ArrowLeft className="h-4 w-4" />
+          Voltar
+        </Button>
+        <Card>
+          <CardHeader className="space-y-1">
+            <div className="flex items-center justify-center mb-4">
+              <img 
+                src={logo} 
+                alt="Comércio Vizinho" 
+                className="h-20 w-20 object-contain"
+              />
             </div>
-          </div>
-          <CardTitle className="text-2xl text-center">Área Administrativa</CardTitle>
-          <CardDescription className="text-center">
-            Entre com suas credenciais de administrador
-          </CardDescription>
-        </CardHeader>
+            <CardTitle className="text-2xl text-center">Área Administrativa</CardTitle>
+            <CardDescription className="text-center">
+              Entre com suas credenciais de administrador
+            </CardDescription>
+          </CardHeader>
         <CardContent>
           <form onSubmit={handleLogin} className="space-y-4">
             <div className="space-y-2">
@@ -131,7 +143,8 @@ export default function AdminLogin() {
             </Button>
           </form>
         </CardContent>
-      </Card>
+        </Card>
+      </div>
     </div>
   );
 }
