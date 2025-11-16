@@ -111,26 +111,7 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-background">
-      <header className="sticky top-0 z-50 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b">
-        <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
-            <Link to="/">
-              <h1 className="text-2xl font-bold bg-gradient-primary bg-clip-text text-transparent">
-                Comércio Vizinho
-              </h1>
-            </Link>
-            <div className="flex items-center gap-2">
-              <Link to="/admin/login">
-                <Button variant="ghost" size="sm">
-                  <Lock className="h-4 w-4 mr-2" />
-                  Admin
-                </Button>
-              </Link>
-              <ThemeToggle />
-            </div>
-          </div>
-        </div>
-      </header>
+      <Header />
 
       <main className="container mx-auto px-4 py-8 space-y-8">
         <BannerCarousel />
@@ -168,6 +149,9 @@ export default function Home() {
           </div>
         </div>
       </main>
+
+      <Footer />
+      <WhatsAppButton />
     </div>
   );
 }
