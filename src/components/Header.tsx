@@ -4,25 +4,15 @@ import { ThemeToggle } from "./ThemeToggle";
 import { Button } from "./ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "./ui/sheet";
 import { useState } from "react";
-import {
-  NavigationMenu,
-  NavigationMenuContent,
-  NavigationMenuItem,
-  NavigationMenuLink,
-  NavigationMenuList,
-  NavigationMenuTrigger,
-} from "./ui/navigation-menu";
+import { NavigationMenu, NavigationMenuContent, NavigationMenuItem, NavigationMenuLink, NavigationMenuList, NavigationMenuTrigger } from "./ui/navigation-menu";
 import logo from "@/assets/logo.png";
-
 export function Header() {
   const [isOpen, setIsOpen] = useState(false);
-
-  return (
-    <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+  return <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container flex h-16 items-center justify-between px-4">
         <Link to="/" className="flex items-center gap-2">
           <img src={logo} alt="Comércio Vizinho" className="h-10 w-10" />
-          <span className="font-bold text-xl hidden sm:inline">Comércio Vizinho</span>
+          
         </Link>
 
         <NavigationMenu className="hidden md:flex">
@@ -124,6 +114,5 @@ export function Header() {
           </Sheet>
         </div>
       </div>
-    </header>
-  );
+    </header>;
 }
