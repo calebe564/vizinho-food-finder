@@ -1,7 +1,9 @@
 import { Link } from "react-router-dom";
-import { Home, Building2, MapPin, ListChecks, UserPlus, MessageCircle, Info } from "lucide-react";
+import { Home, Building2, MapPin, ListChecks, UserPlus, MessageCircle, Info, Menu } from "lucide-react";
 import { ThemeToggle } from "./ThemeToggle";
 import { Button } from "./ui/button";
+import { Sheet, SheetContent, SheetTrigger } from "./ui/sheet";
+import { useState } from "react";
 import {
   NavigationMenu,
   NavigationMenuContent,
@@ -13,6 +15,8 @@ import {
 import logo from "@/assets/logo.png";
 
 export function Header() {
+  const [isOpen, setIsOpen] = useState(false);
+
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container flex h-16 items-center justify-between px-4">
@@ -81,11 +85,43 @@ export function Header() {
 
         <div className="flex items-center gap-2">
           <ThemeToggle />
-          <Button asChild variant="ghost" size="sm" className="md:hidden">
-            <Link to="/menu">
-              <ListChecks className="h-5 w-5" />
-            </Link>
-          </Button>
+          
+          {/* Menu Mobile */}
+          <Sheet open={isOpen} onOpenChange={setIsOpen}>
+            <SheetTrigger asChild className="md:hidden">
+              <Button variant="ghost" size="icon">
+                <Menu className="h-5 w-5" />
+              </Button>
+            </SheetTrigger>
+            <SheetContent side="right" className="w-[300px]">
+              <nav className="flex flex-col gap-4 mt-8">
+                <Link to="/" onClick={() => setIsOpen(false)} className="flex items-center gap-2 px-4 py-3 rounded-lg hover:bg-accent transition-colors">
+                  <Home className="h-5 w-5" />
+                  <span>Início</span>
+                </Link>
+                <Link to="/categorias" onClick={() => setIsOpen(false)} className="flex items-center gap-2 px-4 py-3 rounded-lg hover:bg-accent transition-colors">
+                  <Building2 className="h-5 w-5" />
+                  <span>Categorias</span>
+                </Link>
+                <Link to="/bairros" onClick={() => setIsOpen(false)} className="flex items-center gap-2 px-4 py-3 rounded-lg hover:bg-accent transition-colors">
+                  <MapPin className="h-5 w-5" />
+                  <span>Bairros</span>
+                </Link>
+                <Link to="/estabelecimentos" onClick={() => setIsOpen(false)} className="flex items-center gap-2 px-4 py-3 rounded-lg hover:bg-accent transition-colors">
+                  <ListChecks className="h-5 w-5" />
+                  <span>Empresas</span>
+                </Link>
+                <Link to="/cadastrar" onClick={() => setIsOpen(false)} className="flex items-center gap-2 px-4 py-3 rounded-lg hover:bg-accent transition-colors">
+                  <UserPlus className="h-5 w-5" />
+                  <span>Cadastrar Empresa</span>
+                </Link>
+                <Link to="/sobre" onClick={() => setIsOpen(false)} className="flex items-center gap-2 px-4 py-3 rounded-lg hover:bg-accent transition-colors">
+                  <Info className="h-5 w-5" />
+                  <span>Sobre</span>
+                </Link>
+              </nav>
+            </SheetContent>
+          </Sheet>
         </div>
       </div>
     </header>
