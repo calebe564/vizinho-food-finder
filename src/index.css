@@ -43,8 +43,14 @@ All colors MUST be HSL.
     
     /* Gradientes e efeitos */
     --gradient-primary: linear-gradient(135deg, hsl(220 100% 50%), hsl(220 100% 65%));
+    --gradient-subtle: linear-gradient(180deg, hsl(0 0% 100%), hsl(0 0% 98%));
     --shadow-card: 0 4px 12px hsl(220 100% 50% / 0.1);
     --shadow-elevated: 0 8px 24px hsl(220 100% 50% / 0.15);
+    --shadow-glow: 0 0 40px hsl(220 100% 50% / 0.2);
+    
+    /* Animações */
+    --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    --transition-bounce: all 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55);
   }
 
   .dark {
@@ -81,8 +87,10 @@ All colors MUST be HSL.
     
     /* Gradientes e efeitos modo escuro */
     --gradient-primary: linear-gradient(135deg, hsl(211 100% 59%), hsl(211 100% 75%));
+    --gradient-subtle: linear-gradient(180deg, hsl(0 0% 5%), hsl(0 0% 8%));
     --shadow-card: 0 4px 12px hsl(211 100% 59% / 0.2);
     --shadow-elevated: 0 8px 24px hsl(211 100% 59% / 0.25);
+    --shadow-glow: 0 0 40px hsl(211 100% 59% / 0.3);
   }
 }
 
@@ -93,5 +101,81 @@ All colors MUST be HSL.
 
   body {
     @apply bg-background text-foreground;
+  }
+  
+  /* Smooth scrolling */
+  html {
+    scroll-behavior: smooth;
+  }
+}
+
+/* Utilitários de animação */
+@layer utilities {
+  .hover-scale {
+    transition: var(--transition-smooth);
+  }
+  
+  .hover-scale:hover {
+    transform: scale(1.05);
+  }
+  
+  .hover-lift {
+    transition: var(--transition-smooth);
+  }
+  
+  .hover-lift:hover {
+    transform: translateY(-4px);
+    box-shadow: var(--shadow-elevated);
+  }
+  
+  .animate-fade-in {
+    animation: fadeIn 0.5s ease-in;
+  }
+  
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+      transform: translateY(20px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+  
+  .animate-slide-in {
+    animation: slideIn 0.5s ease-out;
+  }
+  
+  @keyframes slideIn {
+    from {
+      opacity: 0;
+      transform: translateX(-20px);
+    }
+    to {
+      opacity: 1;
+      transform: translateX(0);
+    }
+  }
+  
+  /* Loading skeleton */
+  .skeleton {
+    background: linear-gradient(
+      90deg,
+      hsl(var(--muted)) 0%,
+      hsl(var(--muted) / 0.8) 50%,
+      hsl(var(--muted)) 100%
+    );
+    background-size: 200% 100%;
+    animation: skeleton-loading 1.5s ease-in-out infinite;
+  }
+  
+  @keyframes skeleton-loading {
+    0% {
+      background-position: 200% 0;
+    }
+    100% {
+      background-position: -200% 0;
+    }
   }
 }

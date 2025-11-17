@@ -75,19 +75,24 @@ export function Footer() {
                 </Link>
               </li>
               <li>
-                <Link to="/cadastrar" className="text-muted-foreground hover:text-primary transition-colors">
-                  Cadastrar Empresa
+                <Link to="/info-clientes" className="text-muted-foreground hover:text-primary transition-colors">
+                  Para Clientes
                 </Link>
               </li>
               <li>
-                <a
-                  href="https://wa.me/5531999999999"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-muted-foreground hover:text-primary transition-colors"
-                >
-                  Contato / Suporte
-                </a>
+                <Link to="/info-comerciantes" className="text-muted-foreground hover:text-primary transition-colors">
+                  Para Comerciantes
+                </Link>
+              </li>
+              <li>
+                <Link to="/privacidade" className="text-muted-foreground hover:text-primary transition-colors">
+                  Política de Privacidade
+                </Link>
+              </li>
+              <li>
+                <Link to="/termos" className="text-muted-foreground hover:text-primary transition-colors">
+                  Termos de Uso
+                </Link>
               </li>
             </ul>
           </div>
