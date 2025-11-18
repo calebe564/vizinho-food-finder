@@ -1,14 +1,18 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Routes, Route, Link, useLocation } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
-import { LogOut, Store, Package, BarChart3 } from "lucide-react";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { LogOut, LayoutDashboard, Store, FileText, Package } from "lucide-react";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import AdminDashboardHome from "./admin/AdminDashboardHome";
+import AdminEstablishments from "./admin/AdminEstablishments";
+import AdminEstablishmentForm from "./admin/AdminEstablishmentForm";
+import AdminRequests from "./admin/AdminRequests";
 
 export default function AdminDashboard() {
   const navigate = useNavigate();
+  const location = useLocation();
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -27,7 +31,7 @@ export default function AdminDashboard() {
       .from("admin_users")
       .select("id")
       .eq("id", session.user.id)
-      .single();
+      .maybeSingle();
 
     if (!adminUser) {
       await supabase.auth.signOut();
@@ -48,14 +52,19 @@ export default function AdminDashboard() {
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <p>Carregando...</p>
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+          <p>Carregando...</p>
+        </div>
       </div>
     );
   }
 
+  const isActive = (path: string) => location.pathname === path || location.pathname.startsWith(path + "/");
+
   return (
     <div className="min-h-screen bg-background">
-      <header className="border-b">
+      <header className="border-b sticky top-0 z-50 bg-background">
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <h1 className="text-2xl font-bold bg-gradient-primary bg-clip-text text-transparent">
@@ -72,48 +81,51 @@ export default function AdminDashboard() {
         </div>
       </header>
 
-      <main className="container mx-auto px-4 py-8">
-        <Tabs defaultValue="establishments" className="w-full">
-          <TabsList className="grid w-full max-w-md grid-cols-3">
-            <TabsTrigger value="establishments">
-              <Store className="h-4 w-4 mr-2" />
-              Estabelecimentos
-            </TabsTrigger>
-            <TabsTrigger value="products">
-              <Package className="h-4 w-4 mr-2" />
-              Produtos
-            </TabsTrigger>
-            <TabsTrigger value="statistics">
-              <BarChart3 className="h-4 w-4 mr-2" />
-              Estatísticas
-            </TabsTrigger>
-          </TabsList>
+      <div className="flex min-h-[calc(100vh-73px)]">
+        {/* Sidebar */}
+        <aside className="w-64 border-r bg-muted/20 p-4">
+          <nav className="space-y-2">
+            <Link to="/admin/dashboard">
+              <Button 
+                variant={isActive("/admin/dashboard") && location.pathname === "/admin/dashboard" ? "default" : "ghost"} 
+                className="w-full justify-start"
+              >
+                <LayoutDashboard className="mr-2 h-4 w-4" />
+                Dashboard
+              </Button>
+            </Link>
+            <Link to="/admin/estabelecimentos">
+              <Button 
+                variant={isActive("/admin/estabelecimentos") ? "default" : "ghost"} 
+                className="w-full justify-start"
+              >
+                <Store className="mr-2 h-4 w-4" />
+                Estabelecimentos
+              </Button>
+            </Link>
+            <Link to="/admin/solicitacoes">
+              <Button 
+                variant={isActive("/admin/solicitacoes") ? "default" : "ghost"} 
+                className="w-full justify-start"
+              >
+                <FileText className="mr-2 h-4 w-4" />
+                Solicitações
+              </Button>
+            </Link>
+          </nav>
+        </aside>
 
-          <TabsContent value="establishments" className="mt-6">
-            <div className="text-center py-12 text-muted-foreground">
-              <Store className="h-12 w-12 mx-auto mb-4 opacity-50" />
-              <p>Interface de gerenciamento de estabelecimentos em construção</p>
-              <p className="text-sm mt-2">Em breve você poderá adicionar e editar estabelecimentos aqui</p>
-            </div>
-          </TabsContent>
-
-          <TabsContent value="products" className="mt-6">
-            <div className="text-center py-12 text-muted-foreground">
-              <Package className="h-12 w-12 mx-auto mb-4 opacity-50" />
-              <p>Interface de gerenciamento de produtos em construção</p>
-              <p className="text-sm mt-2">Em breve você poderá adicionar e editar produtos aqui</p>
-            </div>
-          </TabsContent>
-
-          <TabsContent value="statistics" className="mt-6">
-            <div className="text-center py-12 text-muted-foreground">
-              <BarChart3 className="h-12 w-12 mx-auto mb-4 opacity-50" />
-              <p>Interface de estatísticas em construção</p>
-              <p className="text-sm mt-2">Em breve você poderá visualizar as estatísticas aqui</p>
-            </div>
-          </TabsContent>
-        </Tabs>
-      </main>
+        {/* Main Content */}
+        <main className="flex-1 p-8">
+          <Routes>
+            <Route index element={<AdminDashboardHome />} />
+            <Route path="estabelecimentos" element={<AdminEstablishments />} />
+            <Route path="estabelecimentos/adicionar" element={<AdminEstablishmentForm />} />
+            <Route path="estabelecimentos/editar/:id" element={<AdminEstablishmentForm />} />
+            <Route path="solicitacoes" element={<AdminRequests />} />
+          </Routes>
+        </main>
+      </div>
     </div>
   );
 }

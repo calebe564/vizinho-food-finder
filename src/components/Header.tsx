@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { Home, Building2, MapPin, ListChecks, UserPlus, MessageCircle, Info, Menu } from "lucide-react";
+import { Home, Building2, MapPin, ListChecks, UserPlus, MessageCircle, Info, Menu, LogIn } from "lucide-react";
 import { ThemeToggle } from "./ThemeToggle";
 import { Button } from "./ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "./ui/sheet";
@@ -74,6 +74,12 @@ export function Header() {
         </NavigationMenu>
 
         <div className="flex items-center gap-2">
+          <Link to="/admin/login" className="hidden md:inline-flex">
+            <Button variant="ghost" size="sm">
+              <LogIn className="mr-2 h-4 w-4" />
+              Admin
+            </Button>
+          </Link>
           <ThemeToggle />
           
           {/* Menu Mobile */}
@@ -108,6 +114,10 @@ export function Header() {
                 <Link to="/sobre" onClick={() => setIsOpen(false)} className="flex items-center gap-2 px-4 py-3 rounded-lg hover:bg-accent transition-colors">
                   <Info className="h-5 w-5" />
                   <span>Sobre</span>
+                </Link>
+                <Link to="/admin/login" onClick={() => setIsOpen(false)} className="flex items-center gap-2 px-4 py-3 rounded-lg hover:bg-accent transition-colors border-t mt-2 pt-5">
+                  <LogIn className="h-5 w-5" />
+                  <span>Área Administrativa</span>
                 </Link>
               </nav>
             </SheetContent>
