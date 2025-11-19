@@ -3,6 +3,8 @@ import { MapPin, Phone, Clock } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { getProximityColor, getProximityIcon } from "@/lib/proximityUtils";
+import type { ProximityLevel } from "@/lib/proximityUtils";
 
 interface Product {
   name: string;
@@ -34,6 +36,7 @@ interface EstablishmentCardProps {
   isPaid?: boolean;
   products?: Product[];
   establishment?: Establishment;
+  proximityLabel?: ProximityLevel;
 }
 
 export function EstablishmentCard({
@@ -48,6 +51,7 @@ export function EstablishmentCard({
   isPaid,
   products,
   establishment,
+  proximityLabel,
 }: EstablishmentCardProps) {
   // Use establishment prop if provided
   const actualId = establishment?.id || id || "";
@@ -89,8 +93,16 @@ export function EstablishmentCard({
 
         <div className="space-y-2 text-sm text-muted-foreground mb-4">
           <div className="flex items-center gap-2">
-            <MapPin className="h-4 w-4" />
-            <span>{actualDistance.toFixed(1)} km • {actualAddress}</span>
+            {proximityLabel ? (
+              <span className={getProximityColor(proximityLabel)}>
+                {getProximityIcon(proximityLabel)} {proximityLabel} • {actualAddress}
+              </span>
+            ) : (
+              <>
+                <MapPin className="h-4 w-4" />
+                <span>{actualDistance.toFixed(1)} km • {actualAddress}</span>
+              </>
+            )}
           </div>
           <div className="flex items-center gap-2">
             <Clock className="h-4 w-4" />

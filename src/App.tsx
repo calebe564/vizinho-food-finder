@@ -17,6 +17,8 @@ const Categories = lazy(() => import("./pages/Categories"));
 const Neighborhoods = lazy(() => import("./pages/Neighborhoods"));
 const AllEstablishments = lazy(() => import("./pages/AllEstablishments"));
 const PublicEstablishmentForm = lazy(() => import("./pages/PublicEstablishmentForm"));
+const WhereAreYou = lazy(() => import("./pages/WhereAreYou"));
+const NearbyEstablishments = lazy(() => import("./pages/NearbyEstablishments"));
 const About = lazy(() => import("./pages/About"));
 const ClientInfo = lazy(() => import("./pages/ClientInfo"));
 const MerchantInfo = lazy(() => import("./pages/MerchantInfo"));
@@ -49,6 +51,8 @@ const App = () => (
               <Route path="/bairros" element={<Neighborhoods />} />
               <Route path="/estabelecimentos" element={<AllEstablishments />} />
               <Route path="/cadastrar" element={<PublicEstablishmentForm />} />
+              <Route path="/where-are-you" element={<WhereAreYou />} />
+              <Route path="/nearby-establishments" element={<NearbyEstablishments />} />
               <Route path="/sobre" element={<About />} />
               <Route path="/info-clientes" element={<ClientInfo />} />
               <Route path="/info-comerciantes" element={<MerchantInfo />} />

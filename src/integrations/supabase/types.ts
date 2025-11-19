@@ -118,6 +118,7 @@ export type Database = {
           address: string
           banner_image: string | null
           category: Database["public"]["Enums"]["establishment_category"]
+          city: string
           created_at: string | null
           description: string | null
           external_link: string | null
@@ -130,6 +131,7 @@ export type Database = {
           neighborhood: string | null
           phone: string
           profile_image: string | null
+          reference_point: string | null
           schedule: string
           whatsapp: string | null
         }
@@ -138,6 +140,7 @@ export type Database = {
           address: string
           banner_image?: string | null
           category: Database["public"]["Enums"]["establishment_category"]
+          city?: string
           created_at?: string | null
           description?: string | null
           external_link?: string | null
@@ -150,6 +153,7 @@ export type Database = {
           neighborhood?: string | null
           phone: string
           profile_image?: string | null
+          reference_point?: string | null
           schedule: string
           whatsapp?: string | null
         }
@@ -158,6 +162,7 @@ export type Database = {
           address?: string
           banner_image?: string | null
           category?: Database["public"]["Enums"]["establishment_category"]
+          city?: string
           created_at?: string | null
           description?: string | null
           external_link?: string | null
@@ -170,6 +175,7 @@ export type Database = {
           neighborhood?: string | null
           phone?: string
           profile_image?: string | null
+          reference_point?: string | null
           schedule?: string
           whatsapp?: string | null
         }

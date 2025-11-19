@@ -50,6 +50,7 @@ export default function AdminEstablishmentForm() {
     name: "",
     category: "" as EstablishmentCategory | "",
     neighborhood: "",
+    city: "",
     address: "",
     latitude: "",
     longitude: "",
@@ -58,6 +59,7 @@ export default function AdminEstablishmentForm() {
     schedule: "",
     description: "",
     external_link: "",
+    reference_point: "",
     is_paid: false,
     active: true,
   });
@@ -85,6 +87,7 @@ export default function AdminEstablishmentForm() {
           name: data.name,
           category: data.category as EstablishmentCategory,
           neighborhood: data.neighborhood || "",
+          city: data.city || "São Paulo",
           address: data.address,
           latitude: data.latitude.toString(),
           longitude: data.longitude.toString(),
@@ -93,6 +96,7 @@ export default function AdminEstablishmentForm() {
           schedule: data.schedule,
           description: data.description || "",
           external_link: data.external_link || "",
+          reference_point: data.reference_point || "",
           is_paid: data.is_paid,
           active: data.active,
         });
@@ -118,6 +122,7 @@ export default function AdminEstablishmentForm() {
         name: formData.name,
         category: formData.category as EstablishmentCategory,
         neighborhood: formData.neighborhood || null,
+        city: formData.city,
         address: formData.address,
         latitude: parseFloat(formData.latitude),
         longitude: parseFloat(formData.longitude),
@@ -126,6 +131,7 @@ export default function AdminEstablishmentForm() {
         schedule: formData.schedule,
         description: formData.description || null,
         external_link: formData.external_link || null,
+        reference_point: formData.reference_point || null,
         is_paid: formData.is_paid,
         active: formData.active,
       };
@@ -218,12 +224,12 @@ export default function AdminEstablishmentForm() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="schedule">Horário de Funcionamento *</Label>
+                <Label htmlFor="city">Cidade *</Label>
                 <Input
-                  id="schedule"
-                  placeholder="Ex: Seg-Sex 8h-18h"
-                  value={formData.schedule}
-                  onChange={(e) => handleChange("schedule", e.target.value)}
+                  id="city"
+                  placeholder="Ex: São Paulo"
+                  value={formData.city}
+                  onChange={(e) => handleChange("city", e.target.value)}
                   required
                 />
               </div>
@@ -235,6 +241,27 @@ export default function AdminEstablishmentForm() {
                 id="address"
                 value={formData.address}
                 onChange={(e) => handleChange("address", e.target.value)}
+                required
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="reference_point">Ponto de Referência</Label>
+              <Input
+                id="reference_point"
+                placeholder="Ex: Próximo ao supermercado"
+                value={formData.reference_point}
+                onChange={(e) => handleChange("reference_point", e.target.value)}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="schedule">Horário de Funcionamento *</Label>
+              <Input
+                id="schedule"
+                placeholder="Ex: Seg-Sex 8h-18h"
+                value={formData.schedule}
+                onChange={(e) => handleChange("schedule", e.target.value)}
                 required
               />
             </div>
