@@ -54,6 +54,15 @@ export function Header() {
             </NavigationMenuItem>
 
             <NavigationMenuItem>
+              <Link to="/nearby-establishments">
+                <NavigationMenuLink className="group inline-flex h-10 w-max items-center justify-center rounded-md bg-background px-4 py-2 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground focus:outline-none disabled:pointer-events-none disabled:opacity-50">
+                  <MapPin className="mr-2 h-4 w-4" />
+                  Próximos
+                </NavigationMenuLink>
+              </Link>
+            </NavigationMenuItem>
+
+            <NavigationMenuItem>
               <Link to="/cadastrar">
                 <NavigationMenuLink className="group inline-flex h-10 w-max items-center justify-center rounded-md bg-background px-4 py-2 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground focus:outline-none disabled:pointer-events-none disabled:opacity-50">
                   <UserPlus className="mr-2 h-4 w-4" />
@@ -106,6 +115,10 @@ export function Header() {
                 <Link to="/estabelecimentos" onClick={() => setIsOpen(false)} className="flex items-center gap-2 px-4 py-3 rounded-lg hover:bg-accent transition-colors">
                   <ListChecks className="h-5 w-5" />
                   <span>Empresas</span>
+                </Link>
+                <Link to="/nearby-establishments" onClick={() => setIsOpen(false)} className="flex items-center gap-2 px-4 py-3 rounded-lg hover:bg-accent transition-colors">
+                  <MapPin className="h-5 w-5" />
+                  <span>Próximos</span>
                 </Link>
                 <Link to="/cadastrar" onClick={() => setIsOpen(false)} className="flex items-center gap-2 px-4 py-3 rounded-lg hover:bg-accent transition-colors">
                   <UserPlus className="h-5 w-5" />
