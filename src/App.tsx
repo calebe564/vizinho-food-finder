@@ -6,7 +6,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { ThemeProvider } from "@/contexts/ThemeContext";
 import { lazy, Suspense } from "react";
 import { ProtectedRoute } from "./components/ProtectedRoute";
-import { WhatsAppButton } from "./components/WhatsAppButton";
+import { AIChatButton } from "./components/AIChatButton";
 
 // Lazy loading para melhor performance
 const Home = lazy(() => import("./pages/Home"));
@@ -24,6 +24,8 @@ const ClientInfo = lazy(() => import("./pages/ClientInfo"));
 const MerchantInfo = lazy(() => import("./pages/MerchantInfo"));
 const PrivacyPolicy = lazy(() => import("./pages/PrivacyPolicy"));
 const Terms = lazy(() => import("./pages/Terms"));
+const ContactAdmin = lazy(() => import("./pages/ContactAdmin"));
+const UserChat = lazy(() => import("./pages/UserChat"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 
 // Loading component
@@ -42,7 +44,7 @@ const App = () => (
         <Toaster />
         <Sonner />
         <BrowserRouter>
-          <WhatsAppButton />
+          <AIChatButton />
           <Suspense fallback={<PageLoader />}>
             <Routes>
               <Route path="/" element={<Home />} />
@@ -58,6 +60,8 @@ const App = () => (
               <Route path="/info-comerciantes" element={<MerchantInfo />} />
               <Route path="/privacidade" element={<PrivacyPolicy />} />
               <Route path="/termos" element={<Terms />} />
+              <Route path="/contato-admin" element={<ContactAdmin />} />
+              <Route path="/chat/:id" element={<UserChat />} />
               <Route path="/admin/login" element={<AdminLogin />} />
               <Route path="/admin/dashboard/*" element={<ProtectedRoute><AdminDashboard /></ProtectedRoute>} />
               <Route path="*" element={<NotFound />} />

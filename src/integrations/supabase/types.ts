@@ -32,6 +32,39 @@ export type Database = {
         }
         Relationships: []
       }
+      conversations: {
+        Row: {
+          category: string
+          city_neighborhood: string
+          created_at: string
+          id: string
+          status: string | null
+          updated_at: string
+          user_email: string
+          user_name: string
+        }
+        Insert: {
+          category: string
+          city_neighborhood: string
+          created_at?: string
+          id?: string
+          status?: string | null
+          updated_at?: string
+          user_email: string
+          user_name: string
+        }
+        Update: {
+          category?: string
+          city_neighborhood?: string
+          created_at?: string
+          id?: string
+          status?: string | null
+          updated_at?: string
+          user_email?: string
+          user_name?: string
+        }
+        Relationships: []
+      }
       establishment_requests: {
         Row: {
           address: string
@@ -180,6 +213,38 @@ export type Database = {
           whatsapp?: string | null
         }
         Relationships: []
+      }
+      messages: {
+        Row: {
+          content: string
+          conversation_id: string
+          created_at: string
+          id: string
+          sender_type: string
+        }
+        Insert: {
+          content: string
+          conversation_id: string
+          created_at?: string
+          id?: string
+          sender_type: string
+        }
+        Update: {
+          content?: string
+          conversation_id?: string
+          created_at?: string
+          id?: string
+          sender_type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "messages_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "conversations"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       products: {
         Row: {
