@@ -72,6 +72,15 @@ export function Header() {
             </NavigationMenuItem>
 
             <NavigationMenuItem>
+              <Link to="/contato-admin">
+                <NavigationMenuLink className="group inline-flex h-10 w-max items-center justify-center rounded-md bg-background px-4 py-2 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground focus:outline-none disabled:pointer-events-none disabled:opacity-50">
+                  <MessageCircle className="mr-2 h-4 w-4" />
+                  Falar com ADM
+                </NavigationMenuLink>
+              </Link>
+            </NavigationMenuItem>
+
+            <NavigationMenuItem>
               <Link to="/sobre">
                 <NavigationMenuLink className="group inline-flex h-10 w-max items-center justify-center rounded-md bg-background px-4 py-2 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground focus:outline-none disabled:pointer-events-none disabled:opacity-50">
                   <Info className="mr-2 h-4 w-4" />
@@ -123,6 +132,10 @@ export function Header() {
                 <Link to="/cadastrar" onClick={() => setIsOpen(false)} className="flex items-center gap-2 px-4 py-3 rounded-lg hover:bg-accent transition-colors">
                   <UserPlus className="h-5 w-5" />
                   <span>Cadastrar Empresa</span>
+                </Link>
+                <Link to="/contato-admin" onClick={() => setIsOpen(false)} className="flex items-center gap-2 px-4 py-3 rounded-lg hover:bg-accent transition-colors">
+                  <MessageCircle className="h-5 w-5" />
+                  <span>Falar com ADM</span>
                 </Link>
                 <Link to="/sobre" onClick={() => setIsOpen(false)} className="flex items-center gap-2 px-4 py-3 rounded-lg hover:bg-accent transition-colors">
                   <Info className="h-5 w-5" />
