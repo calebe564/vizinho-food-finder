@@ -8,9 +8,9 @@ import { supabase } from "@/integrations/supabase/client";
 import { useState, useMemo } from "react";
 import { useSearchParams } from "react-router-dom";
 import { Database } from "@/integrations/supabase/types";
-import { useLocation } from "@/contexts/LocationContext";
+import { useUserLocation } from "@/contexts/LocationContext";
 import { calculateDistance } from "@/hooks/useGeolocation";
-import { MapPin } from "lucide-react";
+import { MapPin, Store, Loader2 } from "lucide-react";
 
 type EstablishmentCategory = Database["public"]["Enums"]["establishment_category"];
 
@@ -36,19 +36,15 @@ export default function AllEstablishments() {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState(initialCategory);
   const [sortBy, setSortBy] = useState("distance");
-  const { coordinates, manualLocation, setManualLocation, isLoading: locationLoading } = useLocation();
+  const { coordinates, manualLocation, setManualLocation, isLoading: locationLoading } = useUserLocation();
 
   const { data: establishments = [], isLoading } = useQuery({
-    queryKey: ["establishments", searchQuery, selectedCategory],
+    queryKey: ["establishments", selectedCategory],
     queryFn: async () => {
       let query = supabase
         .from("establishments")
         .select("*")
         .eq("active", true);
-
-      if (searchQuery) {
-        query = query.ilike("name", `%${searchQuery}%`);
-      }
 
       if (selectedCategory && selectedCategory !== "todos") {
         query = query.eq("category", selectedCategory as EstablishmentCategory);
@@ -60,7 +56,6 @@ export default function AllEstablishments() {
     },
   });
 
-  // Fetch products for search
   const { data: products = [] } = useQuery({
     queryKey: ["products-search"],
     queryFn: async () => {
@@ -76,7 +71,6 @@ export default function AllEstablishments() {
     return products.filter((p) => p.establishment_id === establishmentId);
   };
 
-  // Check if establishment matches manual location filter
   const matchesManualLocation = (est: Establishment) => {
     if (!manualLocation) return true;
     const locationLower = manualLocation.toLowerCase();
@@ -87,17 +81,17 @@ export default function AllEstablishments() {
     );
   };
 
-  // Filter and sort establishments
   const sortedEstablishments = useMemo(() => {
     return establishments
       .filter((est) => {
-        // Filter by product name if searching
         if (searchQuery) {
+          const searchLower = searchQuery.toLowerCase();
           const matchesProduct = getEstablishmentProducts(est.id).some((p) =>
-            p.name.toLowerCase().includes(searchQuery.toLowerCase())
+            p.name.toLowerCase().includes(searchLower)
           );
-          const matchesName = est.name.toLowerCase().includes(searchQuery.toLowerCase());
-          if (!matchesProduct && !matchesName) return false;
+          const matchesName = est.name.toLowerCase().includes(searchLower);
+          const matchesCategory = est.category.toLowerCase().includes(searchLower);
+          if (!matchesProduct && !matchesName && !matchesCategory) return false;
         }
         return matchesManualLocation(est);
       })
@@ -130,17 +124,22 @@ export default function AllEstablishments() {
   }, [establishments, coordinates, manualLocation, sortBy, searchQuery, products]);
 
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="min-h-screen flex flex-col bg-background">
       <Header />
       
       <main className="flex-1 container px-4 py-8">
         <div className="max-w-6xl mx-auto">
-          <h1 className="text-3xl font-bold mb-2">Empresas</h1>
-          <p className="text-muted-foreground mb-8">
-            Encontre empresas próximas a você
-          </p>
+          <div className="mb-8 animate-fade-in">
+            <div className="flex items-center gap-3 mb-2">
+              <Store className="h-8 w-8 text-primary" />
+              <h1 className="text-3xl font-bold">Empresas</h1>
+            </div>
+            <p className="text-muted-foreground">
+              Encontre empresas próximas a você
+            </p>
+          </div>
 
-          <div className="space-y-4 mb-6">
+          <div className="space-y-4 mb-6 animate-fade-in" style={{ animationDelay: "0.1s" }}>
             <SearchBar 
               value={searchQuery}
               onSearch={setSearchQuery}
@@ -156,43 +155,49 @@ export default function AllEstablishments() {
             />
           </div>
 
-          {/* Location Indicator */}
           {!locationLoading && coordinates && (
-            <div className="flex items-center gap-2 text-sm text-muted-foreground mb-6">
-              <MapPin className="h-4 w-4" />
+            <div className="flex items-center gap-2 text-sm text-muted-foreground bg-secondary/50 px-4 py-2 rounded-full w-fit mb-6">
+              <MapPin className="h-4 w-4 text-primary" />
               <span>
                 {manualLocation 
                   ? `Buscando em: ${manualLocation}` 
-                  : "Ordenando por proximidade da sua localização"
+                  : "Ordenando por proximidade"
                 }
               </span>
             </div>
           )}
 
           {isLoading ? (
-            <div className="flex justify-center py-12">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+            <div className="flex items-center justify-center py-20">
+              <Loader2 className="h-8 w-8 animate-spin text-primary" />
             </div>
           ) : sortedEstablishments.length === 0 ? (
-            <div className="text-center py-12">
-              <p className="text-muted-foreground">Nenhuma empresa encontrada.</p>
+            <div className="text-center py-20 bg-secondary/30 rounded-2xl animate-fade-in">
+              <Store className="h-16 w-16 mx-auto text-muted-foreground mb-4" />
+              <p className="text-xl font-medium text-muted-foreground">Nenhuma empresa encontrada</p>
+              <p className="text-sm text-muted-foreground mt-2">Tente ajustar os filtros ou busca</p>
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {sortedEstablishments.map((establishment) => (
-                <EstablishmentCard
+              {sortedEstablishments.map((establishment, index) => (
+                <div 
                   key={establishment.id}
-                  id={establishment.id}
-                  name={establishment.name}
-                  category={establishment.category}
-                  address={establishment.address}
-                  distance={establishment.distance}
-                  phone={establishment.phone}
-                  schedule={establishment.schedule}
-                  profileImage={establishment.profile_image}
-                  isPaid={establishment.is_paid}
-                  products={getEstablishmentProducts(establishment.id)}
-                />
+                  className="animate-fade-in hover-lift"
+                  style={{ animationDelay: `${0.05 * (index % 9)}s` }}
+                >
+                  <EstablishmentCard
+                    id={establishment.id}
+                    name={establishment.name}
+                    category={establishment.category}
+                    address={establishment.address}
+                    distance={establishment.distance}
+                    phone={establishment.phone}
+                    schedule={establishment.schedule}
+                    profileImage={establishment.profile_image}
+                    isPaid={establishment.is_paid}
+                    products={getEstablishmentProducts(establishment.id)}
+                  />
+                </div>
               ))}
             </div>
           )}

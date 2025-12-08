@@ -10,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { toast } from "sonner";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
-import { Building2, Upload } from "lucide-react";
+import { Building2, Upload, CheckCircle } from "lucide-react";
 import { Database } from "@/integrations/supabase/types";
 
 type EstablishmentCategory = Database["public"]["Enums"]["establishment_category"];
@@ -81,7 +81,6 @@ export default function PublicEstablishmentForm() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Validation
     if (!formData.name || !formData.category || !formData.neighborhood || 
         !formData.city || !formData.address || !formData.whatsapp || 
         !formData.schedule || !formData.products) {
@@ -102,10 +101,7 @@ export default function PublicEstablishmentForm() {
     setLoading(true);
 
     try {
-      // For now, store the products in description field until admin approves
       const fullDescription = `Horário: ${formData.schedule}\n\nProdutos: ${formData.products}${formData.description ? `\n\n${formData.description}` : ""}`;
-      
-      // Full address for geocoding purposes
       const fullAddress = `${formData.address}, ${formData.neighborhood}, ${formData.city}`;
 
       const { error } = await supabase
@@ -115,7 +111,7 @@ export default function PublicEstablishmentForm() {
           category: formData.category as EstablishmentCategory,
           neighborhood: formData.neighborhood,
           address: fullAddress,
-          phone: formData.whatsapp, // Using phone field for WhatsApp
+          phone: formData.whatsapp,
           whatsapp: formData.whatsapp,
           description: fullDescription,
           external_link: formData.external_link || null,
@@ -123,7 +119,7 @@ export default function PublicEstablishmentForm() {
 
       if (error) throw error;
 
-      toast.success("Solicitação enviada com sucesso! Sua empresa será analisada e entrará no catálogo após aprovação.");
+      toast.success("Solicitação enviada com sucesso!");
       navigate("/");
     } catch (error: any) {
       console.error("Error submitting request:", error);
@@ -138,27 +134,27 @@ export default function PublicEstablishmentForm() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="min-h-screen flex flex-col bg-background">
       <Header />
       
       <main className="flex-1 container px-4 py-8">
-        <Card className="max-w-2xl mx-auto">
-          <CardHeader>
+        <Card className="max-w-2xl mx-auto border-0 shadow-elevated rounded-3xl animate-fade-in">
+          <CardHeader className="text-center pb-6">
             <div className="flex items-center justify-center mb-4">
-              <div className="p-3 rounded-full bg-primary/10">
-                <Building2 className="h-8 w-8 text-primary" />
+              <div className="p-4 rounded-2xl bg-primary/10">
+                <Building2 className="h-10 w-10 text-primary" />
               </div>
             </div>
-            <CardTitle className="text-2xl text-center">Cadastrar Empresa</CardTitle>
-            <CardDescription className="text-center">
-              Preencha todos os campos obrigatórios. Após aprovação, sua empresa aparecerá no catálogo.
+            <CardTitle className="text-2xl font-bold">Cadastrar Empresa</CardTitle>
+            <CardDescription className="text-base">
+              Preencha todos os campos. Após aprovação, sua empresa aparecerá no catálogo.
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <form onSubmit={handleSubmit} className="space-y-4">
+            <form onSubmit={handleSubmit} className="space-y-5">
               {/* Logo Upload */}
               <div className="space-y-2">
-                <Label htmlFor="logo">Logo da Empresa *</Label>
+                <Label htmlFor="logo" className="text-base font-medium">Logo da Empresa *</Label>
                 <div className="flex items-center gap-4">
                   <div className="relative">
                     <input
@@ -170,41 +166,52 @@ export default function PublicEstablishmentForm() {
                     />
                     <label
                       htmlFor="logo"
-                      className="flex items-center justify-center w-24 h-24 border-2 border-dashed border-muted-foreground/50 rounded-lg cursor-pointer hover:border-primary transition-colors overflow-hidden"
+                      className="flex items-center justify-center w-28 h-28 border-2 border-dashed border-muted-foreground/30 rounded-2xl cursor-pointer hover:border-primary hover:bg-primary/5 transition-all overflow-hidden"
                     >
                       {logoPreview ? (
-                        <img src={logoPreview} alt="Logo preview" className="w-full h-full object-cover" />
+                        <div className="relative w-full h-full">
+                          <img src={logoPreview} alt="Logo preview" className="w-full h-full object-cover" />
+                          <div className="absolute inset-0 bg-primary/20 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity">
+                            <CheckCircle className="h-8 w-8 text-primary-foreground" />
+                          </div>
+                        </div>
                       ) : (
                         <Upload className="h-8 w-8 text-muted-foreground" />
                       )}
                     </label>
                   </div>
-                  <p className="text-sm text-muted-foreground">
-                    Clique para enviar a logo da sua empresa
-                  </p>
+                  <div className="flex-1">
+                    <p className="text-sm text-muted-foreground">
+                      Clique para enviar a logo da sua empresa
+                    </p>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Formatos: JPG, PNG. Tamanho recomendado: 200x200px
+                    </p>
+                  </div>
                 </div>
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="name">Nome da Empresa *</Label>
+                <Label htmlFor="name" className="text-base font-medium">Nome da Empresa *</Label>
                 <Input
                   id="name"
                   value={formData.name}
                   onChange={(e) => handleChange("name", e.target.value)}
                   placeholder="Ex: Padaria do João"
+                  className="h-12 rounded-xl"
                   required
                 />
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="category">Categoria *</Label>
+                <Label htmlFor="category" className="text-base font-medium">Categoria *</Label>
                 <Select value={formData.category} onValueChange={(value) => handleChange("category", value)}>
-                  <SelectTrigger>
+                  <SelectTrigger className="h-12 rounded-xl">
                     <SelectValue placeholder="Selecione a categoria" />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent className="rounded-xl">
                     {categories.map((cat) => (
-                      <SelectItem key={cat} value={cat}>
+                      <SelectItem key={cat} value={cat} className="rounded-lg">
                         {categoryLabels[cat]}
                       </SelectItem>
                     ))}
@@ -213,106 +220,114 @@ export default function PublicEstablishmentForm() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="address">Endereço Completo *</Label>
+                <Label htmlFor="address" className="text-base font-medium">Endereço Completo *</Label>
                 <Input
                   id="address"
                   value={formData.address}
                   onChange={(e) => handleChange("address", e.target.value)}
                   placeholder="Rua, número"
+                  className="h-12 rounded-xl"
                   required
                 />
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="neighborhood">Bairro *</Label>
+                  <Label htmlFor="neighborhood" className="text-base font-medium">Bairro *</Label>
                   <Input
                     id="neighborhood"
                     value={formData.neighborhood}
                     onChange={(e) => handleChange("neighborhood", e.target.value)}
                     placeholder="Ex: Centro"
+                    className="h-12 rounded-xl"
                     required
                   />
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="city">Cidade *</Label>
+                  <Label htmlFor="city" className="text-base font-medium">Cidade *</Label>
                   <Input
                     id="city"
                     value={formData.city}
                     onChange={(e) => handleChange("city", e.target.value)}
                     placeholder="Ex: Belo Horizonte"
+                    className="h-12 rounded-xl"
                     required
                   />
                 </div>
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="whatsapp">WhatsApp *</Label>
+                <Label htmlFor="whatsapp" className="text-base font-medium">WhatsApp *</Label>
                 <Input
                   id="whatsapp"
                   type="tel"
                   placeholder="(31) 99999-9999"
                   value={formData.whatsapp}
                   onChange={(e) => handleChange("whatsapp", e.target.value)}
+                  className="h-12 rounded-xl"
                   required
                 />
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="schedule">Horário de Funcionamento *</Label>
+                <Label htmlFor="schedule" className="text-base font-medium">Horário de Funcionamento *</Label>
                 <Input
                   id="schedule"
                   value={formData.schedule}
                   onChange={(e) => handleChange("schedule", e.target.value)}
                   placeholder="Ex: Seg-Sex 08:00-18:00, Sáb 08:00-12:00"
+                  className="h-12 rounded-xl"
                   required
                 />
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="products">Produtos Oferecidos *</Label>
+                <Label htmlFor="products" className="text-base font-medium">Produtos Oferecidos *</Label>
                 <Textarea
                   id="products"
-                  placeholder="Informe no mínimo 3 produtos, separados por vírgula. Ex: Pizza, Hambúrguer, Refrigerante, Suco natural"
+                  placeholder="Ex: Pizza, Hambúrguer, Refrigerante, Suco natural (mínimo 3)"
                   value={formData.products}
                   onChange={(e) => handleChange("products", e.target.value)}
                   rows={3}
+                  className="rounded-xl resize-none"
                 />
                 <p className="text-xs text-muted-foreground">
-                  Mínimo 3 produtos separados por vírgula
+                  Informe no mínimo 3 produtos, separados por vírgula
                 </p>
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="description">Descrição (opcional)</Label>
+                <Label htmlFor="description" className="text-base font-medium">Descrição (opcional)</Label>
                 <Textarea
                   id="description"
                   placeholder="Conte um pouco sobre sua empresa..."
                   value={formData.description}
                   onChange={(e) => handleChange("description", e.target.value)}
                   rows={3}
+                  className="rounded-xl resize-none"
                 />
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="external_link">Site/Instagram (opcional)</Label>
+                <Label htmlFor="external_link" className="text-base font-medium">Site/Instagram (opcional)</Label>
                 <Input
                   id="external_link"
                   type="url"
                   placeholder="https://..."
                   value={formData.external_link}
                   onChange={(e) => handleChange("external_link", e.target.value)}
+                  className="h-12 rounded-xl"
                 />
               </div>
 
-              <div className="pt-4">
-                <Button type="submit" className="w-full" disabled={loading}>
+              <div className="pt-6">
+                <Button type="submit" className="w-full h-14 text-lg rounded-xl" disabled={loading}>
                   {loading ? "Enviando..." : "Enviar Solicitação"}
                 </Button>
               </div>
 
-              <p className="text-xs text-muted-foreground text-center">
+              <p className="text-sm text-muted-foreground text-center">
                 * Campos obrigatórios. Sua empresa será analisada antes de aparecer no catálogo.
               </p>
             </form>
