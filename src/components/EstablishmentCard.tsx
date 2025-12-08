@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { MapPin, Phone, Clock } from "lucide-react";
+import { MapPin, Clock, MessageCircle, Star } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -39,6 +39,20 @@ interface EstablishmentCardProps {
   proximityLabel?: ProximityLevel;
 }
 
+const categoryLabels: Record<string, string> = {
+  restaurante: "Restaurante",
+  lanchonete: "Lanchonete",
+  padaria: "Padaria",
+  supermercado: "Supermercado",
+  açougue: "Açougue",
+  hortifruti: "Hortifruti",
+  pizzaria: "Pizzaria",
+  hamburgueria: "Hamburgueria",
+  bar: "Bar",
+  cafe: "Café",
+  outro: "Outro"
+};
+
 export function EstablishmentCard({
   id,
   name,
@@ -53,7 +67,6 @@ export function EstablishmentCard({
   establishment,
   proximityLabel,
 }: EstablishmentCardProps) {
-  // Use establishment prop if provided
   const actualId = establishment?.id || id || "";
   const actualName = establishment?.name || name || "";
   const actualCategory = establishment?.category || category || "";
@@ -64,75 +77,105 @@ export function EstablishmentCard({
   const actualIsPaid = establishment?.is_paid ?? isPaid ?? false;
   const actualDistance = distance || 0;
   const actualProducts = products || [];
+
+  const formatWhatsApp = (phoneNumber: string) => {
+    const cleaned = phoneNumber.replace(/\D/g, "");
+    return `https://wa.me/55${cleaned}`;
+  };
+
   return (
-    <Card className="overflow-hidden hover:shadow-elevated transition-shadow">
+    <Card className="overflow-hidden bg-card border-0 shadow-card hover:shadow-elevated transition-all duration-300 rounded-2xl">
       <div className="relative">
         {actualProfileImage ? (
-          <img src={actualProfileImage} alt={actualName} className="w-full h-48 object-cover" />
+          <img 
+            src={actualProfileImage} 
+            alt={actualName} 
+            className="w-full h-44 object-cover"
+          />
         ) : (
-          <div className="w-full h-48 bg-gradient-primary flex items-center justify-center">
-            <span className="text-4xl font-bold text-primary-foreground">
+          <div className="w-full h-44 bg-gradient-primary flex items-center justify-center">
+            <span className="text-5xl font-bold text-primary-foreground">
               {actualName.charAt(0).toUpperCase()}
             </span>
           </div>
         )}
-        {actualIsPaid && (
-          <Badge className="absolute top-3 right-3 bg-accent">Patrocinado</Badge>
-        )}
+        
+        {/* Badges */}
+        <div className="absolute top-3 left-3 flex flex-col gap-2">
+          {actualIsPaid && (
+            <Badge className="bg-accent text-accent-foreground shadow-lg">
+              <Star className="h-3 w-3 mr-1" />
+              Patrocinado
+            </Badge>
+          )}
+        </div>
+
+        {/* Distance Badge */}
+        <div className="absolute bottom-3 right-3">
+          <Badge variant="secondary" className="bg-background/90 backdrop-blur-sm text-foreground shadow-lg">
+            <MapPin className="h-3 w-3 mr-1" />
+            {actualDistance.toFixed(1)} km
+          </Badge>
+        </div>
       </div>
 
-      <CardContent className="p-4">
-        <div className="flex items-start justify-between mb-2">
-          <div>
-            <h3 className="text-xl font-bold">{actualName}</h3>
-            <Badge variant="secondary" className="mt-1 capitalize">
-              {actualCategory}
-            </Badge>
-          </div>
+      <CardContent className="p-5">
+        <div className="mb-3">
+          <h3 className="text-lg font-bold line-clamp-1">{actualName}</h3>
+          <Badge variant="secondary" className="mt-2 text-xs font-medium">
+            {categoryLabels[actualCategory] || actualCategory}
+          </Badge>
         </div>
 
         <div className="space-y-2 text-sm text-muted-foreground mb-4">
-          <div className="flex items-center gap-2">
+          <div className="flex items-start gap-2">
             {proximityLabel ? (
               <span className={getProximityColor(proximityLabel)}>
-                {getProximityIcon(proximityLabel)} {proximityLabel} • {actualAddress}
+                {getProximityIcon(proximityLabel)} {proximityLabel}
               </span>
             ) : (
               <>
-                <MapPin className="h-4 w-4" />
-                <span>{actualDistance.toFixed(1)} km • {actualAddress}</span>
+                <MapPin className="h-4 w-4 flex-shrink-0 mt-0.5" />
+                <span className="line-clamp-2">{actualAddress}</span>
               </>
             )}
           </div>
           <div className="flex items-center gap-2">
-            <Clock className="h-4 w-4" />
-            <span>{actualSchedule}</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <Phone className="h-4 w-4" />
-            <a href={`tel:${actualPhone}`} className="hover:text-primary">
-              {actualPhone}
-            </a>
+            <Clock className="h-4 w-4 flex-shrink-0" />
+            <span className="line-clamp-1">{actualSchedule}</span>
           </div>
         </div>
 
         {actualProducts.length > 0 && (
-          <div className="mb-4">
-            <p className="text-sm font-medium mb-2">Alguns produtos:</p>
-            <div className="space-y-1">
-              {actualProducts.slice(0, 3).map((product, index) => (
+          <div className="mb-4 p-3 bg-secondary/50 rounded-xl">
+            <p className="text-xs font-medium text-muted-foreground mb-2">Produtos em destaque</p>
+            <div className="space-y-1.5">
+              {actualProducts.slice(0, 2).map((product, index) => (
                 <div key={index} className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">{product.name}</span>
-                  <span className="font-medium">R$ {product.price.toFixed(2)}</span>
+                  <span className="text-foreground line-clamp-1">{product.name}</span>
+                  <span className="font-semibold text-primary">R$ {product.price.toFixed(2)}</span>
                 </div>
               ))}
             </div>
           </div>
         )}
 
-        <Link to={`/estabelecimento/${actualId}`}>
-          <Button className="w-full">Ver detalhes</Button>
-        </Link>
+        <div className="flex gap-2">
+          <Link to={`/estabelecimento/${actualId}`} className="flex-1">
+            <Button className="w-full rounded-xl" size="sm">
+              Ver detalhes
+            </Button>
+          </Link>
+          <a 
+            href={formatWhatsApp(actualPhone)} 
+            target="_blank" 
+            rel="noopener noreferrer"
+          >
+            <Button variant="outline" size="sm" className="rounded-xl px-3">
+              <MessageCircle className="h-4 w-4" />
+            </Button>
+          </a>
+        </div>
       </CardContent>
     </Card>
   );

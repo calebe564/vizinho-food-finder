@@ -1,4 +1,5 @@
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Filter, ArrowUpDown } from "lucide-react";
 
 const categories = [
   { value: "todos", label: "Todas as categorias" },
@@ -16,10 +17,10 @@ const categories = [
 ];
 
 const sortOptions = [
-  { value: "distance", label: "Distância" },
+  { value: "distance", label: "Mais próximos" },
   { value: "name", label: "Nome (A-Z)" },
-  { value: "price-asc", label: "Preço (menor)" },
-  { value: "price-desc", label: "Preço (maior)" },
+  { value: "price-asc", label: "Menor preço" },
+  { value: "price-desc", label: "Maior preço" },
 ];
 
 interface FilterBarProps {
@@ -41,34 +42,45 @@ export function FilterBar({
   const handleCategoryChange = (value: string) => {
     if (onCategoryChange) onCategoryChange(value);
   };
-  return (
-    <div className="flex flex-col sm:flex-row gap-4">
-      <Select value={actualCategory} onValueChange={handleCategoryChange}>
-        <SelectTrigger className="w-full sm:w-[220px]">
-          <SelectValue placeholder="Categoria" />
-        </SelectTrigger>
-        <SelectContent>
-          {categories.map((cat) => (
-            <SelectItem key={cat.value} value={cat.value}>
-              {cat.label}
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
 
-      {onSortChange && (
-        <Select value={actualSortBy} onValueChange={onSortChange}>
-          <SelectTrigger className="w-full sm:w-[200px]">
-            <SelectValue placeholder="Ordenar por" />
+  return (
+    <div className="flex flex-col sm:flex-row gap-3">
+      <div className="relative flex-1 sm:flex-none">
+        <Select value={actualCategory} onValueChange={handleCategoryChange}>
+          <SelectTrigger className="w-full sm:w-[240px] h-12 rounded-xl bg-secondary/50 border-0">
+            <div className="flex items-center gap-2">
+              <Filter className="h-4 w-4 text-muted-foreground" />
+              <SelectValue placeholder="Categoria" />
+            </div>
           </SelectTrigger>
-          <SelectContent>
-            {sortOptions.map((option) => (
-              <SelectItem key={option.value} value={option.value}>
-                {option.label}
+          <SelectContent className="rounded-xl">
+            {categories.map((cat) => (
+              <SelectItem key={cat.value} value={cat.value} className="rounded-lg">
+                {cat.label}
               </SelectItem>
             ))}
           </SelectContent>
         </Select>
+      </div>
+
+      {onSortChange && (
+        <div className="relative flex-1 sm:flex-none">
+          <Select value={actualSortBy} onValueChange={onSortChange}>
+            <SelectTrigger className="w-full sm:w-[200px] h-12 rounded-xl bg-secondary/50 border-0">
+              <div className="flex items-center gap-2">
+                <ArrowUpDown className="h-4 w-4 text-muted-foreground" />
+                <SelectValue placeholder="Ordenar por" />
+              </div>
+            </SelectTrigger>
+            <SelectContent className="rounded-xl">
+              {sortOptions.map((option) => (
+                <SelectItem key={option.value} value={option.value} className="rounded-lg">
+                  {option.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
       )}
     </div>
   );

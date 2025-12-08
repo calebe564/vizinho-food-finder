@@ -7,12 +7,12 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { useLocation } from "@/contexts/LocationContext";
+import { useUserLocation } from "@/contexts/LocationContext";
 import { toast } from "sonner";
 
 export default function WhereAreYou() {
   const navigate = useNavigate();
-  const { setUserLocation } = useLocation();
+  const { setUserLocation } = useUserLocation();
   const [neighborhood, setNeighborhood] = useState("");
   const [city, setCity] = useState("");
 

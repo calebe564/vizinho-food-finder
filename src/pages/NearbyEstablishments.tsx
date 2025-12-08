@@ -7,7 +7,7 @@ import { Footer } from "@/components/Footer";
 import { EstablishmentCard } from "@/components/EstablishmentCard";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { useLocation } from "@/contexts/LocationContext";
+import { useUserLocation } from "@/contexts/LocationContext";
 import { calcularProximidade, getProximityColor, getProximityIcon } from "@/lib/proximityUtils";
 import type { ProximityLevel } from "@/lib/proximityUtils";
 
@@ -32,7 +32,7 @@ interface EstablishmentWithProximity extends Establishment {
 
 export default function NearbyEstablishments() {
   const navigate = useNavigate();
-  const { userLocation, clearUserLocation } = useLocation();
+  const { userLocation, clearUserLocation } = useUserLocation();
   const [establishments, setEstablishments] = useState<EstablishmentWithProximity[]>([]);
   const [loading, setLoading] = useState(true);
 
