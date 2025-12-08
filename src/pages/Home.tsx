@@ -6,14 +6,18 @@ import { FilterBar } from "@/components/FilterBar";
 import { EstablishmentCard } from "@/components/EstablishmentCard";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
-import { useGeolocation, calculateDistance } from "@/hooks/useGeolocation";
+import { useLocation } from "@/contexts/LocationContext";
+import { calculateDistance } from "@/hooks/useGeolocation";
 import { useSearchParams } from "react-router-dom";
+import { MapPin } from "lucide-react";
 
 interface Establishment {
   id: string;
   name: string;
   category: string;
   address: string;
+  neighborhood: string | null;
+  city: string;
   latitude: number;
   longitude: number;
   phone: string;
@@ -35,7 +39,7 @@ export default function Home() {
   const [searchTerm, setSearchTerm] = useState("");
   const [category, setCategory] = useState(searchParams.get("category") || "todos");
   const [sortBy, setSortBy] = useState("distance");
-  const { coordinates } = useGeolocation();
+  const { coordinates, manualLocation, setManualLocation, isLoading: locationLoading } = useLocation();
 
   useEffect(() => {
     fetchEstablishments();
@@ -67,6 +71,17 @@ export default function Home() {
     return products.filter((p) => p.establishment_id === establishmentId);
   };
 
+  // Check if establishment matches manual location filter
+  const matchesManualLocation = (est: Establishment) => {
+    if (!manualLocation) return true;
+    const locationLower = manualLocation.toLowerCase();
+    return (
+      (est.neighborhood?.toLowerCase().includes(locationLower) || false) ||
+      est.city.toLowerCase().includes(locationLower) ||
+      est.address.toLowerCase().includes(locationLower)
+    );
+  };
+
   const filteredEstablishments = establishments
     .filter((est) => {
       const matchesSearch =
@@ -79,7 +94,9 @@ export default function Home() {
       const matchesCategory =
         category === "todos" || est.category === category;
 
-      return matchesSearch && matchesCategory;
+      const matchesLocation = matchesManualLocation(est);
+
+      return matchesSearch && matchesCategory && matchesLocation;
     })
     .map((est) => ({
       ...est,
@@ -115,8 +132,15 @@ export default function Home() {
       <main className="container mx-auto px-4 py-8 space-y-8">
         <BannerCarousel />
 
+        {/* Search Section */}
         <div className="space-y-4">
-          <SearchBar value={searchTerm} onChange={setSearchTerm} />
+          <SearchBar 
+            value={searchTerm} 
+            onChange={setSearchTerm}
+            locationValue={manualLocation}
+            onLocationChange={setManualLocation}
+            showLocation={true}
+          />
           <FilterBar
             category={category}
             onCategoryChange={setCategory}
@@ -125,9 +149,23 @@ export default function Home() {
           />
         </div>
 
+        {/* Location Indicator */}
+        {!locationLoading && coordinates && (
+          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+            <MapPin className="h-4 w-4" />
+            <span>
+              {manualLocation 
+                ? `Buscando em: ${manualLocation}` 
+                : "Ordenando por proximidade da sua localização"
+              }
+            </span>
+          </div>
+        )}
+
+        {/* Establishments List */}
         <div>
           <h2 className="text-2xl font-bold mb-4">
-            {filteredEstablishments.length} estabelecimentos próximos
+            {filteredEstablishments.length} {filteredEstablishments.length === 1 ? 'empresa encontrada' : 'empresas encontradas'}
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {filteredEstablishments.map((est) => (
@@ -146,6 +184,12 @@ export default function Home() {
               />
             ))}
           </div>
+
+          {filteredEstablishments.length === 0 && (
+            <div className="text-center py-12">
+              <p className="text-muted-foreground">Nenhuma empresa encontrada.</p>
+            </div>
+          )}
         </div>
       </main>
 
