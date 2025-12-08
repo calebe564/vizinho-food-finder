@@ -27,21 +27,15 @@ interface FilterBarProps {
   onCategoryChange?: (value: string) => void;
   sortBy?: string;
   onSortChange?: (value: string) => void;
-  selectedCategory?: string;
-  onNeighborhoodChange?: (value: string) => void;
-  selectedNeighborhood?: string;
 }
 
 export function FilterBar({ 
   category, 
   onCategoryChange, 
   sortBy, 
-  onSortChange,
-  selectedCategory,
-  selectedNeighborhood,
-  onNeighborhoodChange 
+  onSortChange 
 }: FilterBarProps) {
-  const actualCategory = selectedCategory || category || "todos";
+  const actualCategory = category || "todos";
   const actualSortBy = sortBy || "distance";
   
   const handleCategoryChange = (value: string) => {
