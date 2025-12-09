@@ -1,10 +1,11 @@
 import { Link } from "react-router-dom";
-import { Home, Building2, ListChecks, UserPlus, Menu, LogIn } from "lucide-react";
+import { Home, Building2, Store, MoreHorizontal, UserPlus, LogIn, Settings } from "lucide-react";
 import { ThemeToggle } from "./ThemeToggle";
 import { Button } from "./ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "./ui/sheet";
 import { useState } from "react";
 import { NavigationMenu, NavigationMenuItem, NavigationMenuLink, NavigationMenuList } from "./ui/navigation-menu";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "./ui/dropdown-menu";
 import logo from "@/assets/logo.png";
 
 export function Header() {
@@ -18,6 +19,7 @@ export function Header() {
           <span className="font-bold text-lg hidden sm:inline-block">Comércio Vizinho</span>
         </Link>
 
+        {/* Desktop Navigation - Only main items visible */}
         <NavigationMenu className="hidden md:flex">
           <NavigationMenuList className="gap-1">
             <NavigationMenuItem>
@@ -41,17 +43,8 @@ export function Header() {
             <NavigationMenuItem>
               <Link to="/estabelecimentos">
                 <NavigationMenuLink className="group inline-flex h-10 w-max items-center justify-center rounded-xl bg-transparent px-4 py-2 text-sm font-medium transition-all hover:bg-secondary hover:text-foreground">
-                  <ListChecks className="mr-2 h-4 w-4" />
+                  <Store className="mr-2 h-4 w-4" />
                   Empresas
-                </NavigationMenuLink>
-              </Link>
-            </NavigationMenuItem>
-
-            <NavigationMenuItem>
-              <Link to="/cadastrar">
-                <NavigationMenuLink className="group inline-flex h-10 w-max items-center justify-center rounded-xl bg-primary text-primary-foreground px-4 py-2 text-sm font-medium transition-all hover:bg-primary/90">
-                  <UserPlus className="mr-2 h-4 w-4" />
-                  Cadastrar Empresa
                 </NavigationMenuLink>
               </Link>
             </NavigationMenuItem>
@@ -59,19 +52,37 @@ export function Header() {
         </NavigationMenu>
 
         <div className="flex items-center gap-2">
-          <Link to="/admin/login" className="hidden md:inline-flex">
-            <Button variant="ghost" size="sm" className="rounded-xl">
-              <LogIn className="mr-2 h-4 w-4" />
-              Admin
-            </Button>
-          </Link>
           <ThemeToggle />
           
-          {/* Menu Mobile */}
+          {/* Desktop Overflow Menu */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild className="hidden md:inline-flex">
+              <Button variant="ghost" size="icon" className="rounded-xl" title="Mais opções">
+                <MoreHorizontal className="h-5 w-5" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-56">
+              <DropdownMenuItem asChild>
+                <Link to="/cadastrar" className="flex items-center gap-2 cursor-pointer">
+                  <UserPlus className="h-4 w-4" />
+                  Cadastrar Empresa
+                </Link>
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem asChild>
+                <Link to="/admin/login" className="flex items-center gap-2 cursor-pointer">
+                  <LogIn className="h-4 w-4" />
+                  Área Administrativa
+                </Link>
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+          
+          {/* Mobile Menu */}
           <Sheet open={isOpen} onOpenChange={setIsOpen}>
             <SheetTrigger asChild className="md:hidden">
               <Button variant="ghost" size="icon" className="rounded-xl">
-                <Menu className="h-5 w-5" />
+                <MoreHorizontal className="h-5 w-5" />
               </Button>
             </SheetTrigger>
             <SheetContent side="right" className="w-[300px] p-0">
@@ -80,6 +91,7 @@ export function Header() {
                 <span className="font-bold text-lg">Comércio Vizinho</span>
               </div>
               <nav className="flex flex-col gap-1 p-4">
+                <p className="text-xs text-muted-foreground px-4 pb-2 uppercase tracking-wider">Navegação</p>
                 <Link to="/" onClick={() => setIsOpen(false)} className="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-secondary transition-colors">
                   <Home className="h-5 w-5" />
                   <span className="font-medium">Início</span>
@@ -89,14 +101,16 @@ export function Header() {
                   <span className="font-medium">Categorias</span>
                 </Link>
                 <Link to="/estabelecimentos" onClick={() => setIsOpen(false)} className="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-secondary transition-colors">
-                  <ListChecks className="h-5 w-5" />
+                  <Store className="h-5 w-5" />
                   <span className="font-medium">Empresas</span>
                 </Link>
-                <Link to="/cadastrar" onClick={() => setIsOpen(false)} className="flex items-center gap-3 px-4 py-3 rounded-xl bg-primary text-primary-foreground transition-colors mt-2">
-                  <UserPlus className="h-5 w-5" />
-                  <span className="font-medium">Cadastrar Empresa</span>
-                </Link>
+                
                 <div className="border-t mt-4 pt-4">
+                  <p className="text-xs text-muted-foreground px-4 pb-2 uppercase tracking-wider">Mais opções</p>
+                  <Link to="/cadastrar" onClick={() => setIsOpen(false)} className="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-secondary transition-colors">
+                    <UserPlus className="h-5 w-5" />
+                    <span className="font-medium">Cadastrar Empresa</span>
+                  </Link>
                   <Link to="/admin/login" onClick={() => setIsOpen(false)} className="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-secondary transition-colors">
                     <LogIn className="h-5 w-5" />
                     <span className="font-medium">Área Administrativa</span>
