@@ -1,1 +1,7 @@
 project_id = "cicdiqprobouqmtycsto"
+
+[functions.ai-chat]
+verify_jwt = false
+
+[functions.setup-admin]
+verify_jwt = false
