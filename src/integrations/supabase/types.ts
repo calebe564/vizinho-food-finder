@@ -77,6 +77,9 @@ export type Database = {
           name: string
           neighborhood: string
           phone: string
+          products_json: Json | null
+          profile_image: string | null
+          schedule: string | null
           status: string | null
           whatsapp: string | null
         }
@@ -91,6 +94,9 @@ export type Database = {
           name: string
           neighborhood: string
           phone: string
+          products_json?: Json | null
+          profile_image?: string | null
+          schedule?: string | null
           status?: string | null
           whatsapp?: string | null
         }
@@ -105,6 +111,9 @@ export type Database = {
           name?: string
           neighborhood?: string
           phone?: string
+          products_json?: Json | null
+          profile_image?: string | null
+          schedule?: string | null
           status?: string | null
           whatsapp?: string | null
         }
@@ -242,6 +251,38 @@ export type Database = {
             columns: ["conversation_id"]
             isOneToOne: false
             referencedRelation: "conversations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      product_variations: {
+        Row: {
+          created_at: string | null
+          id: string
+          name: string
+          price: number
+          product_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          name: string
+          price: number
+          product_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          name?: string
+          price?: number
+          product_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "product_variations_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
             referencedColumns: ["id"]
           },
         ]
