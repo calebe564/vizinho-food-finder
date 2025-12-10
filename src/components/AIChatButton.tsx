@@ -1,4 +1,4 @@
-import { Bot, Send, X } from "lucide-react";
+import { MessageCircle, Send, X } from "lucide-react";
 import { Button } from "./ui/button";
 import { useState, useRef, useEffect } from "react";
 import { Textarea } from "./ui/textarea";
@@ -94,29 +94,29 @@ export function AIChatButton() {
 
   return (
     <>
-      {/* Botão flutuante */}
+      {/* Botão flutuante - balão de chat azul com ícone branco */}
       <Button
         onClick={() => setIsOpen(true)}
         size="lg"
-        className="fixed bottom-6 right-6 z-50 rounded-full shadow-lg hover:shadow-xl transition-shadow h-14 w-14 p-0"
+        className="fixed bottom-6 right-6 z-50 rounded-full shadow-lg hover:shadow-xl transition-shadow h-14 w-14 p-0 bg-blue-500 hover:bg-blue-600"
       >
-        <Bot className="h-6 w-6" />
+        <MessageCircle className="h-6 w-6 text-white" />
       </Button>
 
       {/* Chat window */}
       {isOpen && (
-        <Card className="fixed bottom-24 right-6 z-50 w-96 h-[500px] flex flex-col shadow-2xl">
+        <Card className="fixed bottom-24 right-6 z-50 w-96 max-w-[calc(100vw-3rem)] h-[500px] flex flex-col shadow-2xl">
           {/* Header */}
-          <div className="flex items-center justify-between p-4 border-b bg-primary text-primary-foreground rounded-t-lg">
+          <div className="flex items-center justify-between p-4 border-b bg-blue-500 text-white rounded-t-lg">
             <div className="flex items-center gap-2">
-              <Bot className="h-5 w-5" />
+              <MessageCircle className="h-5 w-5" />
               <h3 className="font-semibold">Assistente Comércio Vizinho</h3>
             </div>
             <Button
               variant="ghost"
               size="icon"
               onClick={() => setIsOpen(false)}
-              className="text-primary-foreground hover:bg-primary-foreground/10"
+              className="text-white hover:bg-white/10"
             >
               <X className="h-4 w-4" />
             </Button>
@@ -133,7 +133,7 @@ export function AIChatButton() {
                   <div
                     className={`max-w-[80%] rounded-lg px-4 py-2 ${
                       msg.role === "user"
-                        ? "bg-primary text-primary-foreground"
+                        ? "bg-blue-500 text-white"
                         : "bg-muted text-foreground"
                     }`}
                   >
@@ -164,8 +164,9 @@ export function AIChatButton() {
                 onClick={handleSend}
                 disabled={!input.trim() || isLoading}
                 size="icon"
+                className="bg-blue-500 hover:bg-blue-600"
               >
-                <Send className="h-4 w-4" />
+                <Send className="h-4 w-4 text-white" />
               </Button>
             </div>
           </div>

@@ -10,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { toast } from "sonner";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
-import { Building2, Upload, CheckCircle } from "lucide-react";
+import { Building2, Upload, CheckCircle, Plus, Trash2, Image as ImageIcon } from "lucide-react";
 import { Database } from "@/integrations/supabase/types";
 
 type EstablishmentCategory = Database["public"]["Enums"]["establishment_category"];
@@ -43,6 +43,19 @@ const categoryLabels: Record<string, string> = {
   outro: "Outro"
 };
 
+interface ProductVariation {
+  id: string;
+  name: string;
+  price: string;
+}
+
+interface Product {
+  id: string;
+  name: string;
+  price: string;
+  variations: ProductVariation[];
+}
+
 export default function PublicEstablishmentForm() {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
@@ -53,13 +66,17 @@ export default function PublicEstablishmentForm() {
     neighborhood: "",
     city: "",
     address: "",
+    phone: "",
     whatsapp: "",
     schedule: "",
-    products: "",
     description: "",
     external_link: "",
     logo: null as File | null
   });
+  
+  const [products, setProducts] = useState<Product[]>([
+    { id: crypto.randomUUID(), name: "", price: "", variations: [] }
+  ]);
 
   const handleLogoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -73,17 +90,83 @@ export default function PublicEstablishmentForm() {
     }
   };
 
-  const validateProducts = (products: string): boolean => {
-    const productList = products.split(",").map(p => p.trim()).filter(p => p.length > 0);
-    return productList.length >= 3;
+  const addProduct = () => {
+    setProducts(prev => [...prev, { 
+      id: crypto.randomUUID(), 
+      name: "", 
+      price: "", 
+      variations: [] 
+    }]);
+  };
+
+  const removeProduct = (productId: string) => {
+    if (products.length > 1) {
+      setProducts(prev => prev.filter(p => p.id !== productId));
+    }
+  };
+
+  const updateProduct = (productId: string, field: "name" | "price", value: string) => {
+    setProducts(prev => prev.map(p => 
+      p.id === productId ? { ...p, [field]: value } : p
+    ));
+  };
+
+  const addVariation = (productId: string) => {
+    setProducts(prev => prev.map(p => 
+      p.id === productId 
+        ? { ...p, variations: [...p.variations, { id: crypto.randomUUID(), name: "", price: "" }] }
+        : p
+    ));
+  };
+
+  const removeVariation = (productId: string, variationId: string) => {
+    setProducts(prev => prev.map(p => 
+      p.id === productId 
+        ? { ...p, variations: p.variations.filter(v => v.id !== variationId) }
+        : p
+    ));
+  };
+
+  const updateVariation = (productId: string, variationId: string, field: "name" | "price", value: string) => {
+    setProducts(prev => prev.map(p => 
+      p.id === productId 
+        ? { 
+            ...p, 
+            variations: p.variations.map(v => 
+              v.id === variationId ? { ...v, [field]: value } : v
+            )
+          }
+        : p
+    ));
+  };
+
+  const validateProducts = (): boolean => {
+    // Check if all products have name and price
+    for (const product of products) {
+      if (!product.name.trim()) {
+        toast.error("Todos os produtos devem ter um nome");
+        return false;
+      }
+      if (!product.price.trim() || isNaN(parseFloat(product.price))) {
+        toast.error(`O produto "${product.name}" precisa ter um preço válido`);
+        return false;
+      }
+      // Check variations
+      for (const variation of product.variations) {
+        if (variation.name.trim() && (!variation.price.trim() || isNaN(parseFloat(variation.price)))) {
+          toast.error(`A variação "${variation.name}" precisa ter um preço válido`);
+          return false;
+        }
+      }
+    }
+    return true;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     if (!formData.name || !formData.category || !formData.neighborhood || 
-        !formData.city || !formData.address || !formData.whatsapp || 
-        !formData.schedule || !formData.products) {
+        !formData.city || !formData.address || !formData.phone || !formData.schedule) {
       toast.error("Preencha todos os campos obrigatórios");
       return;
     }
@@ -93,16 +176,33 @@ export default function PublicEstablishmentForm() {
       return;
     }
 
-    if (!validateProducts(formData.products)) {
-      toast.error("Informe pelo menos 3 produtos separados por vírgula");
+    if (products.length === 0) {
+      toast.error("Adicione pelo menos um produto");
+      return;
+    }
+
+    if (!validateProducts()) {
       return;
     }
 
     setLoading(true);
 
     try {
-      const fullDescription = `Horário: ${formData.schedule}\n\nProdutos: ${formData.products}${formData.description ? `\n\n${formData.description}` : ""}`;
       const fullAddress = `${formData.address}, ${formData.neighborhood}, ${formData.city}`;
+
+      // Prepare products JSON
+      const productsJson = products
+        .filter(p => p.name.trim() && p.price.trim())
+        .map(p => ({
+          name: p.name,
+          price: parseFloat(p.price),
+          variations: p.variations
+            .filter(v => v.name.trim() && v.price.trim())
+            .map(v => ({
+              name: v.name,
+              price: parseFloat(v.price)
+            }))
+        }));
 
       const { error } = await supabase
         .from("establishment_requests")
@@ -111,19 +211,22 @@ export default function PublicEstablishmentForm() {
           category: formData.category as EstablishmentCategory,
           neighborhood: formData.neighborhood,
           address: fullAddress,
-          phone: formData.whatsapp,
-          whatsapp: formData.whatsapp,
-          description: fullDescription,
+          phone: formData.phone,
+          whatsapp: formData.whatsapp || formData.phone,
+          description: formData.description || null,
           external_link: formData.external_link || null,
+          schedule: formData.schedule,
+          products_json: productsJson
         }]);
 
       if (error) throw error;
 
-      toast.success("Solicitação enviada com sucesso!");
+      toast.success("Solicitação enviada com sucesso! Aguarde a aprovação do administrador.");
       navigate("/");
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : "Erro desconhecido";
       console.error("Error submitting request:", error);
-      toast.error("Erro ao enviar solicitação: " + error.message);
+      toast.error("Erro ao enviar solicitação: " + message);
     } finally {
       setLoading(false);
     }
@@ -138,7 +241,7 @@ export default function PublicEstablishmentForm() {
       <Header />
       
       <main className="flex-1 container px-4 py-8">
-        <Card className="max-w-2xl mx-auto border-0 shadow-elevated rounded-3xl animate-fade-in">
+        <Card className="max-w-3xl mx-auto border-0 shadow-elevated rounded-3xl animate-fade-in">
           <CardHeader className="text-center pb-6">
             <div className="flex items-center justify-center mb-4">
               <div className="p-4 rounded-2xl bg-primary/10">
@@ -151,7 +254,7 @@ export default function PublicEstablishmentForm() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <form onSubmit={handleSubmit} className="space-y-5">
+            <form onSubmit={handleSubmit} className="space-y-6">
               {/* Logo Upload */}
               <div className="space-y-2">
                 <Label htmlFor="logo" className="text-base font-medium">Logo da Empresa *</Label>
@@ -191,36 +294,39 @@ export default function PublicEstablishmentForm() {
                 </div>
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="name" className="text-base font-medium">Nome da Empresa *</Label>
-                <Input
-                  id="name"
-                  value={formData.name}
-                  onChange={(e) => handleChange("name", e.target.value)}
-                  placeholder="Ex: Padaria do João"
-                  className="h-12 rounded-xl"
-                  required
-                />
+              {/* Basic Info */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="name" className="text-base font-medium">Nome da Empresa *</Label>
+                  <Input
+                    id="name"
+                    value={formData.name}
+                    onChange={(e) => handleChange("name", e.target.value)}
+                    placeholder="Ex: Padaria do João"
+                    className="h-12 rounded-xl"
+                    required
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="category" className="text-base font-medium">Categoria *</Label>
+                  <Select value={formData.category} onValueChange={(value) => handleChange("category", value)}>
+                    <SelectTrigger className="h-12 rounded-xl">
+                      <SelectValue placeholder="Selecione a categoria" />
+                    </SelectTrigger>
+                    <SelectContent className="rounded-xl bg-popover">
+                      {categories.map((cat) => (
+                        <SelectItem key={cat} value={cat} className="rounded-lg">
+                          {categoryLabels[cat]}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="category" className="text-base font-medium">Categoria *</Label>
-                <Select value={formData.category} onValueChange={(value) => handleChange("category", value)}>
-                  <SelectTrigger className="h-12 rounded-xl">
-                    <SelectValue placeholder="Selecione a categoria" />
-                  </SelectTrigger>
-                  <SelectContent className="rounded-xl">
-                    {categories.map((cat) => (
-                      <SelectItem key={cat} value={cat} className="rounded-lg">
-                        {categoryLabels[cat]}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="address" className="text-base font-medium">Endereço Completo *</Label>
+                <Label htmlFor="address" className="text-base font-medium">Endereço *</Label>
                 <Input
                   id="address"
                   value={formData.address}
@@ -257,17 +363,31 @@ export default function PublicEstablishmentForm() {
                 </div>
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="whatsapp" className="text-base font-medium">WhatsApp *</Label>
-                <Input
-                  id="whatsapp"
-                  type="tel"
-                  placeholder="(31) 99999-9999"
-                  value={formData.whatsapp}
-                  onChange={(e) => handleChange("whatsapp", e.target.value)}
-                  className="h-12 rounded-xl"
-                  required
-                />
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="phone" className="text-base font-medium">Telefone *</Label>
+                  <Input
+                    id="phone"
+                    type="tel"
+                    placeholder="(31) 3333-3333"
+                    value={formData.phone}
+                    onChange={(e) => handleChange("phone", e.target.value)}
+                    className="h-12 rounded-xl"
+                    required
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="whatsapp" className="text-base font-medium">WhatsApp (opcional)</Label>
+                  <Input
+                    id="whatsapp"
+                    type="tel"
+                    placeholder="(31) 99999-9999"
+                    value={formData.whatsapp}
+                    onChange={(e) => handleChange("whatsapp", e.target.value)}
+                    className="h-12 rounded-xl"
+                  />
+                </div>
               </div>
 
               <div className="space-y-2">
@@ -280,21 +400,6 @@ export default function PublicEstablishmentForm() {
                   className="h-12 rounded-xl"
                   required
                 />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="products" className="text-base font-medium">Produtos Oferecidos *</Label>
-                <Textarea
-                  id="products"
-                  placeholder="Ex: Pizza, Hambúrguer, Refrigerante, Suco natural (mínimo 3)"
-                  value={formData.products}
-                  onChange={(e) => handleChange("products", e.target.value)}
-                  rows={3}
-                  className="rounded-xl resize-none"
-                />
-                <p className="text-xs text-muted-foreground">
-                  Informe no mínimo 3 produtos, separados por vírgula
-                </p>
               </div>
 
               <div className="space-y-2">
@@ -319,6 +424,107 @@ export default function PublicEstablishmentForm() {
                   onChange={(e) => handleChange("external_link", e.target.value)}
                   className="h-12 rounded-xl"
                 />
+              </div>
+
+              {/* Products Section */}
+              <div className="space-y-4 pt-4 border-t">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <Label className="text-lg font-semibold">Produtos Oferecidos *</Label>
+                    <p className="text-sm text-muted-foreground">Adicione os produtos com seus preços</p>
+                  </div>
+                  <Button type="button" variant="outline" size="sm" onClick={addProduct} className="rounded-xl">
+                    <Plus className="h-4 w-4 mr-2" />
+                    Adicionar Produto
+                  </Button>
+                </div>
+
+                <div className="space-y-4">
+                  {products.map((product, index) => (
+                    <Card key={product.id} className="p-4 bg-secondary/30 rounded-2xl border-0">
+                      <div className="space-y-3">
+                        <div className="flex items-center gap-2 mb-2">
+                          <span className="text-sm font-medium text-muted-foreground">Produto {index + 1}</span>
+                          {products.length > 1 && (
+                            <Button 
+                              type="button" 
+                              variant="ghost" 
+                              size="icon" 
+                              className="h-6 w-6 text-destructive hover:text-destructive"
+                              onClick={() => removeProduct(product.id)}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          )}
+                        </div>
+                        
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                          <Input
+                            placeholder="Nome do produto (ex: Pizza, Pão)"
+                            value={product.name}
+                            onChange={(e) => updateProduct(product.id, "name", e.target.value)}
+                            className="h-11 rounded-xl"
+                          />
+                          <Input
+                            placeholder="Preço (ex: 25.00)"
+                            value={product.price}
+                            onChange={(e) => updateProduct(product.id, "price", e.target.value)}
+                            type="number"
+                            step="0.01"
+                            min="0"
+                            className="h-11 rounded-xl"
+                          />
+                        </div>
+
+                        {/* Variations */}
+                        {product.variations.length > 0 && (
+                          <div className="pl-4 border-l-2 border-primary/30 space-y-2 mt-3">
+                            <p className="text-xs font-medium text-muted-foreground">Variações (tamanhos, opções)</p>
+                            {product.variations.map((variation) => (
+                              <div key={variation.id} className="flex gap-2 items-center">
+                                <Input
+                                  placeholder="Nome (ex: Grande, 600ml)"
+                                  value={variation.name}
+                                  onChange={(e) => updateVariation(product.id, variation.id, "name", e.target.value)}
+                                  className="h-9 rounded-lg text-sm"
+                                />
+                                <Input
+                                  placeholder="Preço"
+                                  value={variation.price}
+                                  onChange={(e) => updateVariation(product.id, variation.id, "price", e.target.value)}
+                                  type="number"
+                                  step="0.01"
+                                  min="0"
+                                  className="h-9 rounded-lg text-sm w-28"
+                                />
+                                <Button 
+                                  type="button" 
+                                  variant="ghost" 
+                                  size="icon" 
+                                  className="h-8 w-8 text-muted-foreground hover:text-destructive"
+                                  onClick={() => removeVariation(product.id, variation.id)}
+                                >
+                                  <Trash2 className="h-3 w-3" />
+                                </Button>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+
+                        <Button 
+                          type="button" 
+                          variant="ghost" 
+                          size="sm" 
+                          className="text-xs text-primary"
+                          onClick={() => addVariation(product.id)}
+                        >
+                          <Plus className="h-3 w-3 mr-1" />
+                          Adicionar variação (tamanho, opção)
+                        </Button>
+                      </div>
+                    </Card>
+                  ))}
+                </div>
               </div>
 
               <div className="pt-6">

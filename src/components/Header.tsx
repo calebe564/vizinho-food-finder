@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { Home, Building2, Store, MoreHorizontal, UserPlus, LogIn, Settings } from "lucide-react";
+import { Home, Building2, Store, MoreVertical, UserPlus, LogIn, Settings } from "lucide-react";
 import { ThemeToggle } from "./ThemeToggle";
 import { Button } from "./ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "./ui/sheet";
@@ -54,14 +54,14 @@ export function Header() {
         <div className="flex items-center gap-2">
           <ThemeToggle />
           
-          {/* Desktop Overflow Menu */}
+          {/* Desktop Overflow Menu - Three vertical dots */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild className="hidden md:inline-flex">
               <Button variant="ghost" size="icon" className="rounded-xl" title="Mais opções">
-                <MoreHorizontal className="h-5 w-5" />
+                <MoreVertical className="h-5 w-5" />
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-56">
+            <DropdownMenuContent align="end" className="w-56 bg-popover">
               <DropdownMenuItem asChild>
                 <Link to="/cadastrar" className="flex items-center gap-2 cursor-pointer">
                   <UserPlus className="h-4 w-4" />
@@ -72,7 +72,13 @@ export function Header() {
               <DropdownMenuItem asChild>
                 <Link to="/admin/login" className="flex items-center gap-2 cursor-pointer">
                   <LogIn className="h-4 w-4" />
-                  Área Administrativa
+                  Login
+                </Link>
+              </DropdownMenuItem>
+              <DropdownMenuItem asChild>
+                <Link to="/admin" className="flex items-center gap-2 cursor-pointer">
+                  <Settings className="h-4 w-4" />
+                  Área ADM
                 </Link>
               </DropdownMenuItem>
             </DropdownMenuContent>
@@ -82,7 +88,7 @@ export function Header() {
           <Sheet open={isOpen} onOpenChange={setIsOpen}>
             <SheetTrigger asChild className="md:hidden">
               <Button variant="ghost" size="icon" className="rounded-xl">
-                <MoreHorizontal className="h-5 w-5" />
+                <MoreVertical className="h-5 w-5" />
               </Button>
             </SheetTrigger>
             <SheetContent side="right" className="w-[300px] p-0">
@@ -113,7 +119,11 @@ export function Header() {
                   </Link>
                   <Link to="/admin/login" onClick={() => setIsOpen(false)} className="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-secondary transition-colors">
                     <LogIn className="h-5 w-5" />
-                    <span className="font-medium">Área Administrativa</span>
+                    <span className="font-medium">Login</span>
+                  </Link>
+                  <Link to="/admin" onClick={() => setIsOpen(false)} className="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-secondary transition-colors">
+                    <Settings className="h-5 w-5" />
+                    <span className="font-medium">Área ADM</span>
                   </Link>
                 </div>
               </nav>
