@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { Home, Building2, Store, MoreVertical, UserPlus, LogIn, Settings } from "lucide-react";
+import { Home, Building2, Store, MoreVertical, UserPlus, LogIn } from "lucide-react";
 import { ThemeToggle } from "./ThemeToggle";
 import { Button } from "./ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "./ui/sheet";
@@ -14,7 +14,7 @@ export function Header() {
   return (
     <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/80 backdrop-blur-xl">
       <div className="container flex h-16 items-center justify-between px-4">
-        <Link to="/" className="flex items-center gap-3 hover-scale">
+        <Link to="/informacoes" className="flex items-center gap-3 hover-scale cursor-pointer">
           <img src={logo} alt="Comércio Vizinho" className="h-10 w-10 rounded-xl" />
           <span className="font-bold text-lg hidden sm:inline-block">Comércio Vizinho</span>
         </Link>
@@ -75,12 +75,6 @@ export function Header() {
                   Login
                 </Link>
               </DropdownMenuItem>
-              <DropdownMenuItem asChild>
-                <Link to="/admin" className="flex items-center gap-2 cursor-pointer">
-                  <Settings className="h-4 w-4" />
-                  Área ADM
-                </Link>
-              </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
           
@@ -120,10 +114,6 @@ export function Header() {
                   <Link to="/admin/login" onClick={() => setIsOpen(false)} className="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-secondary transition-colors">
                     <LogIn className="h-5 w-5" />
                     <span className="font-medium">Login</span>
-                  </Link>
-                  <Link to="/admin" onClick={() => setIsOpen(false)} className="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-secondary transition-colors">
-                    <Settings className="h-5 w-5" />
-                    <span className="font-medium">Área ADM</span>
                   </Link>
                 </div>
               </nav>

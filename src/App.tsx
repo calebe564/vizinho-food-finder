@@ -18,6 +18,10 @@ const Categories = lazy(() => import("./pages/Categories"));
 const AllEstablishments = lazy(() => import("./pages/AllEstablishments"));
 const PublicEstablishmentForm = lazy(() => import("./pages/PublicEstablishmentForm"));
 const NotFound = lazy(() => import("./pages/NotFound"));
+const Information = lazy(() => import("./pages/Information"));
+const About = lazy(() => import("./pages/About"));
+const TermsOfUse = lazy(() => import("./pages/TermsOfUse"));
+const PrivacyPolicy = lazy(() => import("./pages/PrivacyPolicy"));
 
 // Loading component
 const PageLoader = () => (
@@ -44,6 +48,10 @@ const App = () => (
                 <Route path="/categorias" element={<Categories />} />
                 <Route path="/estabelecimentos" element={<AllEstablishments />} />
                 <Route path="/cadastrar" element={<PublicEstablishmentForm />} />
+                <Route path="/informacoes" element={<Information />} />
+                <Route path="/sobre" element={<About />} />
+                <Route path="/termos-de-uso" element={<TermsOfUse />} />
+                <Route path="/politica-de-privacidade" element={<PrivacyPolicy />} />
                 <Route path="/admin/login" element={<AdminLogin />} />
                 <Route path="/admin/dashboard/*" element={<ProtectedRoute><AdminDashboard /></ProtectedRoute>} />
                 <Route path="*" element={<NotFound />} />

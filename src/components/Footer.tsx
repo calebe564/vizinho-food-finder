@@ -57,6 +57,21 @@ export function Footer() {
                   Todas as Empresas
                 </Link>
               </li>
+              <li>
+                <Link to="/sobre" className="text-muted-foreground hover:text-primary transition-colors">
+                  Sobre
+                </Link>
+              </li>
+              <li>
+                <Link to="/termos-de-uso" className="text-muted-foreground hover:text-primary transition-colors">
+                  Termos de Uso
+                </Link>
+              </li>
+              <li>
+                <Link to="/politica-de-privacidade" className="text-muted-foreground hover:text-primary transition-colors">
+                  Política de Privacidade
+                </Link>
+              </li>
             </ul>
           </div>
 
