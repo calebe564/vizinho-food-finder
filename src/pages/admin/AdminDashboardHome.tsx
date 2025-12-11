@@ -108,11 +108,11 @@ export default function AdminDashboardHome() {
           <CardTitle>Atalhos Rápidos</CardTitle>
         </CardHeader>
         <CardContent className="flex gap-4 flex-wrap">
-          <Button onClick={() => navigate("/admin/estabelecimentos/adicionar")}>
+          <Button onClick={() => navigate("/admin/dashboard/estabelecimentos/adicionar")}>
             <Plus className="mr-2 h-4 w-4" />
             Adicionar Empresa
           </Button>
-          <Button variant="outline" onClick={() => navigate("/admin/estabelecimentos")}>
+          <Button variant="outline" onClick={() => navigate("/admin/dashboard/estabelecimentos")}>
             <List className="mr-2 h-4 w-4" />
             Ver Catálogo
           </Button>

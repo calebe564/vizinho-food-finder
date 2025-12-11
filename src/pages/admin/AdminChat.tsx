@@ -138,7 +138,7 @@ export default function AdminChat() {
     <div>
       <Button
         variant="ghost"
-        onClick={() => navigate("/admin/conversas")}
+        onClick={() => navigate("/admin/dashboard/conversas")}
         className="mb-4"
       >
         <ArrowLeft className="h-4 w-4 mr-2" />

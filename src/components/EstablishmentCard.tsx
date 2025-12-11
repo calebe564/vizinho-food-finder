@@ -3,8 +3,6 @@ import { MapPin, Clock, MessageCircle, Star } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { getProximityColor, getProximityIcon } from "@/lib/proximityUtils";
-import type { ProximityLevel } from "@/lib/proximityUtils";
 
 interface Product {
   name: string;
@@ -36,7 +34,6 @@ interface EstablishmentCardProps {
   isPaid?: boolean;
   products?: Product[];
   establishment?: Establishment;
-  proximityLabel?: ProximityLevel;
 }
 
 const categoryLabels: Record<string, string> = {
@@ -65,7 +62,6 @@ export function EstablishmentCard({
   isPaid,
   products,
   establishment,
-  proximityLabel,
 }: EstablishmentCardProps) {
   const actualId = establishment?.id || id || "";
   const actualName = establishment?.name || name || "";
@@ -129,16 +125,8 @@ export function EstablishmentCard({
 
         <div className="space-y-2 text-sm text-muted-foreground mb-4">
           <div className="flex items-start gap-2">
-            {proximityLabel ? (
-              <span className={getProximityColor(proximityLabel)}>
-                {getProximityIcon(proximityLabel)} {proximityLabel}
-              </span>
-            ) : (
-              <>
-                <MapPin className="h-4 w-4 flex-shrink-0 mt-0.5" />
-                <span className="line-clamp-2">{actualAddress}</span>
-              </>
-            )}
+            <MapPin className="h-4 w-4 flex-shrink-0 mt-0.5" />
+            <span className="line-clamp-2">{actualAddress}</span>
           </div>
           <div className="flex items-center gap-2">
             <Clock className="h-4 w-4 flex-shrink-0" />

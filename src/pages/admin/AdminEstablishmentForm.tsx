@@ -153,7 +153,7 @@ export default function AdminEstablishmentForm() {
         toast.success("Estabelecimento criado com sucesso!");
       }
 
-      navigate("/admin/estabelecimentos");
+      navigate("/admin/dashboard/estabelecimentos");
     } catch (error: any) {
       console.error("Error saving establishment:", error);
       toast.error("Erro ao salvar estabelecimento: " + error.message);
@@ -169,7 +169,7 @@ export default function AdminEstablishmentForm() {
   return (
     <div className="space-y-6">
       <div className="flex items-center gap-4">
-        <Button variant="ghost" size="icon" onClick={() => navigate("/admin/estabelecimentos")}>
+        <Button variant="ghost" size="icon" onClick={() => navigate("/admin/dashboard/estabelecimentos")}>
           <ArrowLeft className="h-4 w-4" />
         </Button>
         <div>
@@ -363,7 +363,7 @@ export default function AdminEstablishmentForm() {
               <Button type="submit" disabled={loading}>
                 {loading ? "Salvando..." : id ? "Salvar Alterações" : "Cadastrar Empresa"}
               </Button>
-              <Button type="button" variant="outline" onClick={() => navigate("/admin/estabelecimentos")}>
+              <Button type="button" variant="outline" onClick={() => navigate("/admin/dashboard/estabelecimentos")}>
                 Cancelar
               </Button>
             </div>

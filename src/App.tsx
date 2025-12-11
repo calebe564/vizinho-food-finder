@@ -15,18 +15,8 @@ const EstablishmentDetail = lazy(() => import("./pages/EstablishmentDetail"));
 const AdminLogin = lazy(() => import("./pages/AdminLogin"));
 const AdminDashboard = lazy(() => import("./pages/AdminDashboard"));
 const Categories = lazy(() => import("./pages/Categories"));
-const Neighborhoods = lazy(() => import("./pages/Neighborhoods"));
 const AllEstablishments = lazy(() => import("./pages/AllEstablishments"));
 const PublicEstablishmentForm = lazy(() => import("./pages/PublicEstablishmentForm"));
-const WhereAreYou = lazy(() => import("./pages/WhereAreYou"));
-const NearbyEstablishments = lazy(() => import("./pages/NearbyEstablishments"));
-const About = lazy(() => import("./pages/About"));
-const ClientInfo = lazy(() => import("./pages/ClientInfo"));
-const MerchantInfo = lazy(() => import("./pages/MerchantInfo"));
-const PrivacyPolicy = lazy(() => import("./pages/PrivacyPolicy"));
-const Terms = lazy(() => import("./pages/Terms"));
-const ContactAdmin = lazy(() => import("./pages/ContactAdmin"));
-const UserChat = lazy(() => import("./pages/UserChat"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 
 // Loading component
@@ -52,18 +42,8 @@ const App = () => (
                 <Route path="/" element={<Home />} />
                 <Route path="/estabelecimento/:id" element={<EstablishmentDetail />} />
                 <Route path="/categorias" element={<Categories />} />
-                <Route path="/bairros" element={<Neighborhoods />} />
                 <Route path="/estabelecimentos" element={<AllEstablishments />} />
                 <Route path="/cadastrar" element={<PublicEstablishmentForm />} />
-                <Route path="/where-are-you" element={<WhereAreYou />} />
-                <Route path="/nearby-establishments" element={<NearbyEstablishments />} />
-                <Route path="/sobre" element={<About />} />
-                <Route path="/info-clientes" element={<ClientInfo />} />
-                <Route path="/info-comerciantes" element={<MerchantInfo />} />
-                <Route path="/privacidade" element={<PrivacyPolicy />} />
-                <Route path="/termos" element={<Terms />} />
-                <Route path="/contato-admin" element={<ContactAdmin />} />
-                <Route path="/chat/:id" element={<UserChat />} />
                 <Route path="/admin/login" element={<AdminLogin />} />
                 <Route path="/admin/dashboard/*" element={<ProtectedRoute><AdminDashboard /></ProtectedRoute>} />
                 <Route path="*" element={<NotFound />} />

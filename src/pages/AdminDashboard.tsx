@@ -89,34 +89,34 @@ export default function AdminDashboard() {
           <nav className="space-y-2">
             <Link to="/admin/dashboard">
               <Button 
-                variant={isActive("/admin/dashboard") && location.pathname === "/admin/dashboard" ? "default" : "ghost"} 
+                variant={location.pathname === "/admin/dashboard" ? "default" : "ghost"} 
                 className="w-full justify-start"
               >
                 <LayoutDashboard className="mr-2 h-4 w-4" />
                 Dashboard
               </Button>
             </Link>
-            <Link to="/admin/estabelecimentos">
+            <Link to="/admin/dashboard/estabelecimentos">
               <Button 
-                variant={isActive("/admin/estabelecimentos") ? "default" : "ghost"} 
+                variant={isActive("/admin/dashboard/estabelecimentos") ? "default" : "ghost"} 
                 className="w-full justify-start"
               >
                 <Store className="mr-2 h-4 w-4" />
                 Estabelecimentos
               </Button>
             </Link>
-            <Link to="/admin/solicitacoes">
+            <Link to="/admin/dashboard/solicitacoes">
               <Button 
-                variant={isActive("/admin/solicitacoes") ? "default" : "ghost"} 
+                variant={isActive("/admin/dashboard/solicitacoes") ? "default" : "ghost"} 
                 className="w-full justify-start"
               >
                 <FileText className="mr-2 h-4 w-4" />
                 Solicitações
               </Button>
             </Link>
-            <Link to="/admin/conversas">
+            <Link to="/admin/dashboard/conversas">
               <Button 
-                variant={isActive("/admin/conversas") ? "default" : "ghost"} 
+                variant={isActive("/admin/dashboard/conversas") ? "default" : "ghost"} 
                 className="w-full justify-start"
               >
                 <MessageSquare className="mr-2 h-4 w-4" />
