@@ -53,11 +53,6 @@ export function Footer() {
                 </Link>
               </li>
               <li>
-                <Link to="/bairros" className="text-muted-foreground hover:text-primary transition-colors">
-                  Bairros
-                </Link>
-              </li>
-              <li>
                 <Link to="/estabelecimentos" className="text-muted-foreground hover:text-primary transition-colors">
                   Todas as Empresas
                 </Link>
@@ -65,33 +60,18 @@ export function Footer() {
             </ul>
           </div>
 
-          {/* Informações */}
+          {/* Para Empresas */}
           <div>
-            <h3 className="font-semibold mb-4">Informações</h3>
+            <h3 className="font-semibold mb-4">Para Empresas</h3>
             <ul className="space-y-2 text-sm">
               <li>
-                <Link to="/sobre" className="text-muted-foreground hover:text-primary transition-colors">
-                  Sobre o Projeto
+                <Link to="/cadastrar" className="text-muted-foreground hover:text-primary transition-colors">
+                  Cadastrar Empresa
                 </Link>
               </li>
               <li>
-                <Link to="/info-clientes" className="text-muted-foreground hover:text-primary transition-colors">
-                  Para Clientes
-                </Link>
-              </li>
-              <li>
-                <Link to="/info-comerciantes" className="text-muted-foreground hover:text-primary transition-colors">
-                  Para Comerciantes
-                </Link>
-              </li>
-              <li>
-                <Link to="/privacidade" className="text-muted-foreground hover:text-primary transition-colors">
-                  Política de Privacidade
-                </Link>
-              </li>
-              <li>
-                <Link to="/termos" className="text-muted-foreground hover:text-primary transition-colors">
-                  Termos de Uso
+                <Link to="/admin/login" className="text-muted-foreground hover:text-primary transition-colors">
+                  Área Administrativa
                 </Link>
               </li>
             </ul>

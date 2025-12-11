@@ -105,7 +105,7 @@ export default function AdminEstablishments() {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <h2 className="text-2xl font-bold">Catálogo de Empresas</h2>
-        <Button onClick={() => navigate("/admin/estabelecimentos/adicionar")}>
+        <Button onClick={() => navigate("/admin/dashboard/estabelecimentos/adicionar")}>
           <Plus className="mr-2 h-4 w-4" />
           Adicionar Empresa
         </Button>
@@ -159,7 +159,7 @@ export default function AdminEstablishments() {
                     <Button
                       variant="ghost"
                       size="icon"
-                      onClick={() => navigate(`/admin/estabelecimentos/editar/${est.id}`)}
+                      onClick={() => navigate(`/admin/dashboard/estabelecimentos/editar/${est.id}`)}
                     >
                       <Pencil className="h-4 w-4" />
                     </Button>

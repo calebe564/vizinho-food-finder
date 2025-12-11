@@ -83,7 +83,7 @@ export default function AdminConversations() {
             <Card
               key={conv.id}
               className="p-4 hover:shadow-lg transition-shadow cursor-pointer"
-              onClick={() => navigate(`/admin/conversas/${conv.id}`)}
+              onClick={() => navigate(`/admin/dashboard/conversas/${conv.id}`)}
             >
               <div className="flex items-start justify-between">
                 <div className="space-y-1 flex-1">

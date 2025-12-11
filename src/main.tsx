@@ -1,7 +1,6 @@
 import { createRoot } from "react-dom/client";
 import App from "./App.tsx";
 import "./index.css";
-import { LocationProvider } from "./contexts/LocationContext";
 
 // Register service worker for PWA
 if ('serviceWorker' in navigator) {
@@ -12,8 +11,4 @@ if ('serviceWorker' in navigator) {
   });
 }
 
-createRoot(document.getElementById("root")!).render(
-  <LocationProvider>
-    <App />
-  </LocationProvider>
-);
+createRoot(document.getElementById("root")!).render(<App />);
