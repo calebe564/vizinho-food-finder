@@ -1,27 +1,111 @@
-import { MessageCircle, Send, X } from "lucide-react";
+import { MessageCircle, Send, X, LogOut } from "lucide-react";
 import { Button } from "./ui/button";
 import { useState, useRef, useEffect } from "react";
 import { Textarea } from "./ui/textarea";
 import { ScrollArea } from "./ui/scroll-area";
 import { Card } from "./ui/card";
 import { toast } from "sonner";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 type Message = { role: "user" | "assistant"; content: string };
 
+const CHAT_SESSION_KEY = "ai_chat_session";
+const CHAT_MESSAGES_KEY = "ai_chat_messages";
+
 export function AIChatButton() {
   const [isOpen, setIsOpen] = useState(false);
-  const [messages, setMessages] = useState<Message[]>([
-    { role: "assistant", content: "Olá! Sou o assistente do Comércio Vizinho. Como posso ajudar você?" }
-  ]);
+  const [hasActiveSession, setHasActiveSession] = useState(false);
+  const [showEndSessionDialog, setShowEndSessionDialog] = useState(false);
+  const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
 
+  // Carregar sessão existente ao inicializar
+  useEffect(() => {
+    const savedSession = localStorage.getItem(CHAT_SESSION_KEY);
+    const savedMessages = localStorage.getItem(CHAT_MESSAGES_KEY);
+    
+    if (savedSession === "active" && savedMessages) {
+      try {
+        const parsedMessages = JSON.parse(savedMessages);
+        if (Array.isArray(parsedMessages) && parsedMessages.length > 0) {
+          setMessages(parsedMessages);
+          setHasActiveSession(true);
+        }
+      } catch (e) {
+        console.error("Error parsing saved messages:", e);
+        clearSession();
+      }
+    }
+  }, []);
+
+  // Salvar mensagens quando atualizadas
+  useEffect(() => {
+    if (hasActiveSession && messages.length > 0) {
+      localStorage.setItem(CHAT_MESSAGES_KEY, JSON.stringify(messages));
+    }
+  }, [messages, hasActiveSession]);
+
+  // Scroll para última mensagem
   useEffect(() => {
     if (scrollRef.current) {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
     }
   }, [messages]);
+
+  const startNewSession = () => {
+    const initialMessage: Message = {
+      role: "assistant",
+      content: "Olá! Sou o assistente do Comércio Vizinho. Como posso ajudar você?"
+    };
+    setMessages([initialMessage]);
+    setHasActiveSession(true);
+    localStorage.setItem(CHAT_SESSION_KEY, "active");
+    localStorage.setItem(CHAT_MESSAGES_KEY, JSON.stringify([initialMessage]));
+    setIsOpen(true);
+    toast.success("Nova sessão de chat iniciada!");
+  };
+
+  const clearSession = () => {
+    localStorage.removeItem(CHAT_SESSION_KEY);
+    localStorage.removeItem(CHAT_MESSAGES_KEY);
+    setMessages([]);
+    setHasActiveSession(false);
+    setIsOpen(false);
+    setInput("");
+  };
+
+  const handleEndSession = () => {
+    clearSession();
+    setShowEndSessionDialog(false);
+    toast.info("Sessão de chat encerrada");
+  };
+
+  const handleFloatingButtonClick = () => {
+    if (hasActiveSession) {
+      // Se já tem sessão ativa, pergunta se quer encerrar ou continuar
+      if (isOpen) {
+        // Se chat está aberto, fecha
+        setIsOpen(false);
+      } else {
+        // Se chat está fechado, abre
+        setIsOpen(true);
+      }
+    } else {
+      // Se não tem sessão, inicia uma nova
+      startNewSession();
+    }
+  };
 
   const handleSend = async () => {
     if (!input.trim() || isLoading) return;
@@ -94,17 +178,30 @@ export function AIChatButton() {
 
   return (
     <>
-      {/* Botão flutuante - balão de chat azul com ícone branco */}
-      <Button
-        onClick={() => setIsOpen(true)}
-        size="lg"
-        className="fixed bottom-6 right-6 z-50 rounded-full shadow-lg hover:shadow-xl transition-shadow h-14 w-14 p-0 bg-blue-500 hover:bg-blue-600"
-      >
-        <MessageCircle className="h-6 w-6 text-white" />
-      </Button>
+      {/* Botão flutuante */}
+      <div className="fixed bottom-6 right-6 z-50 flex flex-col items-end gap-2">
+        {/* Indicador de sessão ativa */}
+        {hasActiveSession && !isOpen && (
+          <div className="bg-green-500 text-white text-xs px-3 py-1 rounded-full shadow-md animate-pulse">
+            Chat ativo
+          </div>
+        )}
+        
+        <Button
+          onClick={handleFloatingButtonClick}
+          size="lg"
+          className={`rounded-full shadow-lg hover:shadow-xl transition-all h-14 w-14 p-0 ${
+            hasActiveSession 
+              ? "bg-green-500 hover:bg-green-600" 
+              : "bg-blue-500 hover:bg-blue-600"
+          }`}
+        >
+          <MessageCircle className="h-6 w-6 text-white" />
+        </Button>
+      </div>
 
       {/* Chat window */}
-      {isOpen && (
+      {isOpen && hasActiveSession && (
         <Card className="fixed bottom-24 right-6 z-50 w-96 max-w-[calc(100vw-3rem)] h-[500px] flex flex-col shadow-2xl">
           {/* Header */}
           <div className="flex items-center justify-between p-4 border-b bg-blue-500 text-white rounded-t-lg">
@@ -112,14 +209,37 @@ export function AIChatButton() {
               <MessageCircle className="h-5 w-5" />
               <h3 className="font-semibold">Assistente Comércio Vizinho</h3>
             </div>
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => setIsOpen(false)}
-              className="text-white hover:bg-white/10"
+            <div className="flex items-center gap-1">
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setShowEndSessionDialog(true)}
+                className="text-white hover:bg-white/10"
+                title="Encerrar sessão"
+              >
+                <LogOut className="h-4 w-4" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setIsOpen(false)}
+                className="text-white hover:bg-white/10"
+                title="Minimizar"
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
+          </div>
+
+          {/* Aviso de sessão */}
+          <div className="bg-green-50 dark:bg-green-900/20 px-4 py-2 text-xs text-green-700 dark:text-green-300 flex items-center justify-between">
+            <span>Sessão ativa • {messages.length} mensagens</span>
+            <button 
+              onClick={() => setShowEndSessionDialog(true)}
+              className="text-green-600 dark:text-green-400 hover:underline"
             >
-              <X className="h-4 w-4" />
-            </Button>
+              Encerrar
+            </button>
           </div>
 
           {/* Messages */}
@@ -137,7 +257,13 @@ export function AIChatButton() {
                         : "bg-muted text-foreground"
                     }`}
                   >
-                    {msg.content}
+                    {msg.content || (
+                      <span className="inline-flex gap-1">
+                        <span className="animate-bounce">.</span>
+                        <span className="animate-bounce delay-100">.</span>
+                        <span className="animate-bounce delay-200">.</span>
+                      </span>
+                    )}
                   </div>
                 </div>
               ))}
@@ -172,6 +298,28 @@ export function AIChatButton() {
           </div>
         </Card>
       )}
+
+      {/* Dialog de confirmação para encerrar sessão */}
+      <AlertDialog open={showEndSessionDialog} onOpenChange={setShowEndSessionDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Encerrar sessão de chat?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Ao encerrar a sessão, todo o histórico de mensagens será perdido. 
+              Você poderá iniciar uma nova conversa a qualquer momento.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Continuar conversando</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={handleEndSession}
+              className="bg-destructive hover:bg-destructive/90"
+            >
+              Encerrar sessão
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   );
 }
