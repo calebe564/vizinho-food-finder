@@ -10,6 +10,15 @@ interface Establishment {
   category: string;
   profile_image: string | null;
   banner_image: string | null;
+  favorite_images: string[] | null;
+}
+
+interface CarouselItem {
+  establishmentId: string;
+  establishmentName: string;
+  category: string;
+  image: string;
+  profileImage: string | null;
 }
 
 const categoryLabels: Record<string, string> = {
@@ -27,7 +36,7 @@ const categoryLabels: Record<string, string> = {
 };
 
 export function BannerCarousel() {
-  const [establishments, setEstablishments] = useState<Establishment[]>([]);
+  const [carouselItems, setCarouselItems] = useState<CarouselItem[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
 
   useEffect(() => {
@@ -35,76 +44,105 @@ export function BannerCarousel() {
   }, []);
 
   useEffect(() => {
-    if (establishments.length === 0) return;
+    if (carouselItems.length === 0) return;
 
     const interval = setInterval(() => {
-      setCurrentIndex((prev) => (prev + 1) % establishments.length);
+      setCurrentIndex((prev) => (prev + 1) % carouselItems.length);
     }, 4000);
 
     return () => clearInterval(interval);
-  }, [establishments.length]);
+  }, [carouselItems.length]);
 
   const fetchPaidEstablishments = async () => {
     const { data, error } = await supabase
       .from("establishments")
-      .select("id, name, category, profile_image, banner_image")
+      .select("id, name, category, profile_image, banner_image, favorite_images")
       .eq("is_paid", true)
       .eq("active", true);
 
     if (!error && data) {
-      setEstablishments(data);
+      // Build carousel items from favorite images
+      const items: CarouselItem[] = [];
+      data.forEach((est) => {
+        const favoriteImages = Array.isArray(est.favorite_images) ? est.favorite_images as string[] : [];
+        if (favoriteImages.length > 0) {
+          favoriteImages.forEach((img) => {
+            items.push({
+              establishmentId: est.id,
+              establishmentName: est.name,
+              category: est.category,
+              image: img,
+              profileImage: est.profile_image,
+            });
+          });
+        } else if (est.banner_image || est.profile_image) {
+          // Fallback to banner/profile image if no favorites
+          items.push({
+            establishmentId: est.id,
+            establishmentName: est.name,
+            category: est.category,
+            image: est.banner_image || est.profile_image || "",
+            profileImage: est.profile_image,
+          });
+        }
+      });
+      setCarouselItems(items);
     }
   };
 
   const goToPrevious = () => {
-    setCurrentIndex((prev) => (prev - 1 + establishments.length) % establishments.length);
+    setCurrentIndex((prev) => (prev - 1 + carouselItems.length) % carouselItems.length);
   };
 
   const goToNext = () => {
-    setCurrentIndex((prev) => (prev + 1) % establishments.length);
+    setCurrentIndex((prev) => (prev + 1) % carouselItems.length);
   };
 
-  if (establishments.length === 0) {
+  if (carouselItems.length === 0) {
     return null;
   }
 
-  const current = establishments[currentIndex];
+  const current = carouselItems[currentIndex];
 
   return (
-    <div className="relative w-full h-64 md:h-80 rounded-2xl overflow-hidden shadow-elevated bg-gradient-to-br from-primary/20 to-primary/5">
-      <Link to={`/estabelecimento/${current.id}`} className="block w-full h-full">
-        <div className="relative w-full h-full flex items-center justify-center p-6">
-          {/* Background with gradient */}
-          <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-transparent to-primary/20" />
-          
-          {/* Content */}
-          <div className="relative z-10 flex flex-col md:flex-row items-center gap-6 md:gap-8 w-full max-w-4xl mx-auto">
+    <div className="relative w-full h-64 md:h-80 rounded-2xl overflow-hidden shadow-elevated">
+      <Link to={`/estabelecimento/${current.establishmentId}`} className="block w-full h-full">
+        {/* Background Image */}
+        <div 
+          className="absolute inset-0 bg-cover bg-center"
+          style={{ backgroundImage: `url(${current.image})` }}
+        />
+        <div className="absolute inset-0 bg-gradient-to-t from-background/90 via-background/40 to-transparent" />
+        
+        {/* Content */}
+        <div className="absolute bottom-0 left-0 right-0 p-6">
+          <div className="flex items-center gap-4">
             {/* Logo */}
             <div className="flex-shrink-0">
-              {current.profile_image ? (
+              {current.profileImage ? (
                 <img
-                  src={current.profile_image}
-                  alt={current.name}
-                  className="w-24 h-24 md:w-32 md:h-32 rounded-2xl object-cover shadow-lg border-4 border-background"
+                  src={current.profileImage}
+                  alt={current.establishmentName}
+                  className="w-16 h-16 md:w-20 md:h-20 rounded-xl object-cover shadow-lg border-2 border-background"
                 />
               ) : (
-                <div className="w-24 h-24 md:w-32 md:h-32 rounded-2xl bg-primary/20 flex items-center justify-center shadow-lg border-4 border-background">
-                  <Store className="w-12 h-12 md:w-16 md:h-16 text-primary" />
+                <div className="w-16 h-16 md:w-20 md:h-20 rounded-xl bg-primary/20 flex items-center justify-center shadow-lg border-2 border-background">
+                  <Store className="w-8 h-8 text-primary" />
                 </div>
               )}
             </div>
             
             {/* Info */}
-            <div className="flex-1 text-center md:text-left">
-              <span className="inline-block px-3 py-1 bg-primary/20 text-primary text-sm font-medium rounded-full mb-2">
+            <div className="flex-1">
+              <span className="inline-block px-3 py-1 bg-primary/20 text-primary text-xs font-medium rounded-full mb-1">
                 ⭐ Destaque
               </span>
-              <h3 className="text-2xl md:text-3xl font-bold text-foreground mb-2">{current.name}</h3>
-              <p className="text-muted-foreground text-lg capitalize">{categoryLabels[current.category] || current.category}</p>
+              <h3 className="text-xl md:text-2xl font-bold text-foreground">{current.establishmentName}</h3>
+              <p className="text-muted-foreground text-sm capitalize">{categoryLabels[current.category] || current.category}</p>
             </div>
             
             {/* CTA Button */}
-            <div className="flex-shrink-0">
+            <div className="flex-shrink-0 hidden md:block">
               <Button size="lg" className="rounded-xl shadow-lg">
                 Ver Empresa
               </Button>
@@ -113,7 +151,7 @@ export function BannerCarousel() {
         </div>
       </Link>
 
-      {establishments.length > 1 && (
+      {carouselItems.length > 1 && (
         <>
           <Button
             variant="ghost"
@@ -132,8 +170,8 @@ export function BannerCarousel() {
             <ChevronRight className="h-6 w-6" />
           </Button>
 
-          <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2">
-            {establishments.map((_, index) => (
+          <div className="absolute bottom-4 right-4 flex gap-2">
+            {carouselItems.map((_, index) => (
               <button
                 key={index}
                 onClick={(e) => { e.preventDefault(); setCurrentIndex(index); }}
