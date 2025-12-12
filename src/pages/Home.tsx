@@ -6,6 +6,7 @@ import { FilterBar } from "@/components/FilterBar";
 import { EstablishmentCard } from "@/components/EstablishmentCard";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
+import { AdvertisementBanner } from "@/components/AdvertisementBanner";
 import { useUserLocation } from "@/contexts/LocationContext";
 import { calculateDistance } from "@/hooks/useGeolocation";
 import { useSearchParams } from "react-router-dom";
@@ -32,10 +33,20 @@ interface Product {
   price: number;
 }
 
+interface Advertisement {
+  id: string;
+  image: string;
+  title: string | null;
+  text: string | null;
+  link: string | null;
+  position: string;
+}
+
 export default function Home() {
   const [searchParams] = useSearchParams();
   const [establishments, setEstablishments] = useState<Establishment[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
+  const [advertisements, setAdvertisements] = useState<Advertisement[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [category, setCategory] = useState(searchParams.get("category") || "todos");
   const [sortBy, setSortBy] = useState("distance");
@@ -48,18 +59,24 @@ export default function Home() {
 
   const fetchData = async () => {
     try {
-      const [establishmentsRes, productsRes] = await Promise.all([
+      const [establishmentsRes, productsRes, adsRes] = await Promise.all([
         supabase.from("establishments").select("*").eq("active", true),
-        supabase.from("products").select("establishment_id, name, price")
+        supabase.from("products").select("establishment_id, name, price"),
+        supabase.from("advertisements").select("*").eq("active", true)
       ]);
 
       if (establishmentsRes.data) setEstablishments(establishmentsRes.data);
       if (productsRes.data) setProducts(productsRes.data);
+      if (adsRes.data) setAdvertisements(adsRes.data);
     } catch (error) {
       console.error("Error fetching data:", error);
     } finally {
       setLoading(false);
     }
+  };
+
+  const getAdsByPosition = (position: string) => {
+    return advertisements.filter(ad => ad.position === position);
   };
 
   const getEstablishmentProducts = (establishmentId: string) => {
@@ -123,6 +140,9 @@ export default function Home() {
       <Header />
 
       <main className="container mx-auto px-4 py-6 space-y-6">
+        {/* Top Advertisements */}
+        <AdvertisementBanner advertisements={getAdsByPosition("top")} />
+
         {/* Banner Carousel */}
         <div className="animate-fade-in">
           <BannerCarousel />
@@ -167,6 +187,9 @@ export default function Home() {
             </h2>
           </div>
 
+          {/* Middle Advertisements */}
+          <AdvertisementBanner advertisements={getAdsByPosition("middle")} />
+
           {loading ? (
             <div className="flex items-center justify-center py-20">
               <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -201,6 +224,9 @@ export default function Home() {
               ))}
             </div>
           )}
+
+          {/* Bottom Advertisements */}
+          <AdvertisementBanner advertisements={getAdsByPosition("bottom")} />
         </div>
       </main>
 

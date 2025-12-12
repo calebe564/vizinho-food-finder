@@ -3,7 +3,7 @@ import { useNavigate, Routes, Route, Link, useLocation } from "react-router-dom"
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
-import { LogOut, LayoutDashboard, Store, FileText, MessageSquare } from "lucide-react";
+import { LogOut, LayoutDashboard, Store, FileText, MessageSquare, Megaphone } from "lucide-react";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import AdminDashboardHome from "./admin/AdminDashboardHome";
 import AdminEstablishments from "./admin/AdminEstablishments";
@@ -11,6 +11,7 @@ import AdminEstablishmentForm from "./admin/AdminEstablishmentForm";
 import AdminRequests from "./admin/AdminRequests";
 import AdminConversations from "./admin/AdminConversations";
 import AdminChat from "./admin/AdminChat";
+import AdminAdvertisements from "./admin/AdminAdvertisements";
 
 export default function AdminDashboard() {
   const navigate = useNavigate();
@@ -123,6 +124,15 @@ export default function AdminDashboard() {
                 Conversas
               </Button>
             </Link>
+            <Link to="/admin/dashboard/propagandas">
+              <Button 
+                variant={isActive("/admin/dashboard/propagandas") ? "default" : "ghost"} 
+                className="w-full justify-start"
+              >
+                <Megaphone className="mr-2 h-4 w-4" />
+                Propagandas
+              </Button>
+            </Link>
           </nav>
         </aside>
 
@@ -136,6 +146,7 @@ export default function AdminDashboard() {
             <Route path="solicitacoes" element={<AdminRequests />} />
             <Route path="conversas" element={<AdminConversations />} />
             <Route path="conversas/:id" element={<AdminChat />} />
+            <Route path="propagandas" element={<AdminAdvertisements />} />
           </Routes>
         </main>
       </div>

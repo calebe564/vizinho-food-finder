@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import { ImageCarousel } from "@/components/ImageCarousel";
 import { getScheduleStatus } from "@/lib/scheduleUtils";
 import { toast } from "sonner";
 
@@ -22,6 +23,7 @@ interface Establishment {
   category: string;
   profile_image: string | null;
   banner_image: string | null;
+  images: unknown;
   is_paid: boolean;
 }
 
@@ -152,19 +154,28 @@ export default function EstablishmentDetail() {
 
       <main className="container mx-auto px-4 py-8">
         <div className="mb-8">
-          {establishment.banner_image || establishment.profile_image ? (
-            <img
-              src={establishment.banner_image || establishment.profile_image}
-              alt={establishment.name}
-              className="w-full h-64 md:h-96 object-cover rounded-xl"
-            />
-          ) : (
-            <div className="w-full h-64 md:h-96 bg-gradient-primary rounded-xl flex items-center justify-center">
-              <span className="text-6xl font-bold text-white">
-                {establishment.name.charAt(0).toUpperCase()}
-              </span>
-            </div>
-          )}
+          {(() => {
+            const images = Array.isArray(establishment.images) ? establishment.images as string[] : [];
+            if (images.length > 0) {
+              return <ImageCarousel images={images} />;
+            } else if (establishment.banner_image || establishment.profile_image) {
+              return (
+                <img
+                  src={establishment.banner_image || establishment.profile_image}
+                  alt={establishment.name}
+                  className="w-full h-64 md:h-96 object-cover rounded-xl"
+                />
+              );
+            } else {
+              return (
+                <div className="w-full h-64 md:h-96 bg-gradient-primary rounded-xl flex items-center justify-center">
+                  <span className="text-6xl font-bold text-white">
+                    {establishment.name.charAt(0).toUpperCase()}
+                  </span>
+                </div>
+              );
+            }
+          })()}
         </div>
 
         <div className="grid md:grid-cols-3 gap-8">

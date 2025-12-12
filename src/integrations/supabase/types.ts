@@ -32,6 +32,39 @@ export type Database = {
         }
         Relationships: []
       }
+      advertisements: {
+        Row: {
+          active: boolean | null
+          created_at: string
+          id: string
+          image: string
+          link: string | null
+          position: string
+          text: string | null
+          title: string | null
+        }
+        Insert: {
+          active?: boolean | null
+          created_at?: string
+          id?: string
+          image: string
+          link?: string | null
+          position: string
+          text?: string | null
+          title?: string | null
+        }
+        Update: {
+          active?: boolean | null
+          created_at?: string
+          id?: string
+          image?: string
+          link?: string | null
+          position?: string
+          text?: string | null
+          title?: string | null
+        }
+        Relationships: []
+      }
       conversations: {
         Row: {
           category: string
@@ -73,7 +106,9 @@ export type Database = {
           created_at: string | null
           description: string | null
           external_link: string | null
+          favorite_images: Json | null
           id: string
+          images: Json | null
           name: string
           neighborhood: string
           phone: string
@@ -90,7 +125,9 @@ export type Database = {
           created_at?: string | null
           description?: string | null
           external_link?: string | null
+          favorite_images?: Json | null
           id?: string
+          images?: Json | null
           name: string
           neighborhood: string
           phone: string
@@ -107,7 +144,9 @@ export type Database = {
           created_at?: string | null
           description?: string | null
           external_link?: string | null
+          favorite_images?: Json | null
           id?: string
+          images?: Json | null
           name?: string
           neighborhood?: string
           phone?: string
@@ -164,7 +203,9 @@ export type Database = {
           created_at: string | null
           description: string | null
           external_link: string | null
+          favorite_images: Json | null
           id: string
+          images: Json | null
           is_paid: boolean | null
           last_update: string | null
           latitude: number
@@ -186,7 +227,9 @@ export type Database = {
           created_at?: string | null
           description?: string | null
           external_link?: string | null
+          favorite_images?: Json | null
           id?: string
+          images?: Json | null
           is_paid?: boolean | null
           last_update?: string | null
           latitude: number
@@ -208,7 +251,9 @@ export type Database = {
           created_at?: string | null
           description?: string | null
           external_link?: string | null
+          favorite_images?: Json | null
           id?: string
+          images?: Json | null
           is_paid?: boolean | null
           last_update?: string | null
           latitude?: number

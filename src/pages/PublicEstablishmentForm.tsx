@@ -10,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { toast } from "sonner";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
-import { Building2, Upload, CheckCircle, Plus, Trash2, Image as ImageIcon } from "lucide-react";
+import { Building2, Upload, CheckCircle, Plus, Trash2, Image as ImageIcon, Star } from "lucide-react";
 import { Database } from "@/integrations/supabase/types";
 
 type EstablishmentCategory = Database["public"]["Enums"]["establishment_category"];
@@ -60,6 +60,9 @@ export default function PublicEstablishmentForm() {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
+  const [images, setImages] = useState<File[]>([]);
+  const [imagePreviews, setImagePreviews] = useState<string[]>([]);
+  const [favoriteIndexes, setFavoriteIndexes] = useState<number[]>([]);
   const [formData, setFormData] = useState({
     name: "",
     category: "" as EstablishmentCategory | "",
@@ -87,6 +90,36 @@ export default function PublicEstablishmentForm() {
         setLogoPreview(reader.result as string);
       };
       reader.readAsDataURL(file);
+    }
+  };
+
+  const handleImagesChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || []);
+    if (files.length > 0) {
+      setImages(prev => [...prev, ...files]);
+      files.forEach(file => {
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          setImagePreviews(prev => [...prev, reader.result as string]);
+        };
+        reader.readAsDataURL(file);
+      });
+    }
+  };
+
+  const removeImage = (index: number) => {
+    setImages(prev => prev.filter((_, i) => i !== index));
+    setImagePreviews(prev => prev.filter((_, i) => i !== index));
+    setFavoriteIndexes(prev => prev.filter(i => i !== index).map(i => i > index ? i - 1 : i));
+  };
+
+  const toggleFavorite = (index: number) => {
+    if (favoriteIndexes.includes(index)) {
+      setFavoriteIndexes(prev => prev.filter(i => i !== index));
+    } else if (favoriteIndexes.length < 4) {
+      setFavoriteIndexes(prev => [...prev, index]);
+    } else {
+      toast.error("Máximo de 4 imagens favoritas permitidas");
     }
   };
 
@@ -176,6 +209,11 @@ export default function PublicEstablishmentForm() {
       return;
     }
 
+    if (images.length === 0) {
+      toast.error("Envie pelo menos uma imagem da empresa");
+      return;
+    }
+
     if (products.length === 0) {
       toast.error("Adicione pelo menos um produto");
       return;
@@ -189,6 +227,28 @@ export default function PublicEstablishmentForm() {
 
     try {
       const fullAddress = `${formData.address}, ${formData.neighborhood}, ${formData.city}`;
+
+      // Upload images to storage
+      const uploadedImages: string[] = [];
+      for (const file of images) {
+        const fileExt = file.name.split(".").pop();
+        const fileName = `${crypto.randomUUID()}.${fileExt}`;
+        const filePath = `requests/${fileName}`;
+
+        const { error: uploadError } = await supabase.storage
+          .from("establishment-images")
+          .upload(filePath, file);
+
+        if (!uploadError) {
+          const { data: { publicUrl } } = supabase.storage
+            .from("establishment-images")
+            .getPublicUrl(filePath);
+          uploadedImages.push(publicUrl);
+        }
+      }
+
+      // Get favorite images
+      const favoriteImages = favoriteIndexes.map(i => uploadedImages[i]).filter(Boolean);
 
       // Prepare products JSON
       const productsJson = products
@@ -216,7 +276,9 @@ export default function PublicEstablishmentForm() {
           description: formData.description || null,
           external_link: formData.external_link || null,
           schedule: formData.schedule,
-          products_json: productsJson
+          products_json: productsJson,
+          images: uploadedImages,
+          favorite_images: favoriteImages
         }]);
 
       if (error) throw error;
@@ -276,7 +338,50 @@ export default function PublicEstablishmentForm() {
                           <img src={logoPreview} alt="Logo preview" className="w-full h-full object-cover" />
                           <div className="absolute inset-0 bg-primary/20 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity">
                             <CheckCircle className="h-8 w-8 text-primary-foreground" />
-                          </div>
+              </div>
+
+              {/* Images Upload */}
+              <div className="space-y-2">
+                <Label className="text-base font-medium">Imagens da Empresa * (mínimo 1)</Label>
+                <div className="flex flex-wrap gap-3">
+                  {imagePreviews.map((preview, index) => (
+                    <div key={index} className="relative w-24 h-24 rounded-xl overflow-hidden border-2 border-muted">
+                      <img src={preview} alt={`Imagem ${index + 1}`} className="w-full h-full object-cover" />
+                      <button
+                        type="button"
+                        onClick={() => toggleFavorite(index)}
+                        className={`absolute top-1 left-1 p-1 rounded-full ${favoriteIndexes.includes(index) ? 'bg-yellow-500 text-white' : 'bg-background/80'}`}
+                      >
+                        <Star className="h-3 w-3" />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => removeImage(index)}
+                        className="absolute top-1 right-1 p-1 rounded-full bg-destructive text-destructive-foreground"
+                      >
+                        <Trash2 className="h-3 w-3" />
+                      </button>
+                    </div>
+                  ))}
+                  <label
+                    htmlFor="images"
+                    className="flex items-center justify-center w-24 h-24 border-2 border-dashed border-muted-foreground/30 rounded-xl cursor-pointer hover:border-primary hover:bg-primary/5 transition-all"
+                  >
+                    <Plus className="h-8 w-8 text-muted-foreground" />
+                  </label>
+                  <input
+                    id="images"
+                    type="file"
+                    accept="image/*"
+                    multiple
+                    onChange={handleImagesChange}
+                    className="sr-only"
+                  />
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Clique na ⭐ para marcar até 4 imagens favoritas (exibidas no carrossel da home)
+                </p>
+              </div>
                         </div>
                       ) : (
                         <Upload className="h-8 w-8 text-muted-foreground" />
