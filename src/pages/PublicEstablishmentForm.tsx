@@ -10,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { toast } from "sonner";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
-import { Building2, Upload, CheckCircle, Plus, Trash2, Image as ImageIcon, Star } from "lucide-react";
+import { Building2, Upload, CheckCircle, Plus, Trash2, Star } from "lucide-react";
 import { Database } from "@/integrations/supabase/types";
 
 type EstablishmentCategory = Database["public"]["Enums"]["establishment_category"];
@@ -174,7 +174,6 @@ export default function PublicEstablishmentForm() {
   };
 
   const validateProducts = (): boolean => {
-    // Check if all products have name and price
     for (const product of products) {
       if (!product.name.trim()) {
         toast.error("Todos os produtos devem ter um nome");
@@ -184,7 +183,6 @@ export default function PublicEstablishmentForm() {
         toast.error(`O produto "${product.name}" precisa ter um preço válido`);
         return false;
       }
-      // Check variations
       for (const variation of product.variations) {
         if (variation.name.trim() && (!variation.price.trim() || isNaN(parseFloat(variation.price)))) {
           toast.error(`A variação "${variation.name}" precisa ter um preço válido`);
@@ -338,6 +336,22 @@ export default function PublicEstablishmentForm() {
                           <img src={logoPreview} alt="Logo preview" className="w-full h-full object-cover" />
                           <div className="absolute inset-0 bg-primary/20 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity">
                             <CheckCircle className="h-8 w-8 text-primary-foreground" />
+                          </div>
+                        </div>
+                      ) : (
+                        <Upload className="h-8 w-8 text-muted-foreground" />
+                      )}
+                    </label>
+                  </div>
+                  <div className="flex-1">
+                    <p className="text-sm text-muted-foreground">
+                      Clique para enviar a logo da sua empresa
+                    </p>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Formatos: JPG, PNG. Tamanho recomendado: 200x200px
+                    </p>
+                  </div>
+                </div>
               </div>
 
               {/* Images Upload */}
@@ -381,22 +395,6 @@ export default function PublicEstablishmentForm() {
                 <p className="text-xs text-muted-foreground">
                   Clique na ⭐ para marcar até 4 imagens favoritas (exibidas no carrossel da home)
                 </p>
-              </div>
-                        </div>
-                      ) : (
-                        <Upload className="h-8 w-8 text-muted-foreground" />
-                      )}
-                    </label>
-                  </div>
-                  <div className="flex-1">
-                    <p className="text-sm text-muted-foreground">
-                      Clique para enviar a logo da sua empresa
-                    </p>
-                    <p className="text-xs text-muted-foreground mt-1">
-                      Formatos: JPG, PNG. Tamanho recomendado: 200x200px
-                    </p>
-                  </div>
-                </div>
               </div>
 
               {/* Basic Info */}
