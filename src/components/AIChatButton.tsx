@@ -66,14 +66,14 @@ export function AIChatButton() {
   const startNewSession = () => {
     const initialMessage: Message = {
       role: "assistant",
-      content: "Olá! Sou o assistente do Comércio Vizinho. Como posso ajudar você?"
+      content: "Olá! Sou o assistente do Comércio Vizinho.\n\nPosso ajudar você a:\n• Encontrar empresas próximas\n• Cadastrar seu negócio\n• Usar as funcionalidades do app\n\nComo posso ajudar?"
     };
     setMessages([initialMessage]);
     setHasActiveSession(true);
     localStorage.setItem(CHAT_SESSION_KEY, "active");
     localStorage.setItem(CHAT_MESSAGES_KEY, JSON.stringify([initialMessage]));
     setIsOpen(true);
-    toast.success("Nova sessão de chat iniciada!");
+    toast.success("Chat iniciado!");
   };
 
   const clearSession = () => {

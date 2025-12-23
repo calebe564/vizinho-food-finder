@@ -1,8 +1,9 @@
 import { Link } from "react-router-dom";
-import { MapPin, Clock, MessageCircle, Star, MoreVertical, Heart, Share2, Globe } from "lucide-react";
+import { MapPin, Clock, MessageCircle, Star, MoreVertical, Heart, Share2, Globe, Store } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -28,6 +29,8 @@ interface Establishment {
   external_link?: string | null;
   schedule: string;
   profile_image: string | null;
+  banner_image?: string | null;
+  images?: unknown;
   is_paid: boolean;
   latitude: number;
   longitude: number;
@@ -44,6 +47,8 @@ interface EstablishmentCardProps {
   externalLink?: string | null;
   schedule?: string;
   profileImage?: string | null;
+  bannerImage?: string | null;
+  images?: string[] | null;
   isPaid?: boolean;
   products?: Product[];
   establishment?: Establishment;
@@ -74,6 +79,8 @@ export function EstablishmentCard({
   externalLink,
   schedule,
   profileImage,
+  bannerImage,
+  images,
   isPaid,
   products,
   establishment,
@@ -88,9 +95,26 @@ export function EstablishmentCard({
   const actualExternalLink = establishment?.external_link || externalLink || null;
   const actualSchedule = establishment?.schedule || schedule || "";
   const actualProfileImage = establishment?.profile_image || profileImage;
+  const actualBannerImage = establishment?.banner_image || bannerImage;
   const actualIsPaid = establishment?.is_paid ?? isPaid ?? false;
   const actualDistance = distance || 0;
   const actualProducts = products || [];
+  
+  // Determinar imagem de capa - prioridade: imagens > banner > profile > placeholder
+  const getCoverImage = () => {
+    const estImages = establishment?.images;
+    if (estImages && Array.isArray(estImages) && estImages.length > 0) {
+      return estImages[0] as string;
+    }
+    if (images && images.length > 0) {
+      return images[0];
+    }
+    if (actualBannerImage) return actualBannerImage;
+    if (actualProfileImage) return actualProfileImage;
+    return null;
+  };
+  
+  const coverImage = getCoverImage();
 
   const isFav = isFavorite(actualId);
 
@@ -135,7 +159,6 @@ export function EstablishmentCard({
     const shared = await shareContent({ title: actualName, text, url });
     
     if (!shared) {
-      // Fallback: mostrar opções
       shareViaWhatsApp(text, url);
     }
   };
@@ -150,30 +173,39 @@ export function EstablishmentCard({
   return (
     <Link to={`/estabelecimento/${actualId}`} className="block">
       <Card className="overflow-hidden bg-card border-0 shadow-card hover:shadow-elevated transition-all duration-300 rounded-2xl cursor-pointer">
+        {/* Imagem de capa */}
         <div className="relative">
-          {actualProfileImage ? (
+          {coverImage ? (
             <img 
-              src={actualProfileImage} 
+              src={coverImage} 
               alt={actualName} 
-              className="w-full h-44 object-cover"
+              className="w-full h-40 object-cover"
             />
           ) : (
-            <div className="w-full h-44 bg-gradient-primary flex items-center justify-center">
-              <span className="text-5xl font-bold text-primary-foreground">
-                {actualName.charAt(0).toUpperCase()}
-              </span>
+            <div className="w-full h-40 bg-gradient-to-br from-primary/80 to-primary flex items-center justify-center">
+              <Store className="h-14 w-14 text-primary-foreground/80" />
             </div>
           )}
           
-          {/* Badges */}
-          <div className="absolute top-3 left-3 flex flex-col gap-2">
-            {actualIsPaid && (
+          {/* Logo da empresa sobreposta */}
+          <div className="absolute -bottom-6 left-4">
+            <Avatar className="h-14 w-14 border-4 border-card shadow-lg">
+              <AvatarImage src={actualProfileImage || undefined} alt={actualName} />
+              <AvatarFallback className="bg-primary text-primary-foreground text-xl font-bold">
+                {actualName.charAt(0).toUpperCase()}
+              </AvatarFallback>
+            </Avatar>
+          </div>
+          
+          {/* Badge de patrocinado */}
+          {actualIsPaid && (
+            <div className="absolute top-3 left-3">
               <Badge className="bg-accent text-accent-foreground shadow-lg">
                 <Star className="h-3 w-3 mr-1" />
                 Patrocinado
               </Badge>
-            )}
-          </div>
+            </div>
+          )}
 
           {/* Three dots menu */}
           <div className="absolute top-3 right-3">
@@ -205,17 +237,9 @@ export function EstablishmentCard({
             </DropdownMenu>
           </div>
 
-          {/* Distance Badge */}
-          <div className="absolute bottom-3 right-3">
-            <Badge variant="secondary" className="bg-background/90 backdrop-blur-sm text-foreground shadow-lg">
-              <MapPin className="h-3 w-3 mr-1" />
-              {actualDistance.toFixed(1)} km
-            </Badge>
-          </div>
-
           {/* Favorite indicator */}
           {isFav && (
-            <div className="absolute bottom-3 left-3">
+            <div className="absolute bottom-3 right-3">
               <Badge className="bg-red-500 text-white shadow-lg">
                 <Heart className="h-3 w-3 mr-1 fill-white" />
                 Favorito
@@ -224,18 +248,27 @@ export function EstablishmentCard({
           )}
         </div>
 
-        <CardContent className="p-5">
-          <div className="mb-3">
-            <h3 className="text-lg font-bold line-clamp-1">{actualName}</h3>
-            <Badge variant="secondary" className="mt-2 text-xs font-medium">
-              {categoryLabels[actualCategory] || actualCategory}
+        <CardContent className="pt-8 pb-5 px-5">
+          {/* Header com nome e categoria */}
+          <div className="flex items-start justify-between mb-3">
+            <div className="flex-1 min-w-0">
+              <h3 className="text-lg font-bold line-clamp-1">{actualName}</h3>
+              <Badge variant="secondary" className="mt-1 text-xs font-medium">
+                {categoryLabels[actualCategory] || actualCategory}
+              </Badge>
+            </div>
+            {/* Distance badge */}
+            <Badge variant="outline" className="ml-2 flex-shrink-0">
+              <MapPin className="h-3 w-3 mr-1" />
+              {actualDistance.toFixed(1)} km
             </Badge>
           </div>
 
+          {/* Info */}
           <div className="space-y-2 text-sm text-muted-foreground mb-4">
             <div className="flex items-start gap-2">
               <MapPin className="h-4 w-4 flex-shrink-0 mt-0.5" />
-              <span className="line-clamp-2">{actualAddress}</span>
+              <span className="line-clamp-1">{actualAddress}</span>
             </div>
             <div className="flex items-center gap-2">
               <Clock className="h-4 w-4 flex-shrink-0" />
@@ -243,6 +276,7 @@ export function EstablishmentCard({
             </div>
           </div>
 
+          {/* Produtos em destaque */}
           {actualProducts.length > 0 && (
             <div className="mb-4 p-3 bg-secondary/50 rounded-xl">
               <p className="text-xs font-medium text-muted-foreground mb-2">Produtos em destaque</p>
