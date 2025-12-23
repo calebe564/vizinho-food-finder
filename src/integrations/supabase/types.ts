@@ -339,8 +339,10 @@ export type Database = {
           establishment_id: string
           id: string
           image: string | null
+          images: Json | null
           name: string
           price: number
+          unit: string | null
         }
         Insert: {
           created_at?: string | null
@@ -348,8 +350,10 @@ export type Database = {
           establishment_id: string
           id?: string
           image?: string | null
+          images?: Json | null
           name: string
           price: number
+          unit?: string | null
         }
         Update: {
           created_at?: string | null
@@ -357,8 +361,10 @@ export type Database = {
           establishment_id?: string
           id?: string
           image?: string | null
+          images?: Json | null
           name?: string
           price?: number
+          unit?: string | null
         }
         Relationships: [
           {

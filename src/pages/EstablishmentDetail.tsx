@@ -7,6 +7,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { ImageCarousel } from "@/components/ImageCarousel";
+import { ProductCard } from "@/components/ProductCard";
 import { getScheduleStatus } from "@/lib/scheduleUtils";
 import { toast } from "sonner";
 import { useFavorites } from "@/hooks/useFavorites";
@@ -41,12 +42,22 @@ interface Product {
   price: number;
   description: string | null;
   image: string | null;
+  images: unknown;
+  unit: string | null;
+}
+
+interface ProductVariation {
+  id: string;
+  name: string;
+  price: number;
+  product_id: string;
 }
 
 export default function EstablishmentDetail() {
   const { id } = useParams<{ id: string }>();
   const [establishment, setEstablishment] = useState<Establishment | null>(null);
   const [products, setProducts] = useState<Product[]>([]);
+  const [variations, setVariations] = useState<ProductVariation[]>([]);
   const { isFavorite, toggleFavorite } = useFavorites();
 
   const isFav = id ? isFavorite(id) : false;
@@ -78,7 +89,20 @@ export default function EstablishmentDetail() {
       .eq("establishment_id", id);
 
     if (!error && data) {
-      setProducts(data);
+      setProducts(data as Product[]);
+      
+      // Fetch variations for all products
+      if (data.length > 0) {
+        const productIds = data.map(p => p.id);
+        const { data: varsData } = await supabase
+          .from("product_variations")
+          .select("*")
+          .in("product_id", productIds);
+        
+        if (varsData) {
+          setVariations(varsData as ProductVariation[]);
+        }
+      }
     }
   };
 
@@ -306,30 +330,29 @@ export default function EstablishmentDetail() {
               <Card>
                 <CardContent className="pt-6">
                   <h2 className="text-xl font-bold mb-4">Produtos</h2>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    {products.map((product) => (
-                      <div
-                        key={product.id}
-                        className="border rounded-lg p-4 hover:border-primary transition-colors"
-                      >
-                        {product.image && (
-                          <img
-                            src={product.image}
-                            alt={product.name}
-                            className="w-full h-40 object-cover rounded-md mb-3"
-                          />
-                        )}
-                        <h3 className="font-semibold mb-1">{product.name}</h3>
-                        {product.description && (
-                          <p className="text-sm text-muted-foreground mb-2">
-                            {product.description}
-                          </p>
-                        )}
-                        <p className="text-lg font-bold text-primary">
-                          R$ {product.price.toFixed(2)}
-                        </p>
-                      </div>
-                    ))}
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+                    {products.map((product) => {
+                      const productVariations = variations.filter(v => v.product_id === product.id);
+                      const hasVariations = productVariations.length > 0;
+                      const prices = productVariations.map(v => v.price);
+                      
+                      return (
+                        <ProductCard
+                          key={product.id}
+                          id={product.id}
+                          name={product.name}
+                          description={product.description}
+                          price={product.price}
+                          image={product.image}
+                          images={product.images as string[] | null}
+                          unit={product.unit}
+                          hasVariations={hasVariations}
+                          variationCount={productVariations.length}
+                          minPrice={hasVariations ? Math.min(...prices) : undefined}
+                          maxPrice={hasVariations ? Math.max(...prices) : undefined}
+                        />
+                      );
+                    })}
                   </div>
                 </CardContent>
               </Card>

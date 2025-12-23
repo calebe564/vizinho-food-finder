@@ -11,8 +11,8 @@ import { useFavorites } from "@/hooks/useFavorites";
 
 export function Header() {
   const [isOpen, setIsOpen] = useState(false);
-  const { favorites } = useFavorites();
-  const hasFavorites = favorites.length > 0;
+  const { totalFavorites } = useFavorites();
+  const hasFavorites = totalFavorites > 0;
   
   return (
     <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/80 backdrop-blur-xl">
@@ -65,14 +65,12 @@ export function Header() {
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-56 bg-popover">
-              {hasFavorites && (
-                <DropdownMenuItem asChild>
-                  <Link to="/favoritos" className="flex items-center gap-2 cursor-pointer">
-                    <Heart className="h-4 w-4 text-red-500 fill-red-500" />
-                    Favoritos ({favorites.length})
-                  </Link>
-                </DropdownMenuItem>
-              )}
+              <DropdownMenuItem asChild>
+                <Link to="/favoritos" className="flex items-center gap-2 cursor-pointer">
+                  <Heart className={`h-4 w-4 ${hasFavorites ? "text-red-500 fill-red-500" : ""}`} />
+                  Favoritos {hasFavorites && `(${totalFavorites})`}
+                </Link>
+              </DropdownMenuItem>
               <DropdownMenuItem asChild>
                 <Link to="/cadastrar" className="flex items-center gap-2 cursor-pointer">
                   <UserPlus className="h-4 w-4" />
@@ -118,12 +116,10 @@ export function Header() {
                 
                 <div className="border-t mt-4 pt-4">
                   <p className="text-xs text-muted-foreground px-4 pb-2 uppercase tracking-wider">Mais opções</p>
-                  {hasFavorites && (
-                    <Link to="/favoritos" onClick={() => setIsOpen(false)} className="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-secondary transition-colors">
-                      <Heart className="h-5 w-5 text-red-500 fill-red-500" />
-                      <span className="font-medium">Favoritos ({favorites.length})</span>
-                    </Link>
-                  )}
+                  <Link to="/favoritos" onClick={() => setIsOpen(false)} className="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-secondary transition-colors">
+                    <Heart className={`h-5 w-5 ${hasFavorites ? "text-red-500 fill-red-500" : ""}`} />
+                    <span className="font-medium">Favoritos {hasFavorites && `(${totalFavorites})`}</span>
+                  </Link>
                   <Link to="/cadastrar" onClick={() => setIsOpen(false)} className="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-secondary transition-colors">
                     <UserPlus className="h-5 w-5" />
                     <span className="font-medium">Cadastrar Empresa</span>
