@@ -25,6 +25,7 @@ interface Establishment {
   longitude: number;
   phone: string;
   whatsapp: string | null;
+  external_link: string | null;
   schedule: string;
   profile_image: string | null;
   is_paid: boolean;
@@ -194,6 +195,7 @@ export default function AllEstablishments() {
                     distance={establishment.distance}
                     phone={establishment.phone}
                     whatsapp={establishment.whatsapp}
+                    externalLink={establishment.external_link}
                     schedule={establishment.schedule}
                     profileImage={establishment.profile_image}
                     isPaid={establishment.is_paid}
