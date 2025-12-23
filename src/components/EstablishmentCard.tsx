@@ -1,8 +1,17 @@
 import { Link } from "react-router-dom";
-import { MapPin, Clock, MessageCircle, Star } from "lucide-react";
+import { MapPin, Clock, MessageCircle, Star, MoreVertical, Heart, Share2, Globe } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { useFavorites } from "@/hooks/useFavorites";
+import { shareContent, shareViaWhatsApp, copyToClipboard } from "@/lib/shareUtils";
+import { toast } from "sonner";
 
 interface Product {
   name: string;
@@ -16,6 +25,7 @@ interface Establishment {
   address: string;
   phone: string;
   whatsapp?: string | null;
+  external_link?: string | null;
   schedule: string;
   profile_image: string | null;
   is_paid: boolean;
@@ -31,6 +41,7 @@ interface EstablishmentCardProps {
   distance?: number;
   phone?: string;
   whatsapp?: string | null;
+  externalLink?: string | null;
   schedule?: string;
   profileImage?: string | null;
   isPaid?: boolean;
@@ -60,28 +71,31 @@ export function EstablishmentCard({
   distance,
   phone,
   whatsapp,
+  externalLink,
   schedule,
   profileImage,
   isPaid,
   products,
   establishment,
 }: EstablishmentCardProps) {
+  const { isFavorite, toggleFavorite } = useFavorites();
+  
   const actualId = establishment?.id || id || "";
   const actualName = establishment?.name || name || "";
   const actualCategory = establishment?.category || category || "";
   const actualAddress = establishment?.address || address || "";
-  const actualPhone = establishment?.phone || phone || "";
   const actualWhatsapp = establishment?.whatsapp || whatsapp || null;
+  const actualExternalLink = establishment?.external_link || externalLink || null;
   const actualSchedule = establishment?.schedule || schedule || "";
   const actualProfileImage = establishment?.profile_image || profileImage;
   const actualIsPaid = establishment?.is_paid ?? isPaid ?? false;
   const actualDistance = distance || 0;
   const actualProducts = products || [];
 
+  const isFav = isFavorite(actualId);
+
   const formatWhatsApp = (phoneNumber: string) => {
-    // Remove tudo que não for número
     const cleaned = phoneNumber.replace(/\D/g, "");
-    // Se já começa com 55 (Brasil), usa direto, senão adiciona 55
     const number = cleaned.startsWith("55") ? cleaned : `55${cleaned}`;
     return `https://wa.me/${number}`;
   };
@@ -94,6 +108,43 @@ export function EstablishmentCard({
     if (hasWhatsapp) {
       window.open(formatWhatsApp(actualWhatsapp!), "_blank", "noopener,noreferrer");
     }
+  };
+
+  const handleSiteClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (actualExternalLink) {
+      window.open(actualExternalLink, "_blank", "noopener,noreferrer");
+    }
+  };
+
+  const handleToggleFavorite = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    const newState = toggleFavorite(actualId);
+    toast.success(newState ? "Adicionado aos favoritos!" : "Removido dos favoritos");
+  };
+
+  const handleShare = async (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    const url = `${window.location.origin}/estabelecimento/${actualId}`;
+    const text = `Conheça ${actualName} no Comércio Vizinho!`;
+    
+    const shared = await shareContent({ title: actualName, text, url });
+    
+    if (!shared) {
+      // Fallback: mostrar opções
+      shareViaWhatsApp(text, url);
+    }
+  };
+
+  const handleCopyLink = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    const url = `${window.location.origin}/estabelecimento/${actualId}`;
+    copyToClipboard(url);
   };
 
   return (
@@ -124,6 +175,36 @@ export function EstablishmentCard({
             )}
           </div>
 
+          {/* Three dots menu */}
+          <div className="absolute top-3 right-3">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild onClick={(e) => e.preventDefault()}>
+                <Button 
+                  variant="ghost" 
+                  size="icon" 
+                  className="h-8 w-8 bg-background/80 hover:bg-background rounded-full"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <MoreVertical className="h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="bg-popover">
+                <DropdownMenuItem onClick={handleToggleFavorite} className="cursor-pointer">
+                  <Heart className={`h-4 w-4 mr-2 ${isFav ? "fill-red-500 text-red-500" : ""}`} />
+                  {isFav ? "Remover dos favoritos" : "Favoritar empresa"}
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={handleShare} className="cursor-pointer">
+                  <Share2 className="h-4 w-4 mr-2" />
+                  Compartilhar
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={handleCopyLink} className="cursor-pointer">
+                  <Globe className="h-4 w-4 mr-2" />
+                  Copiar link
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
+
           {/* Distance Badge */}
           <div className="absolute bottom-3 right-3">
             <Badge variant="secondary" className="bg-background/90 backdrop-blur-sm text-foreground shadow-lg">
@@ -131,6 +212,16 @@ export function EstablishmentCard({
               {actualDistance.toFixed(1)} km
             </Badge>
           </div>
+
+          {/* Favorite indicator */}
+          {isFav && (
+            <div className="absolute bottom-3 left-3">
+              <Badge className="bg-red-500 text-white shadow-lg">
+                <Heart className="h-3 w-3 mr-1 fill-white" />
+                Favorito
+              </Badge>
+            </div>
+          )}
         </div>
 
         <CardContent className="p-5">
@@ -166,20 +257,31 @@ export function EstablishmentCard({
             </div>
           )}
 
-          {/* WhatsApp Button - só aparece se tiver WhatsApp cadastrado */}
-          {hasWhatsapp && (
-            <div className="flex justify-end">
+          {/* Action buttons */}
+          <div className="flex gap-2">
+            {hasWhatsapp && (
               <Button 
-                variant="outline" 
+                variant="default" 
                 size="sm" 
-                className="rounded-xl px-3 gap-2"
+                className="flex-1 rounded-xl gap-2"
                 onClick={handleWhatsAppClick}
               >
                 <MessageCircle className="h-4 w-4" />
-                <span className="text-xs">WhatsApp</span>
+                WhatsApp
               </Button>
-            </div>
-          )}
+            )}
+            {actualExternalLink && (
+              <Button 
+                variant="outline" 
+                size="sm" 
+                className="flex-1 rounded-xl gap-2"
+                onClick={handleSiteClick}
+              >
+                <Globe className="h-4 w-4" />
+                Site
+              </Button>
+            )}
+          </div>
         </CardContent>
       </Card>
     </Link>

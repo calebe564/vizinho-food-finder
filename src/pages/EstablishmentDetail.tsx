@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import { ArrowLeft, MapPin, Phone, Clock, Tag, Share2, MessageCircle, ExternalLink } from "lucide-react";
+import { ArrowLeft, MapPin, Phone, Clock, Tag, Share2, MessageCircle, Globe, MoreVertical, Heart, Copy } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -9,6 +9,14 @@ import { ThemeToggle } from "@/components/ThemeToggle";
 import { ImageCarousel } from "@/components/ImageCarousel";
 import { getScheduleStatus } from "@/lib/scheduleUtils";
 import { toast } from "sonner";
+import { useFavorites } from "@/hooks/useFavorites";
+import { shareContent, shareViaWhatsApp, copyToClipboard } from "@/lib/shareUtils";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 interface Establishment {
   id: string;
@@ -39,6 +47,9 @@ export default function EstablishmentDetail() {
   const { id } = useParams<{ id: string }>();
   const [establishment, setEstablishment] = useState<Establishment | null>(null);
   const [products, setProducts] = useState<Product[]>([]);
+  const { isFavorite, toggleFavorite } = useFavorites();
+
+  const isFav = id ? isFavorite(id) : false;
 
   useEffect(() => {
     if (id) {
@@ -101,12 +112,33 @@ export default function EstablishmentDetail() {
     }
   };
 
-  const handleShareWhatsApp = () => {
+  const formatWhatsApp = (phoneNumber: string) => {
+    const cleaned = phoneNumber.replace(/\D/g, "");
+    const number = cleaned.startsWith("55") ? cleaned : `55${cleaned}`;
+    return `https://wa.me/${number}`;
+  };
+
+  const handleShare = async () => {
+    if (!establishment) return;
+    
     const url = window.location.href;
-    const text = `Conheça ${establishment?.name} no Comércio Vizinho!`;
-    const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(`${text}\n${url}`)}`;
-    window.open(whatsappUrl, '_blank');
-    toast.success("Abrindo WhatsApp para compartilhar");
+    const text = `Conheça ${establishment.name} no Comércio Vizinho!`;
+    
+    const shared = await shareContent({ title: establishment.name, text, url });
+    
+    if (!shared) {
+      shareViaWhatsApp(text, url);
+    }
+  };
+
+  const handleCopyLink = () => {
+    copyToClipboard(window.location.href);
+  };
+
+  const handleToggleFavorite = () => {
+    if (!id) return;
+    const newState = toggleFavorite(id);
+    toast.success(newState ? "Adicionado aos favoritos!" : "Removido dos favoritos");
   };
 
   const categoryLabels: Record<string, string> = {
@@ -135,6 +167,8 @@ export default function EstablishmentDetail() {
   }
 
   const scheduleStatus = getScheduleStatus(establishment.schedule);
+  const hasWhatsapp = establishment.whatsapp && establishment.whatsapp.trim() !== "";
+  const hasSite = establishment.external_link && establishment.external_link.trim() !== "";
 
   return (
     <div className="min-h-screen bg-background">
@@ -147,13 +181,37 @@ export default function EstablishmentDetail() {
                 Voltar
               </Button>
             </Link>
-            <ThemeToggle />
+            <div className="flex items-center gap-2">
+              {/* Menu de 3 pontos */}
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" size="icon">
+                    <MoreVertical className="h-5 w-5" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="bg-popover">
+                  <DropdownMenuItem onClick={handleToggleFavorite} className="cursor-pointer">
+                    <Heart className={`h-4 w-4 mr-2 ${isFav ? "fill-red-500 text-red-500" : ""}`} />
+                    {isFav ? "Remover dos favoritos" : "Favoritar empresa"}
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={handleShare} className="cursor-pointer">
+                    <Share2 className="h-4 w-4 mr-2" />
+                    Compartilhar
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={handleCopyLink} className="cursor-pointer">
+                    <Copy className="h-4 w-4 mr-2" />
+                    Copiar link
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+              <ThemeToggle />
+            </div>
           </div>
         </div>
       </header>
 
       <main className="container mx-auto px-4 py-8">
-        <div className="mb-8">
+        <div className="mb-8 relative">
           {(() => {
             const images = Array.isArray(establishment.images) ? establishment.images as string[] : [];
             if (images.length > 0) {
@@ -176,6 +234,16 @@ export default function EstablishmentDetail() {
               );
             }
           })()}
+          
+          {/* Favorite indicator */}
+          {isFav && (
+            <div className="absolute top-4 right-4">
+              <Badge className="bg-red-500 text-white shadow-lg">
+                <Heart className="h-3 w-3 mr-1 fill-white" />
+                Favorito
+              </Badge>
+            </div>
+          )}
         </div>
 
         <div className="grid md:grid-cols-3 gap-8">
@@ -201,13 +269,36 @@ export default function EstablishmentDetail() {
                       )}
                     </div>
                   </div>
-                  <Button variant="outline" size="icon" onClick={handleShareWhatsApp}>
-                    <Share2 className="h-4 w-4" />
-                  </Button>
                 </div>
                 {establishment.description && (
                   <p className="text-muted-foreground">{establishment.description}</p>
                 )}
+
+                {/* Action buttons - WhatsApp e Site lado a lado */}
+                <div className="flex gap-3 mt-6">
+                  {hasWhatsapp && (
+                    <Button 
+                      className="flex-1 gap-2" 
+                      onClick={() => {
+                        window.open(formatWhatsApp(establishment.whatsapp!), '_blank');
+                        handlePhoneClick();
+                      }}
+                    >
+                      <MessageCircle className="h-4 w-4" />
+                      WhatsApp
+                    </Button>
+                  )}
+                  {hasSite && (
+                    <Button 
+                      variant="outline"
+                      className="flex-1 gap-2" 
+                      onClick={() => window.open(establishment.external_link!, '_blank')}
+                    >
+                      <Globe className="h-4 w-4" />
+                      Site
+                    </Button>
+                  )}
+                </div>
               </CardContent>
             </Card>
 
@@ -284,42 +375,22 @@ export default function EstablishmentDetail() {
                   </div>
                 </div>
 
-                {establishment.whatsapp && (
-                  <div className="pt-2">
-                    <Button 
-                      className="w-full gap-2" 
-                      onClick={() => {
-                        window.open(`https://wa.me/${establishment.whatsapp!.replace(/\D/g, '')}`, '_blank');
-                        handlePhoneClick();
-                      }}
-                    >
-                      <MessageCircle className="h-4 w-4" />
-                      Chamar no WhatsApp
-                    </Button>
-                  </div>
-                )}
-
-                {establishment.external_link && (
-                  <div className="pt-2">
-                    <Button 
-                      variant="outline"
-                      className="w-full gap-2" 
-                      onClick={() => window.open(establishment.external_link!, '_blank')}
-                    >
-                      <ExternalLink className="h-4 w-4" />
-                      Visitar Site/Instagram
-                    </Button>
-                  </div>
-                )}
-
-                <div className="pt-2">
+                <div className="pt-2 space-y-2">
                   <Button 
-                    variant="secondary"
+                    variant="outline"
                     className="w-full gap-2" 
-                    onClick={handleShareWhatsApp}
+                    onClick={handleShare}
                   >
                     <Share2 className="h-4 w-4" />
-                    Compartilhar no WhatsApp
+                    Compartilhar
+                  </Button>
+                  <Button 
+                    variant={isFav ? "default" : "secondary"}
+                    className="w-full gap-2" 
+                    onClick={handleToggleFavorite}
+                  >
+                    <Heart className={`h-4 w-4 ${isFav ? "fill-white" : ""}`} />
+                    {isFav ? "Favoritado" : "Favoritar"}
                   </Button>
                 </div>
               </CardContent>

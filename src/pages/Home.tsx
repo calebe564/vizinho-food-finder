@@ -23,6 +23,7 @@ interface Establishment {
   longitude: number;
   phone: string;
   whatsapp: string | null;
+  external_link: string | null;
   schedule: string;
   profile_image: string | null;
   is_paid: boolean;
@@ -217,6 +218,7 @@ export default function Home() {
                     distance={est.distance}
                     phone={est.phone}
                     whatsapp={est.whatsapp}
+                    externalLink={est.external_link}
                     schedule={est.schedule}
                     profileImage={est.profile_image}
                     isPaid={est.is_paid}

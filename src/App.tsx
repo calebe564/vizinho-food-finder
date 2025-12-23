@@ -22,6 +22,7 @@ const Information = lazy(() => import("./pages/Information"));
 const About = lazy(() => import("./pages/About"));
 const TermsOfUse = lazy(() => import("./pages/TermsOfUse"));
 const PrivacyPolicy = lazy(() => import("./pages/PrivacyPolicy"));
+const Favorites = lazy(() => import("./pages/Favorites"));
 
 // Loading component
 const PageLoader = () => (
@@ -47,6 +48,7 @@ const App = () => (
                 <Route path="/estabelecimento/:id" element={<EstablishmentDetail />} />
                 <Route path="/categorias" element={<Categories />} />
                 <Route path="/estabelecimentos" element={<AllEstablishments />} />
+                <Route path="/favoritos" element={<Favorites />} />
                 <Route path="/cadastrar" element={<PublicEstablishmentForm />} />
                 <Route path="/informacoes" element={<Information />} />
                 <Route path="/sobre" element={<About />} />
