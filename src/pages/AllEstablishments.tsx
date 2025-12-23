@@ -28,6 +28,8 @@ interface Establishment {
   external_link: string | null;
   schedule: string;
   profile_image: string | null;
+  banner_image: string | null;
+  images: unknown;
   is_paid: boolean;
 }
 
@@ -198,6 +200,8 @@ export default function AllEstablishments() {
                     externalLink={establishment.external_link}
                     schedule={establishment.schedule}
                     profileImage={establishment.profile_image}
+                    bannerImage={establishment.banner_image}
+                    images={Array.isArray(establishment.images) ? establishment.images as string[] : null}
                     isPaid={establishment.is_paid}
                     products={getEstablishmentProducts(establishment.id)}
                   />

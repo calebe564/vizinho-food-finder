@@ -26,6 +26,8 @@ interface Establishment {
   external_link: string | null;
   schedule: string;
   profile_image: string | null;
+  banner_image: string | null;
+  images: unknown;
   is_paid: boolean;
 }
 
@@ -221,6 +223,8 @@ export default function Home() {
                     externalLink={est.external_link}
                     schedule={est.schedule}
                     profileImage={est.profile_image}
+                    bannerImage={est.banner_image}
+                    images={Array.isArray(est.images) ? est.images as string[] : null}
                     isPaid={est.is_paid}
                     products={getEstablishmentProducts(est.id)}
                   />
