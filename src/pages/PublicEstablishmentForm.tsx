@@ -69,8 +69,7 @@ export default function PublicEstablishmentForm() {
     neighborhood: "",
     city: "",
     address: "",
-    phone: "",
-    whatsapp: "",
+    whatsapp: "", // Campo obrigatório - Telefone/WhatsApp
     schedule: "",
     description: "",
     external_link: "",
@@ -197,8 +196,15 @@ export default function PublicEstablishmentForm() {
     e.preventDefault();
     
     if (!formData.name || !formData.category || !formData.neighborhood || 
-        !formData.city || !formData.address || !formData.phone || !formData.schedule) {
+        !formData.city || !formData.address || !formData.whatsapp || !formData.schedule) {
       toast.error("Preencha todos os campos obrigatórios");
+      return;
+    }
+
+    // Validar formato do WhatsApp (apenas números, mínimo 10 dígitos)
+    const whatsappClean = formData.whatsapp.replace(/\D/g, "");
+    if (whatsappClean.length < 10) {
+      toast.error("Número de WhatsApp inválido. Use o formato: DDI + DDD + número");
       return;
     }
 
@@ -269,8 +275,8 @@ export default function PublicEstablishmentForm() {
           category: formData.category as EstablishmentCategory,
           neighborhood: formData.neighborhood,
           address: fullAddress,
-          phone: formData.phone,
-          whatsapp: formData.whatsapp || formData.phone,
+          phone: formData.whatsapp, // Usa o WhatsApp como telefone principal
+          whatsapp: formData.whatsapp,
           description: formData.description || null,
           external_link: formData.external_link || null,
           schedule: formData.schedule,
@@ -466,31 +472,20 @@ export default function PublicEstablishmentForm() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="phone" className="text-base font-medium">Telefone *</Label>
-                  <Input
-                    id="phone"
-                    type="tel"
-                    placeholder="(31) 3333-3333"
-                    value={formData.phone}
-                    onChange={(e) => handleChange("phone", e.target.value)}
-                    className="h-12 rounded-xl"
-                    required
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="whatsapp" className="text-base font-medium">WhatsApp (opcional)</Label>
-                  <Input
-                    id="whatsapp"
-                    type="tel"
-                    placeholder="(31) 99999-9999"
-                    value={formData.whatsapp}
-                    onChange={(e) => handleChange("whatsapp", e.target.value)}
-                    className="h-12 rounded-xl"
-                  />
-                </div>
+              <div className="space-y-2">
+                <Label htmlFor="whatsapp" className="text-base font-medium">Telefone / WhatsApp *</Label>
+                <Input
+                  id="whatsapp"
+                  type="tel"
+                  placeholder="5511999999999 (DDI + DDD + número)"
+                  value={formData.whatsapp}
+                  onChange={(e) => handleChange("whatsapp", e.target.value)}
+                  className="h-12 rounded-xl"
+                  required
+                />
+                <p className="text-xs text-muted-foreground">
+                  Formato: DDI + DDD + número (ex: 5531999999999)
+                </p>
               </div>
 
               <div className="space-y-2">
