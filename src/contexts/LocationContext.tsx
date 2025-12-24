@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect, ReactNode } from "react";
+import React, { createContext, useContext, useState, useEffect, ReactNode } from "react";
 
 interface Coordinates {
   latitude: number;
@@ -67,40 +67,46 @@ async function reverseGeocode(lat: number, lon: number): Promise<LocationDetails
   }
 }
 
+function getInitialUserLocation(): UserLocationData | null {
+  if (typeof window === "undefined") return null;
+  try {
+    const saved = localStorage.getItem("user_location");
+    return saved ? JSON.parse(saved) : null;
+  } catch {
+    return null;
+  }
+}
+
+function getInitialLocationDetails(): LocationDetails | null {
+  if (typeof window === "undefined") return null;
+  try {
+    const saved = localStorage.getItem("location_details");
+    return saved ? JSON.parse(saved) : null;
+  } catch {
+    return null;
+  }
+}
+
+function getInitialManualLocation(): string {
+  if (typeof window === "undefined") return "";
+  try {
+    return localStorage.getItem("manual_location") || "";
+  } catch {
+    return "";
+  }
+}
+
 export function LocationProvider({ children }: { children: ReactNode }) {
-  const [userLocation, setUserLocationState] = useState<UserLocationData | null>(() => {
-    try {
-      const saved = localStorage.getItem("user_location");
-      return saved ? JSON.parse(saved) : null;
-    } catch {
-      return null;
-    }
-  });
-  
+  const [userLocation, setUserLocationState] = useState<UserLocationData | null>(getInitialUserLocation);
   const [coordinates, setCoordinates] = useState<Coordinates | null>(null);
-  const [locationDetails, setLocationDetailsState] = useState<LocationDetails | null>(() => {
-    try {
-      const saved = localStorage.getItem("location_details");
-      return saved ? JSON.parse(saved) : null;
-    } catch {
-      return null;
-    }
-  });
-  
-  const [manualLocation, setManualLocationState] = useState<string>(() => {
-    try {
-      return localStorage.getItem("manual_location") || "";
-    } catch {
-      return "";
-    }
-  });
-  
+  const [locationDetails, setLocationDetailsState] = useState<LocationDetails | null>(getInitialLocationDetails);
+  const [manualLocation, setManualLocationState] = useState<string>(getInitialManualLocation);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [hasPermission, setHasPermission] = useState(false);
 
-  const requestLocation = () => {
-    if (!navigator.geolocation) {
+  const requestLocation = React.useCallback(() => {
+    if (typeof window === "undefined" || !navigator.geolocation) {
       setError("Geolocalização não suportada pelo navegador");
       setIsLoading(false);
       return;
@@ -154,7 +160,7 @@ export function LocationProvider({ children }: { children: ReactNode }) {
         maximumAge: 300000,
       }
     );
-  };
+  }, []);
 
   // Request geolocation on mount
   useEffect(() => {
@@ -167,27 +173,27 @@ export function LocationProvider({ children }: { children: ReactNode }) {
     requestLocation();
 
     return () => clearTimeout(timeoutId);
-  }, []);
+  }, [requestLocation]);
 
-  const setUserLocation = (location: UserLocationData) => {
+  const setUserLocation = React.useCallback((location: UserLocationData) => {
     setUserLocationState(location);
     try {
       localStorage.setItem("user_location", JSON.stringify(location));
     } catch (e) {
       console.warn("Could not save location to localStorage", e);
     }
-  };
+  }, []);
 
-  const setLocationDetails = (details: LocationDetails) => {
+  const setLocationDetails = React.useCallback((details: LocationDetails) => {
     setLocationDetailsState(details);
     try {
       localStorage.setItem("location_details", JSON.stringify(details));
     } catch (e) {
       console.warn("Could not save location details to localStorage", e);
     }
-  };
+  }, []);
 
-  const setManualLocation = (location: string) => {
+  const setManualLocation = React.useCallback((location: string) => {
     setManualLocationState(location);
     try {
       if (location) {
@@ -198,9 +204,9 @@ export function LocationProvider({ children }: { children: ReactNode }) {
     } catch (e) {
       console.warn("Could not save manual location to localStorage", e);
     }
-  };
+  }, []);
 
-  const clearUserLocation = () => {
+  const clearUserLocation = React.useCallback(() => {
     setUserLocationState(null);
     setLocationDetailsState(null);
     try {
@@ -209,23 +215,38 @@ export function LocationProvider({ children }: { children: ReactNode }) {
     } catch (e) {
       console.warn("Could not clear location from localStorage", e);
     }
-  };
+  }, []);
+
+  const value = React.useMemo(() => ({
+    userLocation, 
+    coordinates,
+    locationDetails,
+    manualLocation,
+    setUserLocation,
+    setLocationDetails,
+    setManualLocation,
+    clearUserLocation,
+    isLoading,
+    error,
+    hasPermission,
+    requestLocation
+  }), [
+    userLocation, 
+    coordinates, 
+    locationDetails, 
+    manualLocation, 
+    setUserLocation, 
+    setLocationDetails, 
+    setManualLocation, 
+    clearUserLocation, 
+    isLoading, 
+    error, 
+    hasPermission, 
+    requestLocation
+  ]);
 
   return (
-    <LocationContext.Provider value={{ 
-      userLocation, 
-      coordinates,
-      locationDetails,
-      manualLocation,
-      setUserLocation,
-      setLocationDetails,
-      setManualLocation,
-      clearUserLocation,
-      isLoading,
-      error,
-      hasPermission,
-      requestLocation
-    }}>
+    <LocationContext.Provider value={value}>
       {children}
     </LocationContext.Provider>
   );
