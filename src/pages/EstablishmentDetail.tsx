@@ -1,7 +1,7 @@
-import { useState, useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { ArrowLeft, MapPin, Phone, Clock, Tag, Share2, MessageCircle, Globe, MoreVertical, Heart, Copy } from "lucide-react";
+import { ArrowLeft, MapPin, Phone, Clock, Tag, Share2, MessageCircle, Globe, MoreVertical, Heart, Copy, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -18,6 +18,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { useEffect } from "react";
 
 interface Establishment {
   id: string;
@@ -53,73 +54,96 @@ interface ProductVariation {
   product_id: string;
 }
 
+const categoryLabels: Record<string, string> = {
+  restaurante: "Restaurante",
+  lanchonete: "Lanchonete",
+  padaria: "Padaria",
+  supermercado: "Supermercado",
+  açougue: "Açougue",
+  hortifruti: "Hortifruti",
+  pizzaria: "Pizzaria",
+  hamburgueria: "Hamburgueria",
+  bar: "Bar",
+  cafe: "Café",
+  outro: "Outro",
+};
+
 export default function EstablishmentDetail() {
   const { id } = useParams<{ id: string }>();
-  const [establishment, setEstablishment] = useState<Establishment | null>(null);
-  const [products, setProducts] = useState<Product[]>([]);
-  const [variations, setVariations] = useState<ProductVariation[]>([]);
   const { isFavorite, toggleFavorite } = useFavorites();
-
   const isFav = id ? isFavorite(id) : false;
 
+  // Fetch establishment with React Query for caching
+  const { data: establishment, isLoading: establishmentLoading } = useQuery({
+    queryKey: ["establishment", id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("establishments")
+        .select("*")
+        .eq("id", id)
+        .maybeSingle();
+
+      if (error) throw error;
+      return data as Establishment | null;
+    },
+    enabled: !!id,
+    staleTime: 1000 * 60 * 5, // Cache for 5 minutes
+  });
+
+  // Fetch products with React Query
+  const { data: products = [] } = useQuery({
+    queryKey: ["products", id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("products")
+        .select("*")
+        .eq("establishment_id", id);
+
+      if (error) throw error;
+      return (data || []) as Product[];
+    },
+    enabled: !!id,
+    staleTime: 1000 * 60 * 5,
+  });
+
+  // Fetch all variations for products
+  const productIds = products.map(p => p.id);
+  const { data: variations = [] } = useQuery({
+    queryKey: ["product-variations-list", productIds],
+    queryFn: async () => {
+      if (productIds.length === 0) return [];
+      
+      const { data, error } = await supabase
+        .from("product_variations")
+        .select("*")
+        .in("product_id", productIds);
+
+      if (error) throw error;
+      return (data || []) as ProductVariation[];
+    },
+    enabled: productIds.length > 0,
+    staleTime: 1000 * 60 * 5,
+  });
+
+  // Increment page views (fire and forget)
   useEffect(() => {
     if (id) {
-      fetchEstablishment();
-      fetchProducts();
-      incrementPageViews();
+      supabase
+        .from("establishment_statistics")
+        .select("page_views")
+        .eq("establishment_id", id)
+        .maybeSingle()
+        .then(({ data: stat }) => {
+          if (stat) {
+            supabase
+              .from("establishment_statistics")
+              .update({ page_views: (stat.page_views || 0) + 1 })
+              .eq("establishment_id", id)
+              .then(() => {});
+          }
+        });
     }
   }, [id]);
-
-  const fetchEstablishment = async () => {
-    const { data, error } = await supabase
-      .from("establishments")
-      .select("*")
-      .eq("id", id)
-      .single();
-
-    if (!error && data) {
-      setEstablishment(data);
-    }
-  };
-
-  const fetchProducts = async () => {
-    const { data, error } = await supabase
-      .from("products")
-      .select("*")
-      .eq("establishment_id", id);
-
-    if (!error && data) {
-      setProducts(data as Product[]);
-      
-      // Fetch variations for all products
-      if (data.length > 0) {
-        const productIds = data.map(p => p.id);
-        const { data: varsData } = await supabase
-          .from("product_variations")
-          .select("*")
-          .in("product_id", productIds);
-        
-        if (varsData) {
-          setVariations(varsData as ProductVariation[]);
-        }
-      }
-    }
-  };
-
-  const incrementPageViews = async () => {
-    const { data: stat } = await supabase
-      .from("establishment_statistics")
-      .select("page_views")
-      .eq("establishment_id", id)
-      .maybeSingle();
-
-    if (stat) {
-      await supabase
-        .from("establishment_statistics")
-        .update({ page_views: stat.page_views + 1 })
-        .eq("establishment_id", id);
-    }
-  };
 
   const handlePhoneClick = async () => {
     const { data: stat } = await supabase
@@ -131,7 +155,7 @@ export default function EstablishmentDetail() {
     if (stat) {
       await supabase
         .from("establishment_statistics")
-        .update({ phone_clicks: stat.phone_clicks + 1 })
+        .update({ phone_clicks: (stat.phone_clicks || 0) + 1 })
         .eq("establishment_id", id);
     }
   };
@@ -165,26 +189,25 @@ export default function EstablishmentDetail() {
     toast.success(newState ? "Adicionado aos favoritos!" : "Removido dos favoritos");
   };
 
-  const categoryLabels: Record<string, string> = {
-    restaurante: "Restaurante",
-    lanchonete: "Lanchonete",
-    padaria: "Padaria",
-    supermercado: "Supermercado",
-    açougue: "Açougue",
-    hortifruti: "Hortifruti",
-    pizzaria: "Pizzaria",
-    hamburgueria: "Hamburgueria",
-    bar: "Bar",
-    cafe: "Café",
-    outro: "Outro",
-  };
+  if (establishmentLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
 
   if (!establishment) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
-          <p>Carregando...</p>
+          <p className="text-lg text-muted-foreground mb-4">Estabelecimento não encontrado</p>
+          <Link to="/">
+            <Button>
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              Voltar ao início
+            </Button>
+          </Link>
         </div>
       </div>
     );
@@ -193,6 +216,7 @@ export default function EstablishmentDetail() {
   const scheduleStatus = getScheduleStatus(establishment.schedule);
   const hasWhatsapp = establishment.whatsapp && establishment.whatsapp.trim() !== "";
   const hasSite = establishment.external_link && establishment.external_link.trim() !== "";
+  const images = Array.isArray(establishment.images) ? establishment.images as string[] : [];
 
   return (
     <div className="min-h-screen bg-background">
@@ -206,7 +230,6 @@ export default function EstablishmentDetail() {
               </Button>
             </Link>
             <div className="flex items-center gap-2">
-              {/* Menu de 3 pontos */}
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button variant="ghost" size="icon">
@@ -236,30 +259,22 @@ export default function EstablishmentDetail() {
 
       <main className="container mx-auto px-4 py-8">
         <div className="mb-8 relative">
-          {(() => {
-            const images = Array.isArray(establishment.images) ? establishment.images as string[] : [];
-            if (images.length > 0) {
-              return <ImageCarousel images={images} />;
-            } else if (establishment.banner_image || establishment.profile_image) {
-              return (
-                <img
-                  src={establishment.banner_image || establishment.profile_image}
-                  alt={establishment.name}
-                  className="w-full h-64 md:h-96 object-cover rounded-xl"
-                />
-              );
-            } else {
-              return (
-                <div className="w-full h-64 md:h-96 bg-gradient-primary rounded-xl flex items-center justify-center">
-                  <span className="text-6xl font-bold text-white">
-                    {establishment.name.charAt(0).toUpperCase()}
-                  </span>
-                </div>
-              );
-            }
-          })()}
+          {images.length > 0 ? (
+            <ImageCarousel images={images} />
+          ) : establishment.banner_image || establishment.profile_image ? (
+            <img
+              src={establishment.banner_image || establishment.profile_image}
+              alt={establishment.name}
+              className="w-full h-64 md:h-96 object-cover rounded-xl"
+            />
+          ) : (
+            <div className="w-full h-64 md:h-96 bg-gradient-primary rounded-xl flex items-center justify-center">
+              <span className="text-6xl font-bold text-white">
+                {establishment.name.charAt(0).toUpperCase()}
+              </span>
+            </div>
+          )}
           
-          {/* Favorite indicator */}
           {isFav && (
             <div className="absolute top-4 right-4">
               <Badge className="bg-red-500 text-white shadow-lg">
@@ -298,7 +313,6 @@ export default function EstablishmentDetail() {
                   <p className="text-muted-foreground">{establishment.description}</p>
                 )}
 
-                {/* Action buttons - WhatsApp e Site lado a lado */}
                 <div className="flex gap-3 mt-6">
                   {hasWhatsapp && (
                     <Button 
