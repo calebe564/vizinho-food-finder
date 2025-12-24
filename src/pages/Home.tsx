@@ -318,6 +318,7 @@ export default function Home() {
                     category={est.category}
                     proximityLabel={est.proximityLabel}
                     profileImage={est.profile_image}
+                    bannerImage={est.banner_image}
                     isPaid={est.is_paid}
                   />
                 </div>
