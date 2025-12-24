@@ -11,19 +11,10 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { Plus, Pencil, Trash2, Eye, EyeOff } from "lucide-react";
+import { ConfirmPasswordDialog } from "@/components/ConfirmPasswordDialog";
 
 export default function AdminEstablishments() {
   const navigate = useNavigate();
@@ -125,6 +116,7 @@ export default function AdminEstablishments() {
               <TableHead>Nome</TableHead>
               <TableHead>Categoria</TableHead>
               <TableHead>Bairro</TableHead>
+              <TableHead>Região</TableHead>
               <TableHead>Status</TableHead>
               <TableHead className="text-right">Ações</TableHead>
             </TableRow>
@@ -132,7 +124,7 @@ export default function AdminEstablishments() {
           <TableBody>
             {filtered.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={5} className="text-center text-muted-foreground">
+                <TableCell colSpan={6} className="text-center text-muted-foreground">
                   Nenhum estabelecimento encontrado
                 </TableCell>
               </TableRow>
@@ -142,10 +134,14 @@ export default function AdminEstablishments() {
                   <TableCell className="font-medium">{est.name}</TableCell>
                   <TableCell className="capitalize">{est.category}</TableCell>
                   <TableCell>{est.neighborhood || "-"}</TableCell>
+                  <TableCell>{est.region || "-"}</TableCell>
                   <TableCell>
                     <Badge variant={est.active ? "default" : "secondary"}>
                       {est.active ? "Ativa" : "Inativa"}
                     </Badge>
+                    {est.is_paid && (
+                      <Badge variant="outline" className="ml-1">Destaque</Badge>
+                    )}
                   </TableCell>
                   <TableCell className="text-right space-x-2">
                     <Button
@@ -178,22 +174,15 @@ export default function AdminEstablishments() {
         </Table>
       </div>
 
-      <AlertDialog open={!!deleteId} onOpenChange={() => setDeleteId(null)}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Confirmar exclusão</AlertDialogTitle>
-            <AlertDialogDescription>
-              Tem certeza que deseja excluir este estabelecimento? Esta ação não pode ser desfeita.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancelar</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
-              Excluir
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      <ConfirmPasswordDialog
+        open={!!deleteId}
+        onOpenChange={(open) => !open && setDeleteId(null)}
+        onConfirm={handleDelete}
+        title="Excluir Estabelecimento"
+        description="Esta ação é irreversível. Digite a senha de administrador para confirmar a exclusão."
+        actionLabel="Excluir"
+        variant="destructive"
+      />
     </div>
   );
 }
