@@ -107,6 +107,7 @@ export type Database = {
           description: string | null
           external_link: string | null
           favorite_images: Json | null
+          google_maps_link: string | null
           id: string
           images: Json | null
           name: string
@@ -114,6 +115,7 @@ export type Database = {
           phone: string
           products_json: Json | null
           profile_image: string | null
+          region: string | null
           schedule: string | null
           status: string | null
           whatsapp: string | null
@@ -126,6 +128,7 @@ export type Database = {
           description?: string | null
           external_link?: string | null
           favorite_images?: Json | null
+          google_maps_link?: string | null
           id?: string
           images?: Json | null
           name: string
@@ -133,6 +136,7 @@ export type Database = {
           phone: string
           products_json?: Json | null
           profile_image?: string | null
+          region?: string | null
           schedule?: string | null
           status?: string | null
           whatsapp?: string | null
@@ -145,6 +149,7 @@ export type Database = {
           description?: string | null
           external_link?: string | null
           favorite_images?: Json | null
+          google_maps_link?: string | null
           id?: string
           images?: Json | null
           name?: string
@@ -152,6 +157,7 @@ export type Database = {
           phone?: string
           products_json?: Json | null
           profile_image?: string | null
+          region?: string | null
           schedule?: string | null
           status?: string | null
           whatsapp?: string | null
@@ -204,6 +210,7 @@ export type Database = {
           description: string | null
           external_link: string | null
           favorite_images: Json | null
+          google_maps_link: string | null
           id: string
           images: Json | null
           is_paid: boolean | null
@@ -215,6 +222,7 @@ export type Database = {
           phone: string
           profile_image: string | null
           reference_point: string | null
+          region: string | null
           schedule: string
           whatsapp: string | null
         }
@@ -228,6 +236,7 @@ export type Database = {
           description?: string | null
           external_link?: string | null
           favorite_images?: Json | null
+          google_maps_link?: string | null
           id?: string
           images?: Json | null
           is_paid?: boolean | null
@@ -239,6 +248,7 @@ export type Database = {
           phone: string
           profile_image?: string | null
           reference_point?: string | null
+          region?: string | null
           schedule: string
           whatsapp?: string | null
         }
@@ -252,6 +262,7 @@ export type Database = {
           description?: string | null
           external_link?: string | null
           favorite_images?: Json | null
+          google_maps_link?: string | null
           id?: string
           images?: Json | null
           is_paid?: boolean | null
@@ -263,6 +274,7 @@ export type Database = {
           phone?: string
           profile_image?: string | null
           reference_point?: string | null
+          region?: string | null
           schedule?: string
           whatsapp?: string | null
         }

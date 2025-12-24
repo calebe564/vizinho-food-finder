@@ -41,7 +41,8 @@ interface EstablishmentCardProps {
   name?: string;
   category?: string;
   address?: string;
-  distance?: number;
+  proximityLabel?: string;
+  distance?: number; // Kept for backward compatibility
   phone?: string;
   whatsapp?: string | null;
   externalLink?: string | null;
@@ -73,6 +74,7 @@ export function EstablishmentCard({
   name,
   category,
   address,
+  proximityLabel,
   distance,
   phone,
   whatsapp,
@@ -85,6 +87,8 @@ export function EstablishmentCard({
   products,
   establishment,
 }: EstablishmentCardProps) {
+  // If no proximityLabel but distance exists, show distance-based label
+  const displayLabel = proximityLabel || (distance !== undefined ? `${distance.toFixed(1)} km` : undefined);
   const { isFavorite, toggleFavorite } = useFavorites();
   
   const actualId = establishment?.id || id || "";
@@ -97,7 +101,6 @@ export function EstablishmentCard({
   const actualProfileImage = establishment?.profile_image || profileImage;
   const actualBannerImage = establishment?.banner_image || bannerImage;
   const actualIsPaid = establishment?.is_paid ?? isPaid ?? false;
-  const actualDistance = distance || 0;
   const actualProducts = products || [];
   
   // Determinar imagem de capa - prioridade: imagens > banner > profile > placeholder
@@ -257,11 +260,13 @@ export function EstablishmentCard({
                 {categoryLabels[actualCategory] || actualCategory}
               </Badge>
             </div>
-            {/* Distance badge */}
-            <Badge variant="outline" className="ml-2 flex-shrink-0">
-              <MapPin className="h-3 w-3 mr-1" />
-              {actualDistance.toFixed(1)} km
-            </Badge>
+            {/* Proximity badge */}
+            {displayLabel && (
+              <Badge variant="outline" className="ml-2 flex-shrink-0 text-xs">
+                <MapPin className="h-3 w-3 mr-1" />
+                {displayLabel}
+              </Badge>
+            )}
           </div>
 
           {/* Info */}
