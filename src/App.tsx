@@ -11,6 +11,7 @@ import { HelmetProvider } from "react-helmet-async";
 import { lazy, Suspense } from "react";
 import { ProtectedRoute } from "./components/ProtectedRoute";
 import { AIChatButton } from "./components/AIChatButton";
+import { ErrorBoundary } from "./components/ErrorBoundary";
 
 // Lazy loading para melhor performance
 const Home = lazy(() => import("./pages/Home"));
@@ -58,24 +59,26 @@ function App() {
                 <BrowserRouter>
                   <LocationProvider>
                     <AIChatButton />
-                    <Suspense fallback={<PageLoader />}>
-                      <Routes>
-                        <Route path="/" element={<Home />} />
-                        <Route path="/estabelecimento/:id" element={<EstablishmentDetail />} />
-                        <Route path="/produto/:id" element={<ProductDetail />} />
-                        <Route path="/categorias" element={<Categories />} />
-                        <Route path="/estabelecimentos" element={<AllEstablishments />} />
-                        <Route path="/favoritos" element={<Favorites />} />
-                        <Route path="/cadastrar" element={<PublicEstablishmentForm />} />
-                        <Route path="/informacoes" element={<Information />} />
-                        <Route path="/sobre" element={<About />} />
-                        <Route path="/termos-de-uso" element={<TermsOfUse />} />
-                        <Route path="/politica-de-privacidade" element={<PrivacyPolicy />} />
-                        <Route path="/admin/login" element={<AdminLogin />} />
-                        <Route path="/admin/dashboard/*" element={<ProtectedRoute><AdminDashboard /></ProtectedRoute>} />
-                        <Route path="*" element={<NotFound />} />
-                      </Routes>
-                    </Suspense>
+                    <ErrorBoundary>
+                      <Suspense fallback={<PageLoader />}>
+                        <Routes>
+                          <Route path="/" element={<Home />} />
+                          <Route path="/estabelecimento/:id" element={<EstablishmentDetail />} />
+                          <Route path="/produto/:id" element={<ProductDetail />} />
+                          <Route path="/categorias" element={<Categories />} />
+                          <Route path="/estabelecimentos" element={<AllEstablishments />} />
+                          <Route path="/favoritos" element={<Favorites />} />
+                          <Route path="/cadastrar" element={<PublicEstablishmentForm />} />
+                          <Route path="/informacoes" element={<Information />} />
+                          <Route path="/sobre" element={<About />} />
+                          <Route path="/termos-de-uso" element={<TermsOfUse />} />
+                          <Route path="/politica-de-privacidade" element={<PrivacyPolicy />} />
+                          <Route path="/admin/login" element={<AdminLogin />} />
+                          <Route path="/admin/dashboard/*" element={<ProtectedRoute><AdminDashboard /></ProtectedRoute>} />
+                          <Route path="*" element={<NotFound />} />
+                        </Routes>
+                      </Suspense>
+                    </ErrorBoundary>
                   </LocationProvider>
                 </BrowserRouter>
               </TooltipProvider>
