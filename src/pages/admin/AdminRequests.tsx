@@ -419,7 +419,7 @@ export default function AdminRequests() {
       </div>
 
       <Tabs defaultValue="pending" className="w-full">
-        <TabsList className="grid w-full grid-cols-3">
+        <TabsList className="grid w-full grid-cols-4">
           <TabsTrigger value="pending" className="flex items-center gap-2">
             <Clock className="h-4 w-4" />
             Pendentes ({pendingRequests.length})
@@ -431,6 +431,10 @@ export default function AdminRequests() {
           <TabsTrigger value="rejected" className="flex items-center gap-2">
             <XCircle className="h-4 w-4" />
             Rejeitadas ({rejectedRequests.length})
+          </TabsTrigger>
+          <TabsTrigger value="all" className="flex items-center gap-2">
+            <Eye className="h-4 w-4" />
+            Todas ({requests.length})
           </TabsTrigger>
         </TabsList>
 
@@ -479,6 +483,23 @@ export default function AdminRequests() {
               </Card>
             ) : (
               rejectedRequests.map((request) => (
+                <RequestCard key={request.id} request={request} showActions={true} />
+              ))
+            )}
+          </div>
+        </TabsContent>
+
+        <TabsContent value="all" className="mt-6">
+          <div className="grid gap-4">
+            {requests.length === 0 ? (
+              <Card>
+                <CardContent className="py-12 text-center text-muted-foreground">
+                  <Eye className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                  Nenhuma solicitação registrada
+                </CardContent>
+              </Card>
+            ) : (
+              requests.map((request) => (
                 <RequestCard key={request.id} request={request} showActions={true} />
               ))
             )}
