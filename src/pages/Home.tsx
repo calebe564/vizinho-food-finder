@@ -4,6 +4,7 @@ import { BannerCarousel } from "@/components/BannerCarousel";
 import { SearchBar } from "@/components/SearchBar";
 import { FilterBar } from "@/components/FilterBar";
 import { EstablishmentCard } from "@/components/EstablishmentCard";
+import { EstablishmentCardCompact } from "@/components/EstablishmentCardCompact";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { AdvertisementBanner } from "@/components/AdvertisementBanner";
@@ -12,6 +13,7 @@ import { useUserLocation } from "@/contexts/LocationContext";
 import { useSearchParams } from "react-router-dom";
 import { MapPin, Store, Loader2, Navigation } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 interface Establishment {
   id: string;
@@ -102,6 +104,7 @@ function getProximityLabel(score: number): string {
 }
 
 export default function Home() {
+  const isMobile = useIsMobile();
   const [searchParams] = useSearchParams();
   const [establishments, setEstablishments] = useState<Establishment[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
@@ -218,18 +221,18 @@ export default function Home() {
     <div className="min-h-screen bg-background">
       <Header />
 
-      <main className="container mx-auto px-4 py-6 space-y-6">
-        {/* Top Advertisements */}
+      <main className="container mx-auto px-3 md:px-4 py-4 md:py-6 space-y-4 md:space-y-6">
+        {/* Top Advertisements - compact on mobile */}
         <AdvertisementBanner advertisements={getAdsByPosition("top")} />
 
-        {/* Banner Carousel */}
-        <div className="animate-fade-in">
+        {/* Banner Carousel - hidden on mobile for cleaner experience */}
+        <div className="hidden md:block animate-fade-in">
           <BannerCarousel />
         </div>
 
-        {/* Search Section */}
-        <div className="space-y-4 animate-fade-in" style={{ animationDelay: "0.1s" }}>
-          <div className="flex flex-col lg:flex-row gap-3">
+        {/* Search Section - more compact on mobile */}
+        <div className="space-y-3 animate-fade-in" style={{ animationDelay: "0.1s" }}>
+          <div className="flex flex-col lg:flex-row gap-2 md:gap-3">
             <div className="flex-1">
               <SearchBar 
                 value={searchTerm} 
@@ -248,28 +251,31 @@ export default function Home() {
           />
         </div>
 
-        {/* Location Indicator */}
+        {/* Location Indicator - smaller on mobile */}
         {!locationLoading && (
-          <div className="flex items-center gap-2 text-sm text-muted-foreground bg-secondary/50 px-4 py-2 rounded-full w-fit">
+          <div className="flex items-center gap-1.5 md:gap-2 text-xs md:text-sm text-muted-foreground bg-secondary/50 px-3 md:px-4 py-1.5 md:py-2 rounded-full w-fit">
             {hasPermission && selectedLocation ? (
               <>
-                <Navigation className="h-4 w-4 text-primary" />
-                <span>Resultados na sua região</span>
+                <Navigation className="h-3.5 w-3.5 md:h-4 md:w-4 text-primary" />
+                <span>Na sua região</span>
                 {selectedLocation.neighborhood && (
-                  <Badge variant="secondary" className="ml-1">
+                  <Badge variant="secondary" className="ml-1 text-[10px] md:text-xs py-0">
                     {selectedLocation.neighborhood}
                   </Badge>
                 )}
               </>
             ) : selectedLocation ? (
               <>
-                <MapPin className="h-4 w-4 text-primary" />
-                <span>Buscando em: {selectedLocation.city || selectedLocation.neighborhood}</span>
+                <MapPin className="h-3.5 w-3.5 md:h-4 md:w-4 text-primary" />
+                <span className="truncate max-w-[150px] md:max-w-none">
+                  {selectedLocation.city || selectedLocation.neighborhood}
+                </span>
               </>
             ) : (
               <>
-                <MapPin className="h-4 w-4 text-muted-foreground" />
-                <span>Informe sua localização para resultados mais relevantes</span>
+                <MapPin className="h-3.5 w-3.5 md:h-4 md:w-4 text-muted-foreground" />
+                <span className="hidden md:inline">Informe sua localização para resultados mais relevantes</span>
+                <span className="md:hidden">Defina sua localização</span>
               </>
             )}
           </div>
@@ -277,27 +283,48 @@ export default function Home() {
 
         {/* Establishments List */}
         <div className="animate-fade-in" style={{ animationDelay: "0.2s" }}>
-          <div className="flex items-center gap-2 mb-6">
-            <Store className="h-6 w-6 text-primary" />
-            <h2 className="text-2xl font-bold">
+          <div className="flex items-center gap-2 mb-3 md:mb-6">
+            <Store className="h-5 w-5 md:h-6 md:w-6 text-primary" />
+            <h2 className="text-lg md:text-2xl font-bold">
               {loading ? "Carregando..." : `${filteredEstablishments.length} ${filteredEstablishments.length === 1 ? 'empresa' : 'empresas'}`}
             </h2>
           </div>
 
           {/* Middle Advertisements */}
-          <AdvertisementBanner advertisements={getAdsByPosition("middle")} />
+          {!isMobile && <AdvertisementBanner advertisements={getAdsByPosition("middle")} />}
 
           {loading ? (
-            <div className="flex items-center justify-center py-20">
-              <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            <div className="flex items-center justify-center py-12 md:py-20">
+              <Loader2 className="h-6 w-6 md:h-8 md:w-8 animate-spin text-primary" />
             </div>
           ) : filteredEstablishments.length === 0 ? (
-            <div className="text-center py-20 bg-secondary/30 rounded-2xl">
-              <Store className="h-16 w-16 mx-auto text-muted-foreground mb-4" />
-              <p className="text-xl font-medium text-muted-foreground">Nenhuma empresa encontrada</p>
-              <p className="text-sm text-muted-foreground mt-2">Tente ajustar os filtros ou localização</p>
+            <div className="text-center py-12 md:py-20 bg-secondary/30 rounded-xl md:rounded-2xl">
+              <Store className="h-12 w-12 md:h-16 md:w-16 mx-auto text-muted-foreground mb-3 md:mb-4" />
+              <p className="text-base md:text-xl font-medium text-muted-foreground">Nenhuma empresa encontrada</p>
+              <p className="text-xs md:text-sm text-muted-foreground mt-1 md:mt-2">Tente ajustar os filtros</p>
+            </div>
+          ) : isMobile ? (
+            /* Mobile: Compact 2-column grid */
+            <div className="grid grid-cols-2 gap-2.5">
+              {filteredEstablishments.map((est, index) => (
+                <div 
+                  key={est.id} 
+                  className="animate-fade-in"
+                  style={{ animationDelay: `${0.03 * (index % 8)}s` }}
+                >
+                  <EstablishmentCardCompact
+                    id={est.id}
+                    name={est.name}
+                    category={est.category}
+                    proximityLabel={est.proximityLabel}
+                    profileImage={est.profile_image}
+                    isPaid={est.is_paid}
+                  />
+                </div>
+              ))}
             </div>
           ) : (
+            /* Desktop: Full cards */
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {filteredEstablishments.map((est, index) => (
                 <div 
@@ -326,8 +353,8 @@ export default function Home() {
             </div>
           )}
 
-          {/* Bottom Advertisements */}
-          <AdvertisementBanner advertisements={getAdsByPosition("bottom")} />
+          {/* Bottom Advertisements - only on desktop */}
+          {!isMobile && <AdvertisementBanner advertisements={getAdsByPosition("bottom")} />}
         </div>
       </main>
 
