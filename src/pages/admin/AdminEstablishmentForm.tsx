@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -9,7 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Upload, Trash2, Plus, Star, Package, Image, Building2 } from "lucide-react";
 import { Database } from "@/integrations/supabase/types";
 
 type EstablishmentCategory = Database["public"]["Enums"]["establishment_category"];
@@ -42,6 +42,23 @@ const categoryLabels: Record<string, string> = {
   outro: "Outro"
 };
 
+interface ProductVariation {
+  id: string;
+  name: string;
+  price: number;
+}
+
+interface Product {
+  id: string;
+  name: string;
+  price: number;
+  description: string;
+  image: string;
+  newImage?: File | null;
+  newImagePreview?: string | null;
+  variations: ProductVariation[];
+}
+
 export default function AdminEstablishmentForm() {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -64,9 +81,23 @@ export default function AdminEstablishmentForm() {
     active: true,
   });
 
+  // Images state
+  const [profileImage, setProfileImage] = useState<string>("");
+  const [bannerImage, setBannerImage] = useState<string>("");
+  const [newBannerImage, setNewBannerImage] = useState<File | null>(null);
+  const [bannerPreview, setBannerPreview] = useState<string | null>(null);
+  const [images, setImages] = useState<string[]>([]);
+  const [favoriteImages, setFavoriteImages] = useState<string[]>([]);
+  const [newImages, setNewImages] = useState<File[]>([]);
+  const [newImagePreviews, setNewImagePreviews] = useState<string[]>([]);
+
+  // Products state
+  const [products, setProducts] = useState<Product[]>([]);
+
   useEffect(() => {
     if (id) {
       fetchEstablishment();
+      fetchProducts();
     }
   }, [id]);
 
@@ -97,14 +128,181 @@ export default function AdminEstablishmentForm() {
           description: data.description || "",
           external_link: data.external_link || "",
           reference_point: data.reference_point || "",
-          is_paid: data.is_paid,
-          active: data.active,
+          is_paid: data.is_paid || false,
+          active: data.active ?? true,
         });
+        setProfileImage(data.profile_image || "");
+        setBannerImage(data.banner_image || "");
+        setImages((data.images as string[]) || []);
+        setFavoriteImages((data.favorite_images as string[]) || []);
       }
     } catch (error: any) {
       console.error("Error fetching establishment:", error);
       toast.error("Erro ao carregar estabelecimento");
     }
+  };
+
+  const fetchProducts = async () => {
+    if (!id) return;
+
+    try {
+      const { data: productsData, error: productsError } = await supabase
+        .from("products")
+        .select("*")
+        .eq("establishment_id", id);
+
+      if (productsError) throw productsError;
+
+      const { data: variationsData, error: variationsError } = await supabase
+        .from("product_variations")
+        .select("*");
+
+      if (variationsError) throw variationsError;
+
+      const productsWithVariations = (productsData || []).map(p => ({
+        id: p.id,
+        name: p.name,
+        price: Number(p.price),
+        description: p.description || "",
+        image: p.image || "",
+        variations: (variationsData || [])
+          .filter(v => v.product_id === p.id)
+          .map(v => ({
+            id: v.id,
+            name: v.name,
+            price: Number(v.price)
+          }))
+      }));
+
+      setProducts(productsWithVariations);
+    } catch (error: any) {
+      console.error("Error fetching products:", error);
+    }
+  };
+
+  const handleBannerChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setNewBannerImage(file);
+      const reader = new FileReader();
+      reader.onloadend = () => setBannerPreview(reader.result as string);
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleNewImagesChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || []);
+    files.forEach(file => {
+      setNewImages(prev => [...prev, file]);
+      const reader = new FileReader();
+      reader.onloadend = () => setNewImagePreviews(prev => [...prev, reader.result as string]);
+      reader.readAsDataURL(file);
+    });
+  };
+
+  const removeExistingImage = (url: string) => {
+    setImages(prev => prev.filter(img => img !== url));
+    setFavoriteImages(prev => prev.filter(img => img !== url));
+  };
+
+  const removeNewImage = (index: number) => {
+    setNewImages(prev => prev.filter((_, i) => i !== index));
+    setNewImagePreviews(prev => prev.filter((_, i) => i !== index));
+  };
+
+  const toggleFavorite = (url: string) => {
+    if (favoriteImages.includes(url)) {
+      setFavoriteImages(prev => prev.filter(img => img !== url));
+    } else if (favoriteImages.length < 4) {
+      setFavoriteImages(prev => [...prev, url]);
+    } else {
+      toast.error("Máximo de 4 imagens favoritas");
+    }
+  };
+
+  // Product management
+  const addProduct = () => {
+    setProducts(prev => [...prev, {
+      id: `new-${crypto.randomUUID()}`,
+      name: "",
+      price: 0,
+      description: "",
+      image: "",
+      newImage: null,
+      newImagePreview: null,
+      variations: []
+    }]);
+  };
+
+  const removeProduct = async (productId: string) => {
+    if (productId.startsWith("new-")) {
+      setProducts(prev => prev.filter(p => p.id !== productId));
+    } else {
+      try {
+        // Delete variations first
+        await supabase.from("product_variations").delete().eq("product_id", productId);
+        await supabase.from("products").delete().eq("id", productId);
+        setProducts(prev => prev.filter(p => p.id !== productId));
+        toast.success("Produto removido");
+      } catch (error) {
+        toast.error("Erro ao remover produto");
+      }
+    }
+  };
+
+  const updateProduct = (productId: string, field: keyof Product, value: any) => {
+    setProducts(prev => prev.map(p => p.id === productId ? { ...p, [field]: value } : p));
+  };
+
+  const handleProductImageChange = (productId: string, e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setProducts(prev => prev.map(p =>
+          p.id === productId ? { ...p, newImage: file, newImagePreview: reader.result as string } : p
+        ));
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const addVariation = (productId: string) => {
+    setProducts(prev => prev.map(p =>
+      p.id === productId
+        ? { ...p, variations: [...p.variations, { id: `new-${crypto.randomUUID()}`, name: "", price: 0 }] }
+        : p
+    ));
+  };
+
+  const removeVariation = async (productId: string, variationId: string) => {
+    if (variationId.startsWith("new-")) {
+      setProducts(prev => prev.map(p =>
+        p.id === productId ? { ...p, variations: p.variations.filter(v => v.id !== variationId) } : p
+      ));
+    } else {
+      try {
+        await supabase.from("product_variations").delete().eq("id", variationId);
+        setProducts(prev => prev.map(p =>
+          p.id === productId ? { ...p, variations: p.variations.filter(v => v.id !== variationId) } : p
+        ));
+      } catch (error) {
+        toast.error("Erro ao remover variação");
+      }
+    }
+  };
+
+  const updateVariation = (productId: string, variationId: string, field: "name" | "price", value: string | number) => {
+    setProducts(prev => prev.map(p =>
+      p.id === productId
+        ? {
+            ...p,
+            variations: p.variations.map(v =>
+              v.id === variationId ? { ...v, [field]: value } : v
+            )
+          }
+        : p
+    ));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -118,6 +316,30 @@ export default function AdminEstablishmentForm() {
     setLoading(true);
 
     try {
+      // Upload new banner if exists
+      let finalBannerImage = bannerImage;
+      if (newBannerImage) {
+        const ext = newBannerImage.name.split(".").pop();
+        const path = `banners/${crypto.randomUUID()}.${ext}`;
+        const { error } = await supabase.storage.from("establishment-images").upload(path, newBannerImage);
+        if (!error) {
+          const { data } = supabase.storage.from("establishment-images").getPublicUrl(path);
+          finalBannerImage = data.publicUrl;
+        }
+      }
+
+      // Upload new images
+      const allImages = [...images];
+      for (const file of newImages) {
+        const ext = file.name.split(".").pop();
+        const path = `establishments/${crypto.randomUUID()}.${ext}`;
+        const { error } = await supabase.storage.from("establishment-images").upload(path, file);
+        if (!error) {
+          const { data } = supabase.storage.from("establishment-images").getPublicUrl(path);
+          allImages.push(data.publicUrl);
+        }
+      }
+
       const dataToSave = {
         name: formData.name,
         category: formData.category as EstablishmentCategory,
@@ -134,6 +356,9 @@ export default function AdminEstablishmentForm() {
         reference_point: formData.reference_point || null,
         is_paid: formData.is_paid,
         active: formData.active,
+        banner_image: finalBannerImage || null,
+        images: allImages,
+        favorite_images: favoriteImages,
       };
 
       if (id) {
@@ -143,6 +368,74 @@ export default function AdminEstablishmentForm() {
           .eq("id", id);
 
         if (error) throw error;
+
+        // Save products
+        for (const product of products) {
+          // Upload new product image if exists
+          let productImageUrl = product.image;
+          if (product.newImage) {
+            const ext = product.newImage.name.split(".").pop();
+            const path = `products/${crypto.randomUUID()}.${ext}`;
+            const { error } = await supabase.storage.from("establishment-images").upload(path, product.newImage);
+            if (!error) {
+              const { data } = supabase.storage.from("establishment-images").getPublicUrl(path);
+              productImageUrl = data.publicUrl;
+            }
+          }
+
+          if (product.id.startsWith("new-")) {
+            // Insert new product
+            const { data: newProduct, error } = await supabase
+              .from("products")
+              .insert({
+                establishment_id: id,
+                name: product.name,
+                price: product.price,
+                description: product.description || null,
+                image: productImageUrl || null
+              })
+              .select()
+              .single();
+
+            if (!error && newProduct) {
+              // Insert variations for new product
+              for (const variation of product.variations) {
+                await supabase.from("product_variations").insert({
+                  product_id: newProduct.id,
+                  name: variation.name,
+                  price: variation.price
+                });
+              }
+            }
+          } else {
+            // Update existing product
+            await supabase
+              .from("products")
+              .update({
+                name: product.name,
+                price: product.price,
+                description: product.description || null,
+                image: productImageUrl || null
+              })
+              .eq("id", product.id);
+
+            // Handle variations
+            for (const variation of product.variations) {
+              if (variation.id.startsWith("new-")) {
+                await supabase.from("product_variations").insert({
+                  product_id: product.id,
+                  name: variation.name,
+                  price: variation.price
+                });
+              } else {
+                await supabase.from("product_variations")
+                  .update({ name: variation.name, price: variation.price })
+                  .eq("id", variation.id);
+              }
+            }
+          }
+        }
+
         toast.success("Estabelecimento atualizado com sucesso!");
       } else {
         const { error } = await supabase
@@ -182,9 +475,26 @@ export default function AdminEstablishmentForm() {
         </div>
       </div>
 
-      <Card>
-        <CardContent className="pt-6">
-          <form onSubmit={handleSubmit} className="space-y-6">
+      <form onSubmit={handleSubmit} className="space-y-6">
+        {/* Basic Info Card */}
+        <Card>
+          <CardContent className="pt-6 space-y-6">
+            <div className="flex items-center gap-2 pb-2 border-b">
+              <Building2 className="h-5 w-5 text-primary" />
+              <h3 className="text-lg font-semibold">Dados da Empresa</h3>
+            </div>
+
+            {/* Logo (read-only) */}
+            {profileImage && (
+              <div className="space-y-2">
+                <Label className="text-base font-medium">Logo da Empresa (não editável)</Label>
+                <div className="flex items-center gap-4">
+                  <img src={profileImage} alt="Logo" className="w-20 h-20 rounded-xl object-cover border-2 border-muted" />
+                  <p className="text-sm text-muted-foreground">A logo não pode ser alterada pelo administrador.</p>
+                </div>
+              </div>
+            )}
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="name">Nome da Empresa *</Label>
@@ -227,7 +537,6 @@ export default function AdminEstablishmentForm() {
                 <Label htmlFor="city">Cidade *</Label>
                 <Input
                   id="city"
-                  placeholder="Ex: São Paulo"
                   value={formData.city}
                   onChange={(e) => handleChange("city", e.target.value)}
                   required
@@ -249,7 +558,6 @@ export default function AdminEstablishmentForm() {
               <Label htmlFor="reference_point">Ponto de Referência</Label>
               <Input
                 id="reference_point"
-                placeholder="Ex: Próximo ao supermercado"
                 value={formData.reference_point}
                 onChange={(e) => handleChange("reference_point", e.target.value)}
               />
@@ -259,7 +567,6 @@ export default function AdminEstablishmentForm() {
               <Label htmlFor="schedule">Horário de Funcionamento *</Label>
               <Input
                 id="schedule"
-                placeholder="Ex: Seg-Sex 8h-18h"
                 value={formData.schedule}
                 onChange={(e) => handleChange("schedule", e.target.value)}
                 required
@@ -273,7 +580,6 @@ export default function AdminEstablishmentForm() {
                   id="latitude"
                   type="number"
                   step="any"
-                  placeholder="-19.9833"
                   value={formData.latitude}
                   onChange={(e) => handleChange("latitude", e.target.value)}
                   required
@@ -286,7 +592,6 @@ export default function AdminEstablishmentForm() {
                   id="longitude"
                   type="number"
                   step="any"
-                  placeholder="-44.0333"
                   value={formData.longitude}
                   onChange={(e) => handleChange("longitude", e.target.value)}
                   required
@@ -300,7 +605,6 @@ export default function AdminEstablishmentForm() {
                 <Input
                   id="phone"
                   type="tel"
-                  placeholder="(31) 99999-9999"
                   value={formData.phone}
                   onChange={(e) => handleChange("phone", e.target.value)}
                   required
@@ -312,7 +616,6 @@ export default function AdminEstablishmentForm() {
                 <Input
                   id="whatsapp"
                   type="tel"
-                  placeholder="5531999999999"
                   value={formData.whatsapp}
                   onChange={(e) => handleChange("whatsapp", e.target.value)}
                 />
@@ -324,7 +627,6 @@ export default function AdminEstablishmentForm() {
               <Input
                 id="external_link"
                 type="url"
-                placeholder="https://..."
                 value={formData.external_link}
                 onChange={(e) => handleChange("external_link", e.target.value)}
               />
@@ -334,7 +636,6 @@ export default function AdminEstablishmentForm() {
               <Label htmlFor="description">Descrição</Label>
               <Textarea
                 id="description"
-                placeholder="Conte um pouco sobre o estabelecimento..."
                 value={formData.description}
                 onChange={(e) => handleChange("description", e.target.value)}
                 rows={4}
@@ -347,7 +648,7 @@ export default function AdminEstablishmentForm() {
                 checked={formData.is_paid}
                 onCheckedChange={(checked) => handleChange("is_paid", checked)}
               />
-              <Label htmlFor="is_paid">Empresa Patrocinada (aparece em destaque)</Label>
+              <Label htmlFor="is_paid">Empresa Patrocinada</Label>
             </div>
 
             <div className="flex items-center space-x-2">
@@ -356,20 +657,223 @@ export default function AdminEstablishmentForm() {
                 checked={formData.active}
                 onCheckedChange={(checked) => handleChange("active", checked)}
               />
-              <Label htmlFor="active">Ativa (visível no catálogo público)</Label>
+              <Label htmlFor="active">Ativa (visível no catálogo)</Label>
             </div>
+          </CardContent>
+        </Card>
 
-            <div className="flex gap-4 pt-4">
-              <Button type="submit" disabled={loading}>
-                {loading ? "Salvando..." : id ? "Salvar Alterações" : "Cadastrar Empresa"}
-              </Button>
-              <Button type="button" variant="outline" onClick={() => navigate("/admin/dashboard/estabelecimentos")}>
-                Cancelar
-              </Button>
-            </div>
-          </form>
-        </CardContent>
-      </Card>
+        {/* Images Card */}
+        {id && (
+          <Card>
+            <CardContent className="pt-6 space-y-6">
+              <div className="flex items-center gap-2 pb-2 border-b">
+                <Image className="h-5 w-5 text-primary" />
+                <h3 className="text-lg font-semibold">Imagens da Empresa</h3>
+              </div>
+
+              {/* Banner */}
+              <div className="space-y-2">
+                <Label className="text-base font-medium">Banner</Label>
+                <div className="flex items-center gap-4">
+                  {(bannerPreview || bannerImage) && (
+                    <img
+                      src={bannerPreview || bannerImage}
+                      alt="Banner"
+                      className="w-40 h-20 rounded-xl object-cover border"
+                    />
+                  )}
+                  <label className="flex flex-col items-center justify-center px-4 py-2 border-2 border-dashed rounded-xl cursor-pointer hover:border-primary">
+                    <Upload className="h-5 w-5 text-muted-foreground" />
+                    <span className="text-xs mt-1">Alterar banner</span>
+                    <input type="file" accept="image/*" onChange={handleBannerChange} className="sr-only" />
+                  </label>
+                </div>
+              </div>
+
+              {/* Gallery */}
+              <div className="space-y-2">
+                <Label className="text-base font-medium">Galeria de Fotos</Label>
+                <div className="flex flex-wrap gap-3">
+                  {images.map((url, index) => (
+                    <div key={index} className="relative w-24 h-24 rounded-xl overflow-hidden border-2 border-muted">
+                      <img src={url} alt={`Imagem ${index + 1}`} className="w-full h-full object-cover" />
+                      <button
+                        type="button"
+                        onClick={() => toggleFavorite(url)}
+                        className={`absolute top-1 left-1 p-1 rounded-full ${favoriteImages.includes(url) ? 'bg-yellow-500 text-white' : 'bg-background/80'}`}
+                      >
+                        <Star className="h-3 w-3" />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => removeExistingImage(url)}
+                        className="absolute top-1 right-1 p-1 rounded-full bg-destructive text-destructive-foreground"
+                      >
+                        <Trash2 className="h-3 w-3" />
+                      </button>
+                    </div>
+                  ))}
+                  {newImagePreviews.map((preview, index) => (
+                    <div key={`new-${index}`} className="relative w-24 h-24 rounded-xl overflow-hidden border-2 border-primary">
+                      <img src={preview} alt={`Nova ${index + 1}`} className="w-full h-full object-cover" />
+                      <button
+                        type="button"
+                        onClick={() => removeNewImage(index)}
+                        className="absolute top-1 right-1 p-1 rounded-full bg-destructive text-destructive-foreground"
+                      >
+                        <Trash2 className="h-3 w-3" />
+                      </button>
+                    </div>
+                  ))}
+                  <label className="flex items-center justify-center w-24 h-24 border-2 border-dashed border-muted-foreground/30 rounded-xl cursor-pointer hover:border-primary">
+                    <Plus className="h-8 w-8 text-muted-foreground" />
+                    <input type="file" accept="image/*" multiple onChange={handleNewImagesChange} className="sr-only" />
+                  </label>
+                </div>
+                <p className="text-xs text-muted-foreground">⭐ Clique na estrela para marcar favoritas</p>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Products Card */}
+        {id && (
+          <Card>
+            <CardContent className="pt-6 space-y-6">
+              <div className="flex items-center justify-between pb-2 border-b">
+                <div className="flex items-center gap-2">
+                  <Package className="h-5 w-5 text-primary" />
+                  <h3 className="text-lg font-semibold">Produtos</h3>
+                </div>
+                <Button type="button" variant="outline" size="sm" onClick={addProduct}>
+                  <Plus className="h-4 w-4 mr-2" />
+                  Adicionar Produto
+                </Button>
+              </div>
+
+              <div className="space-y-4">
+                {products.map((product, index) => (
+                  <Card key={product.id} className="p-4 bg-secondary/30 border-0">
+                    <div className="space-y-4">
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm font-medium text-muted-foreground">Produto {index + 1}</span>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          className="h-6 w-6 text-destructive"
+                          onClick={() => removeProduct(product.id)}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <Label>Nome *</Label>
+                          <Input
+                            value={product.name}
+                            onChange={(e) => updateProduct(product.id, "name", e.target.value)}
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label>Preço *</Label>
+                          <Input
+                            type="number"
+                            step="0.01"
+                            value={product.price}
+                            onChange={(e) => updateProduct(product.id, "price", parseFloat(e.target.value) || 0)}
+                          />
+                        </div>
+                      </div>
+
+                      {/* Product Image */}
+                      <div className="space-y-2">
+                        <Label>Imagem do Produto</Label>
+                        <div className="flex items-center gap-3">
+                          {(product.newImagePreview || product.image) && (
+                            <img
+                              src={product.newImagePreview || product.image}
+                              alt="Produto"
+                              className="w-16 h-16 rounded-xl object-cover border"
+                            />
+                          )}
+                          <label className="flex flex-col items-center justify-center px-3 py-2 border-2 border-dashed rounded-xl cursor-pointer hover:border-primary">
+                            <Upload className="h-4 w-4 text-muted-foreground" />
+                            <span className="text-xs mt-1">{product.image ? "Alterar" : "Adicionar"}</span>
+                            <input
+                              type="file"
+                              accept="image/*"
+                              onChange={(e) => handleProductImageChange(product.id, e)}
+                              className="sr-only"
+                            />
+                          </label>
+                        </div>
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label>Descrição</Label>
+                        <Textarea
+                          value={product.description}
+                          onChange={(e) => updateProduct(product.id, "description", e.target.value)}
+                          rows={2}
+                        />
+                      </div>
+
+                      {/* Variations */}
+                      <div className="space-y-3 pl-4 border-l-2 border-primary/30">
+                        <div className="flex items-center justify-between">
+                          <span className="text-sm font-medium text-muted-foreground">Variações</span>
+                          <Button type="button" variant="ghost" size="sm" onClick={() => addVariation(product.id)}>
+                            <Plus className="h-3 w-3 mr-1" />
+                            Adicionar
+                          </Button>
+                        </div>
+                        {product.variations.map((variation, vIndex) => (
+                          <div key={variation.id} className="flex gap-2 items-center">
+                            <Input
+                              placeholder={`Nome da variação ${vIndex + 1}`}
+                              value={variation.name}
+                              onChange={(e) => updateVariation(product.id, variation.id, "name", e.target.value)}
+                              className="flex-1"
+                            />
+                            <Input
+                              type="number"
+                              step="0.01"
+                              placeholder="Preço"
+                              value={variation.price}
+                              onChange={(e) => updateVariation(product.id, variation.id, "price", parseFloat(e.target.value) || 0)}
+                              className="w-24"
+                            />
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8 text-muted-foreground hover:text-destructive"
+                              onClick={() => removeVariation(product.id, variation.id)}
+                            >
+                              <Trash2 className="h-3 w-3" />
+                            </Button>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </Card>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        <div className="flex gap-4">
+          <Button type="submit" disabled={loading}>
+            {loading ? "Salvando..." : id ? "Salvar Alterações" : "Cadastrar Empresa"}
+          </Button>
+          <Button type="button" variant="outline" onClick={() => navigate("/admin/dashboard/estabelecimentos")}>
+            Cancelar
+          </Button>
+        </div>
+      </form>
     </div>
   );
 }
