@@ -1,93 +1,59 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { ArrowLeft } from "lucide-react";
-import { z } from "zod";
+import { useAdmin } from "@/contexts/AdminContext";
 import logo from "@/assets/logo.png";
-
-const loginSchema = z.object({
-  email: z.string().email({ message: "Email inválido" }),
-  password: z.string().min(6, { message: "Senha deve ter no mínimo 6 caracteres" }),
-});
 
 export default function AdminLogin() {
   const navigate = useNavigate();
-  const [email, setEmail] = useState("");
+  const { isAdmin, isLoading, login } = useAdmin();
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    checkAuth();
-  }, []);
-
-  const checkAuth = async () => {
-    const { data: { session } } = await supabase.auth.getSession();
-    
-    if (session) {
-      const { data: adminUser } = await supabase
-        .from("admin_users")
-        .select("id")
-        .eq("id", session.user.id)
-        .single();
-
-      if (adminUser) {
-        navigate("/admin/dashboard");
-      }
+    if (!isLoading && isAdmin) {
+      navigate("/admin/dashboard");
     }
-  };
+  }, [isAdmin, isLoading, navigate]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     
+    if (!password.trim()) {
+      toast.error("Digite a senha de administrador");
+      return;
+    }
+
+    setLoading(true);
+
     try {
-      const validatedData = loginSchema.parse({ email, password });
-      setLoading(true);
-
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email: validatedData.email,
-        password: validatedData.password,
-      });
-
-      if (error) {
-        if (error.message.includes("Invalid login credentials")) {
-          toast.error("Email ou senha incorretos");
-        } else {
-          toast.error("Erro ao fazer login: " + error.message);
-        }
-        return;
-      }
-
-      if (data.user) {
-        const { data: adminUser, error: adminError } = await supabase
-          .from("admin_users")
-          .select("id")
-          .eq("id", data.user.id)
-          .single();
-
-        if (adminError || !adminUser) {
-          await supabase.auth.signOut();
-          toast.error("Acesso não autorizado");
-          return;
-        }
-
-        toast.success("Login realizado com sucesso!");
+      const result = await login(password);
+      
+      if (result.success) {
+        toast.success("Acesso autorizado!");
         navigate("/admin/dashboard");
+      } else {
+        toast.error(result.message);
       }
     } catch (error) {
-      if (error instanceof z.ZodError) {
-        toast.error(error.errors[0].message);
-      } else {
-        toast.error("Erro ao fazer login");
-      }
+      toast.error("Erro ao fazer login");
     } finally {
       setLoading(false);
     }
   };
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-background p-4">
@@ -111,39 +77,32 @@ export default function AdminLogin() {
             </div>
             <CardTitle className="text-2xl text-center">Área Administrativa</CardTitle>
             <CardDescription className="text-center">
-              Entre com suas credenciais de administrador
+              Digite a senha de administrador para acessar
             </CardDescription>
           </CardHeader>
-        <CardContent>
-          <form onSubmit={handleLogin} className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
-              <Input
-                id="email"
-                type="email"
-                placeholder="admin@exemplo.com"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="password">Senha</Label>
-              <Input
-                id="password"
-                type="password"
-                placeholder="••••••••"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-              />
-            </div>
-            <Button type="submit" className="w-full" disabled={loading}>
-              {loading ? "Entrando..." : "Entrar"}
-            </Button>
-          </form>
-        </CardContent>
+          <CardContent>
+            <form onSubmit={handleLogin} className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="password">Senha de Administrador</Label>
+                <Input
+                  id="password"
+                  type="password"
+                  placeholder="••••••••"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                  autoComplete="off"
+                />
+              </div>
+              <Button type="submit" className="w-full" disabled={loading}>
+                {loading ? "Verificando..." : "Entrar"}
+              </Button>
+            </form>
+          </CardContent>
         </Card>
+        <p className="text-center text-xs text-muted-foreground mt-4">
+          Acesso restrito ao proprietário da plataforma
+        </p>
       </div>
     </div>
   );

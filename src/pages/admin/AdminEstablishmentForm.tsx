@@ -9,8 +9,9 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
-import { ArrowLeft, Upload, Trash2, Plus, Star, Package, Image, Building2 } from "lucide-react";
+import { ArrowLeft, Upload, Trash2, Plus, Star, Package, Image, Building2, MapPin, Loader2 } from "lucide-react";
 import { Database } from "@/integrations/supabase/types";
+import { ConfirmPasswordDialog } from "@/components/ConfirmPasswordDialog";
 
 type EstablishmentCategory = Database["public"]["Enums"]["establishment_category"];
 
@@ -63,12 +64,18 @@ export default function AdminEstablishmentForm() {
   const { id } = useParams();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
+  const [loadingCep, setLoadingCep] = useState(false);
+  const [showPaidConfirm, setShowPaidConfirm] = useState(false);
+  const [pendingPaidValue, setPendingPaidValue] = useState(false);
+  
   const [formData, setFormData] = useState({
     name: "",
     category: "" as EstablishmentCategory | "",
     neighborhood: "",
+    region: "",
     city: "",
     address: "",
+    cep: "",
     latitude: "",
     longitude: "",
     phone: "",
@@ -76,6 +83,7 @@ export default function AdminEstablishmentForm() {
     schedule: "",
     description: "",
     external_link: "",
+    google_maps_link: "",
     reference_point: "",
     is_paid: false,
     active: true,
@@ -118,8 +126,10 @@ export default function AdminEstablishmentForm() {
           name: data.name,
           category: data.category as EstablishmentCategory,
           neighborhood: data.neighborhood || "",
+          region: data.region || "",
           city: data.city || "São Paulo",
           address: data.address,
+          cep: "",
           latitude: data.latitude.toString(),
           longitude: data.longitude.toString(),
           phone: data.phone,
@@ -127,6 +137,7 @@ export default function AdminEstablishmentForm() {
           schedule: data.schedule,
           description: data.description || "",
           external_link: data.external_link || "",
+          google_maps_link: data.google_maps_link || "",
           reference_point: data.reference_point || "",
           is_paid: data.is_paid || false,
           active: data.active ?? true,
@@ -178,6 +189,60 @@ export default function AdminEstablishmentForm() {
     } catch (error: any) {
       console.error("Error fetching products:", error);
     }
+  };
+
+  // CEP Lookup
+  const handleCepBlur = async () => {
+    const cep = formData.cep.replace(/\D/g, "");
+    
+    if (cep.length !== 8) return;
+
+    setLoadingCep(true);
+    
+    try {
+      const response = await fetch(`https://viacep.com.br/ws/${cep}/json/`);
+      const data = await response.json();
+      
+      if (data.erro) {
+        toast.error("CEP não encontrado");
+        return;
+      }
+
+      setFormData(prev => ({
+        ...prev,
+        address: data.logradouro || prev.address,
+        neighborhood: data.bairro || prev.neighborhood,
+        city: data.localidade || prev.city,
+        region: getRegionFromNeighborhood(data.bairro) || prev.region
+      }));
+
+      toast.success("Endereço encontrado!");
+    } catch (error) {
+      console.error("Erro ao buscar CEP:", error);
+      toast.error("Erro ao buscar CEP");
+    } finally {
+      setLoadingCep(false);
+    }
+  };
+
+  // Helper function to determine region from neighborhood
+  const getRegionFromNeighborhood = (bairro: string): string => {
+    // Basic region mapping for São Paulo - can be expanded
+    const northZone = ["Santana", "Tucuruvi", "Jaçanã", "Tremembé", "Vila Maria", "Casa Verde"];
+    const southZone = ["Moema", "Ipiranga", "Santo Amaro", "Jabaquara", "Campo Limpo", "Capela do Socorro"];
+    const eastZone = ["Tatuapé", "Penha", "São Miguel", "Itaquera", "Guaianazes", "Ermelino Matarazzo"];
+    const westZone = ["Pinheiros", "Butantã", "Lapa", "Jaguaré", "Alto de Pinheiros"];
+    const centralZone = ["Sé", "República", "Bela Vista", "Consolação", "Liberdade", "Santa Cecília"];
+
+    const bairroLower = bairro.toLowerCase();
+    
+    if (northZone.some(b => bairroLower.includes(b.toLowerCase()))) return "Zona Norte";
+    if (southZone.some(b => bairroLower.includes(b.toLowerCase()))) return "Zona Sul";
+    if (eastZone.some(b => bairroLower.includes(b.toLowerCase()))) return "Zona Leste";
+    if (westZone.some(b => bairroLower.includes(b.toLowerCase()))) return "Zona Oeste";
+    if (centralZone.some(b => bairroLower.includes(b.toLowerCase()))) return "Centro";
+    
+    return "";
   };
 
   const handleBannerChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -239,7 +304,6 @@ export default function AdminEstablishmentForm() {
       setProducts(prev => prev.filter(p => p.id !== productId));
     } else {
       try {
-        // Delete variations first
         await supabase.from("product_variations").delete().eq("product_id", productId);
         await supabase.from("products").delete().eq("id", productId);
         setProducts(prev => prev.filter(p => p.id !== productId));
@@ -305,11 +369,30 @@ export default function AdminEstablishmentForm() {
     ));
   };
 
+  const handleIsPaidChange = (checked: boolean) => {
+    if (checked) {
+      // Requires confirmation to mark as paid/featured
+      setPendingPaidValue(true);
+      setShowPaidConfirm(true);
+    } else {
+      setFormData(prev => ({ ...prev, is_paid: false }));
+    }
+  };
+
+  const confirmPaidChange = () => {
+    setFormData(prev => ({ ...prev, is_paid: pendingPaidValue }));
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     if (!formData.name || !formData.category || !formData.address || !formData.latitude || !formData.longitude || !formData.phone || !formData.schedule) {
       toast.error("Preencha todos os campos obrigatórios");
+      return;
+    }
+
+    if (!formData.google_maps_link) {
+      toast.error("O link do Google Maps é obrigatório");
       return;
     }
 
@@ -344,6 +427,7 @@ export default function AdminEstablishmentForm() {
         name: formData.name,
         category: formData.category as EstablishmentCategory,
         neighborhood: formData.neighborhood || null,
+        region: formData.region || null,
         city: formData.city,
         address: formData.address,
         latitude: parseFloat(formData.latitude),
@@ -353,6 +437,7 @@ export default function AdminEstablishmentForm() {
         schedule: formData.schedule,
         description: formData.description || null,
         external_link: formData.external_link || null,
+        google_maps_link: formData.google_maps_link || null,
         reference_point: formData.reference_point || null,
         is_paid: formData.is_paid,
         active: formData.active,
@@ -371,7 +456,6 @@ export default function AdminEstablishmentForm() {
 
         // Save products
         for (const product of products) {
-          // Upload new product image if exists
           let productImageUrl = product.image;
           if (product.newImage) {
             const ext = product.newImage.name.split(".").pop();
@@ -384,7 +468,6 @@ export default function AdminEstablishmentForm() {
           }
 
           if (product.id.startsWith("new-")) {
-            // Insert new product
             const { data: newProduct, error } = await supabase
               .from("products")
               .insert({
@@ -398,7 +481,6 @@ export default function AdminEstablishmentForm() {
               .single();
 
             if (!error && newProduct) {
-              // Insert variations for new product
               for (const variation of product.variations) {
                 await supabase.from("product_variations").insert({
                   product_id: newProduct.id,
@@ -408,7 +490,6 @@ export default function AdminEstablishmentForm() {
               }
             }
           } else {
-            // Update existing product
             await supabase
               .from("products")
               .update({
@@ -419,7 +500,6 @@ export default function AdminEstablishmentForm() {
               })
               .eq("id", product.id);
 
-            // Handle variations
             for (const variation of product.variations) {
               if (variation.id.startsWith("new-")) {
                 await supabase.from("product_variations").insert({
@@ -490,7 +570,7 @@ export default function AdminEstablishmentForm() {
                 <Label className="text-base font-medium">Logo da Empresa (não editável)</Label>
                 <div className="flex items-center gap-4">
                   <img src={profileImage} alt="Logo" className="w-20 h-20 rounded-xl object-cover border-2 border-muted" />
-                  <p className="text-sm text-muted-foreground">A logo não pode ser alterada pelo administrador.</p>
+                  <p className="text-sm text-muted-foreground">A logo não pode ser alterada após o cadastro.</p>
                 </div>
               </div>
             )}
@@ -523,16 +603,73 @@ export default function AdminEstablishmentForm() {
               </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="description">Descrição / Slogan</Label>
+              <Textarea
+                id="description"
+                value={formData.description}
+                onChange={(e) => handleChange("description", e.target.value)}
+                rows={3}
+                placeholder="Ex: O melhor pão da região!"
+              />
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Address Card */}
+        <Card>
+          <CardContent className="pt-6 space-y-6">
+            <div className="flex items-center gap-2 pb-2 border-b">
+              <MapPin className="h-5 w-5 text-primary" />
+              <h3 className="text-lg font-semibold">Localização</h3>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="neighborhood">Bairro</Label>
+                <Label htmlFor="cep">CEP</Label>
+                <div className="relative">
+                  <Input
+                    id="cep"
+                    value={formData.cep}
+                    onChange={(e) => handleChange("cep", e.target.value)}
+                    onBlur={handleCepBlur}
+                    placeholder="00000-000"
+                    maxLength={9}
+                  />
+                  {loadingCep && (
+                    <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 animate-spin text-muted-foreground" />
+                  )}
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="neighborhood">Bairro *</Label>
                 <Input
                   id="neighborhood"
                   value={formData.neighborhood}
                   onChange={(e) => handleChange("neighborhood", e.target.value)}
+                  required
                 />
               </div>
 
+              <div className="space-y-2">
+                <Label htmlFor="region">Região *</Label>
+                <Select value={formData.region} onValueChange={(value) => handleChange("region", value)}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecione a região" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Centro">Centro</SelectItem>
+                    <SelectItem value="Zona Norte">Zona Norte</SelectItem>
+                    <SelectItem value="Zona Sul">Zona Sul</SelectItem>
+                    <SelectItem value="Zona Leste">Zona Leste</SelectItem>
+                    <SelectItem value="Zona Oeste">Zona Oeste</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="city">Cidade *</Label>
                 <Input
@@ -540,6 +677,16 @@ export default function AdminEstablishmentForm() {
                   value={formData.city}
                   onChange={(e) => handleChange("city", e.target.value)}
                   required
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="reference_point">Ponto de Referência</Label>
+                <Input
+                  id="reference_point"
+                  value={formData.reference_point}
+                  onChange={(e) => handleChange("reference_point", e.target.value)}
+                  placeholder="Ex: Próximo ao metrô"
                 />
               </div>
             </div>
@@ -551,26 +698,23 @@ export default function AdminEstablishmentForm() {
                 value={formData.address}
                 onChange={(e) => handleChange("address", e.target.value)}
                 required
+                placeholder="Rua, número, complemento"
               />
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="reference_point">Ponto de Referência</Label>
+              <Label htmlFor="google_maps_link">Link do Google Maps *</Label>
               <Input
-                id="reference_point"
-                value={formData.reference_point}
-                onChange={(e) => handleChange("reference_point", e.target.value)}
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="schedule">Horário de Funcionamento *</Label>
-              <Input
-                id="schedule"
-                value={formData.schedule}
-                onChange={(e) => handleChange("schedule", e.target.value)}
+                id="google_maps_link"
+                type="url"
+                value={formData.google_maps_link}
+                onChange={(e) => handleChange("google_maps_link", e.target.value)}
                 required
+                placeholder="https://maps.google.com/..."
               />
+              <p className="text-xs text-muted-foreground">
+                Cole o link do Google Maps do endereço exato da empresa
+              </p>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -598,6 +742,27 @@ export default function AdminEstablishmentForm() {
                 />
               </div>
             </div>
+          </CardContent>
+        </Card>
+
+        {/* Contact Card */}
+        <Card>
+          <CardContent className="pt-6 space-y-6">
+            <div className="flex items-center gap-2 pb-2 border-b">
+              <Building2 className="h-5 w-5 text-primary" />
+              <h3 className="text-lg font-semibold">Contato e Funcionamento</h3>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="schedule">Horário de Funcionamento *</Label>
+              <Input
+                id="schedule"
+                value={formData.schedule}
+                onChange={(e) => handleChange("schedule", e.target.value)}
+                required
+                placeholder="Ex: Seg-Sex 8h-18h, Sáb 8h-12h"
+              />
+            </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
@@ -608,6 +773,7 @@ export default function AdminEstablishmentForm() {
                   value={formData.phone}
                   onChange={(e) => handleChange("phone", e.target.value)}
                   required
+                  placeholder="(11) 99999-9999"
                 />
               </div>
 
@@ -618,6 +784,7 @@ export default function AdminEstablishmentForm() {
                   type="tel"
                   value={formData.whatsapp}
                   onChange={(e) => handleChange("whatsapp", e.target.value)}
+                  placeholder="(11) 99999-9999"
                 />
               </div>
             </div>
@@ -629,16 +796,7 @@ export default function AdminEstablishmentForm() {
                 type="url"
                 value={formData.external_link}
                 onChange={(e) => handleChange("external_link", e.target.value)}
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="description">Descrição</Label>
-              <Textarea
-                id="description"
-                value={formData.description}
-                onChange={(e) => handleChange("description", e.target.value)}
-                rows={4}
+                placeholder="https://..."
               />
             </div>
 
@@ -646,9 +804,9 @@ export default function AdminEstablishmentForm() {
               <Switch
                 id="is_paid"
                 checked={formData.is_paid}
-                onCheckedChange={(checked) => handleChange("is_paid", checked)}
+                onCheckedChange={handleIsPaidChange}
               />
-              <Label htmlFor="is_paid">Empresa Patrocinada</Label>
+              <Label htmlFor="is_paid">Empresa Patrocinada / Destaque</Label>
             </div>
 
             <div className="flex items-center space-x-2">
@@ -730,7 +888,7 @@ export default function AdminEstablishmentForm() {
                     <input type="file" accept="image/*" multiple onChange={handleNewImagesChange} className="sr-only" />
                   </label>
                 </div>
-                <p className="text-xs text-muted-foreground">⭐ Clique na estrela para marcar favoritas</p>
+                <p className="text-xs text-muted-foreground">⭐ Clique na estrela para marcar favoritas (máx. 4)</p>
               </div>
             </CardContent>
           </Card>
@@ -774,6 +932,7 @@ export default function AdminEstablishmentForm() {
                           <Input
                             value={product.name}
                             onChange={(e) => updateProduct(product.id, "name", e.target.value)}
+                            placeholder="Nome do produto"
                           />
                         </div>
                         <div className="space-y-2">
@@ -783,13 +942,14 @@ export default function AdminEstablishmentForm() {
                             step="0.01"
                             value={product.price}
                             onChange={(e) => updateProduct(product.id, "price", parseFloat(e.target.value) || 0)}
+                            placeholder="0.00"
                           />
                         </div>
                       </div>
 
                       {/* Product Image */}
                       <div className="space-y-2">
-                        <Label>Imagem do Produto</Label>
+                        <Label>Imagem do Produto *</Label>
                         <div className="flex items-center gap-3">
                           {(product.newImagePreview || product.image) && (
                             <img
@@ -817,6 +977,7 @@ export default function AdminEstablishmentForm() {
                           value={product.description}
                           onChange={(e) => updateProduct(product.id, "description", e.target.value)}
                           rows={2}
+                          placeholder="Descrição do produto"
                         />
                       </div>
 
@@ -874,6 +1035,15 @@ export default function AdminEstablishmentForm() {
           </Button>
         </div>
       </form>
+
+      <ConfirmPasswordDialog
+        open={showPaidConfirm}
+        onOpenChange={setShowPaidConfirm}
+        onConfirm={confirmPaidChange}
+        title="Marcar como Destaque"
+        description="Esta ação marcará a empresa como patrocinada/destaque. Digite a senha de administrador para confirmar."
+        actionLabel="Confirmar Destaque"
+      />
     </div>
   );
 }

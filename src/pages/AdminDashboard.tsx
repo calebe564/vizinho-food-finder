@@ -1,10 +1,10 @@
 import { useEffect, useState } from "react";
 import { useNavigate, Routes, Route, Link, useLocation } from "react-router-dom";
-import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { LogOut, LayoutDashboard, Store, FileText, MessageSquare, Megaphone } from "lucide-react";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import { useAdmin } from "@/contexts/AdminContext";
 import AdminDashboardHome from "./admin/AdminDashboardHome";
 import AdminEstablishments from "./admin/AdminEstablishments";
 import AdminEstablishmentForm from "./admin/AdminEstablishmentForm";
@@ -16,52 +16,13 @@ import AdminAdvertisements from "./admin/AdminAdvertisements";
 export default function AdminDashboard() {
   const navigate = useNavigate();
   const location = useLocation();
-  const [loading, setLoading] = useState(true);
+  const { logout } = useAdmin();
 
-  useEffect(() => {
-    checkAuth();
-  }, []);
-
-  const checkAuth = async () => {
-    const { data: { session } } = await supabase.auth.getSession();
-    
-    if (!session) {
-      navigate("/admin/login");
-      return;
-    }
-
-    const { data: adminUser } = await supabase
-      .from("admin_users")
-      .select("id")
-      .eq("id", session.user.id)
-      .maybeSingle();
-
-    if (!adminUser) {
-      await supabase.auth.signOut();
-      toast.error("Acesso não autorizado");
-      navigate("/admin/login");
-      return;
-    }
-
-    setLoading(false);
-  };
-
-  const handleLogout = async () => {
-    await supabase.auth.signOut();
+  const handleLogout = () => {
+    logout();
     toast.success("Logout realizado com sucesso");
     navigate("/");
   };
-
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
-          <p>Carregando...</p>
-        </div>
-      </div>
-    );
-  }
 
   const isActive = (path: string) => location.pathname === path || location.pathname.startsWith(path + "/");
 
