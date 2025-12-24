@@ -56,6 +56,8 @@ interface Product {
   price: string;
   hasVariations: boolean;
   variations: ProductVariation[];
+  image: File | null;
+  imagePreview: string | null;
 }
 
 interface AddressData {
@@ -104,7 +106,7 @@ export default function PublicEstablishmentForm() {
   });
   
   const [products, setProducts] = useState<Product[]>([
-    { id: crypto.randomUUID(), name: "", price: "", hasVariations: false, variations: [] }
+    { id: crypto.randomUUID(), name: "", price: "", hasVariations: false, variations: [], image: null, imagePreview: null }
   ]);
 
   // CEP Lookup via ViaCEP
@@ -192,7 +194,9 @@ export default function PublicEstablishmentForm() {
       name: "", 
       price: "", 
       hasVariations: false,
-      variations: [] 
+      variations: [],
+      image: null,
+      imagePreview: null
     }]);
   };
 
@@ -257,10 +261,35 @@ export default function PublicEstablishmentForm() {
     ));
   };
 
+  const handleProductImageChange = (productId: string, e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setProducts(prev => prev.map(p =>
+          p.id === productId ? { ...p, image: file, imagePreview: reader.result as string } : p
+        ));
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const removeProductImage = (productId: string) => {
+    setProducts(prev => prev.map(p =>
+      p.id === productId ? { ...p, image: null, imagePreview: null } : p
+    ));
+  };
+
   const validateProducts = (): boolean => {
     for (const product of products) {
       if (!product.name.trim()) {
         toast.error("Todos os produtos devem ter um nome");
+        return false;
+      }
+      
+      // Check product image is required
+      if (!product.image) {
+        toast.error(`O produto "${product.name || 'sem nome'}" precisa ter uma imagem`);
         return false;
       }
       
@@ -382,12 +411,31 @@ export default function PublicEstablishmentForm() {
       // Get favorite images
       const favoriteImages = favoriteIndexes.map(i => uploadedImages[i]).filter(Boolean);
 
-      // Prepare products JSON
-      const productsJson = products
-        .filter(p => p.name.trim())
-        .map(p => ({
+      // Upload product images and prepare products JSON
+      const productsJson = [];
+      for (const p of products.filter(p => p.name.trim())) {
+        let productImageUrl = "";
+        if (p.image) {
+          const fileExt = p.image.name.split(".").pop();
+          const fileName = `${crypto.randomUUID()}.${fileExt}`;
+          const filePath = `requests/products/${fileName}`;
+
+          const { error: uploadError } = await supabase.storage
+            .from("establishment-images")
+            .upload(filePath, p.image);
+
+          if (!uploadError) {
+            const { data: { publicUrl } } = supabase.storage
+              .from("establishment-images")
+              .getPublicUrl(filePath);
+            productImageUrl = publicUrl;
+          }
+        }
+
+        productsJson.push({
           name: p.name,
           price: p.hasVariations ? 0 : parseFloat(p.price),
+          image: productImageUrl,
           hasVariations: p.hasVariations,
           variations: p.variations
             .filter(v => v.name.trim() && v.price.trim())
@@ -395,7 +443,8 @@ export default function PublicEstablishmentForm() {
               name: v.name,
               price: parseFloat(v.price)
             }))
-        }));
+        });
+      }
 
       const { error } = await supabase
         .from("establishment_requests")
@@ -740,6 +789,43 @@ export default function PublicEstablishmentForm() {
                             onChange={(e) => updateProduct(product.id, "name", e.target.value)}
                             className="h-11 rounded-xl"
                           />
+                        </div>
+
+                        {/* Product Image Upload */}
+                        <div className="space-y-2">
+                          <Label className="text-sm font-medium">Imagem do Produto *</Label>
+                          <div className="flex items-center gap-3">
+                            {product.imagePreview ? (
+                              <div className="relative w-20 h-20 rounded-xl overflow-hidden border-2 border-primary">
+                                <img src={product.imagePreview} alt="Preview" className="w-full h-full object-cover" />
+                                <button
+                                  type="button"
+                                  onClick={() => removeProductImage(product.id)}
+                                  className="absolute top-1 right-1 p-1 rounded-full bg-destructive text-destructive-foreground"
+                                >
+                                  <Trash2 className="h-3 w-3" />
+                                </button>
+                              </div>
+                            ) : (
+                              <label
+                                htmlFor={`product-image-${product.id}`}
+                                className="flex flex-col items-center justify-center w-20 h-20 border-2 border-dashed border-muted-foreground/30 rounded-xl cursor-pointer hover:border-primary hover:bg-primary/5 transition-all"
+                              >
+                                <Upload className="h-5 w-5 text-muted-foreground" />
+                                <span className="text-xs text-muted-foreground mt-1">Foto</span>
+                              </label>
+                            )}
+                            <input
+                              id={`product-image-${product.id}`}
+                              type="file"
+                              accept="image/*"
+                              onChange={(e) => handleProductImageChange(product.id, e)}
+                              className="sr-only"
+                            />
+                            <p className="text-xs text-muted-foreground flex-1">
+                              Envie uma foto do produto
+                            </p>
+                          </div>
                         </div>
 
                         {/* Toggle for variations */}
