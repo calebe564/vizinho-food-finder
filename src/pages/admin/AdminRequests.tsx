@@ -55,6 +55,8 @@ interface Request {
   created_at: string;
   products_json: Product[] | null;
   profile_image: string | null;
+  images: string[] | null;
+  favorite_images: string[] | null;
 }
 
 const categoryLabels: Record<string, string> = {
@@ -119,10 +121,12 @@ export default function AdminRequests() {
 
       if (error) throw error;
       
-      // Parse products_json properly
+      // Parse products_json and images properly
       const parsedData = (data || []).map(item => ({
         ...item,
-        products_json: Array.isArray(item.products_json) ? item.products_json as unknown as Product[] : null
+        products_json: Array.isArray(item.products_json) ? item.products_json as unknown as Product[] : null,
+        images: Array.isArray(item.images) ? item.images as unknown as string[] : null,
+        favorite_images: Array.isArray(item.favorite_images) ? item.favorite_images as unknown as string[] : null
       }));
       
       setRequests(parsedData);
@@ -136,7 +140,7 @@ export default function AdminRequests() {
 
   const handleApprove = async (request: Request) => {
     try {
-      // Criar estabelecimento com todos os dados
+      // Criar estabelecimento com todos os dados incluindo imagens
       const { data: establishment, error: establishmentError } = await supabase
         .from("establishments")
         .insert([{
@@ -150,6 +154,8 @@ export default function AdminRequests() {
           external_link: request.external_link,
           schedule: request.schedule || "Seg-Sex: 08:00-18:00",
           profile_image: request.profile_image,
+          images: request.images || [],
+          favorite_images: request.favorite_images || [],
           latitude: -19.9167,
           longitude: -43.9345,
           active: true,
