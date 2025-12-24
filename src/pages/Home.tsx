@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { BannerCarousel } from "@/components/BannerCarousel";
 import { SearchBar } from "@/components/SearchBar";
@@ -7,10 +7,11 @@ import { EstablishmentCard } from "@/components/EstablishmentCard";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { AdvertisementBanner } from "@/components/AdvertisementBanner";
+import { LocationSearch } from "@/components/LocationSearch";
 import { useUserLocation } from "@/contexts/LocationContext";
-import { calculateDistance } from "@/hooks/useGeolocation";
 import { useSearchParams } from "react-router-dom";
-import { MapPin, Store, Loader2 } from "lucide-react";
+import { MapPin, Store, Loader2, Navigation } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 
 interface Establishment {
   id: string;
@@ -18,6 +19,7 @@ interface Establishment {
   category: string;
   address: string;
   neighborhood: string | null;
+  region: string | null;
   city: string;
   latitude: number;
   longitude: number;
@@ -46,6 +48,59 @@ interface Advertisement {
   position: string;
 }
 
+interface LocationSelection {
+  neighborhood: string;
+  region: string;
+  city: string;
+  state: string;
+}
+
+// Calculate proximity score based on hierarchy (lower is closer)
+function calculateProximityScore(
+  establishment: Establishment,
+  userLocation: LocationSelection | null
+): number {
+  if (!userLocation) return 999;
+  
+  const normalize = (str: string) => str?.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim() || "";
+  
+  const estNeighborhood = normalize(establishment.neighborhood || "");
+  const estRegion = normalize(establishment.region || "");
+  const estCity = normalize(establishment.city || "");
+  
+  const userNeighborhood = normalize(userLocation.neighborhood);
+  const userRegion = normalize(userLocation.region);
+  const userCity = normalize(userLocation.city);
+  
+  // Same neighborhood = score 1 (highest priority)
+  if (estNeighborhood && userNeighborhood && estNeighborhood.includes(userNeighborhood)) {
+    return 1;
+  }
+  
+  // Same region = score 2
+  if (estRegion && userRegion && estRegion.includes(userRegion)) {
+    return 2;
+  }
+  
+  // Same city = score 3
+  if (estCity && userCity && estCity.includes(userCity)) {
+    return 3;
+  }
+  
+  // Different city = score 4
+  return 4;
+}
+
+// Get proximity label for display
+function getProximityLabel(score: number): string {
+  switch (score) {
+    case 1: return "No seu bairro";
+    case 2: return "Na sua região";
+    case 3: return "Na sua cidade";
+    default: return "Outras cidades";
+  }
+}
+
 export default function Home() {
   const [searchParams] = useSearchParams();
   const [establishments, setEstablishments] = useState<Establishment[]>([]);
@@ -53,9 +108,27 @@ export default function Home() {
   const [advertisements, setAdvertisements] = useState<Advertisement[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [category, setCategory] = useState(searchParams.get("category") || "todos");
-  const [sortBy, setSortBy] = useState("distance");
+  const [sortBy, setSortBy] = useState("proximity");
   const [loading, setLoading] = useState(true);
-  const { coordinates, manualLocation, setManualLocation, isLoading: locationLoading } = useUserLocation();
+  const [selectedLocation, setSelectedLocation] = useState<LocationSelection | null>(null);
+  
+  const { 
+    locationDetails, 
+    hasPermission, 
+    isLoading: locationLoading 
+  } = useUserLocation();
+
+  // Set initial location from user's detected location
+  useEffect(() => {
+    if (locationDetails && hasPermission && !selectedLocation) {
+      setSelectedLocation({
+        neighborhood: locationDetails.neighborhood,
+        region: locationDetails.region,
+        city: locationDetails.city,
+        state: locationDetails.state
+      });
+    }
+  }, [locationDetails, hasPermission]);
 
   useEffect(() => {
     fetchData();
@@ -87,57 +160,59 @@ export default function Home() {
     return products.filter((p) => p.establishment_id === establishmentId);
   };
 
-  const matchesManualLocation = (est: Establishment) => {
-    if (!manualLocation) return true;
-    const locationLower = manualLocation.toLowerCase();
-    return (
-      (est.neighborhood?.toLowerCase().includes(locationLower) || false) ||
-      est.city.toLowerCase().includes(locationLower) ||
-      est.address.toLowerCase().includes(locationLower)
-    );
+  const handleLocationSelect = (location: { neighborhood: string; region: string; city: string; state: string } | null) => {
+    setSelectedLocation(location);
   };
 
-  const filteredEstablishments = establishments
-    .filter((est) => {
-      const searchLower = searchTerm.toLowerCase();
-      const matchesSearch = !searchTerm ||
-        est.name.toLowerCase().includes(searchLower) ||
-        est.category.toLowerCase().includes(searchLower) ||
-        getEstablishmentProducts(est.id).some((p) =>
-          p.name.toLowerCase().includes(searchLower)
-        );
+  // Filter and sort establishments
+  const filteredEstablishments = useMemo(() => {
+    return establishments
+      .filter((est) => {
+        const searchLower = searchTerm.toLowerCase();
+        const matchesSearch = !searchTerm ||
+          est.name.toLowerCase().includes(searchLower) ||
+          est.category.toLowerCase().includes(searchLower) ||
+          getEstablishmentProducts(est.id).some((p) =>
+            p.name.toLowerCase().includes(searchLower)
+          );
 
-      const matchesCategory = category === "todos" || est.category === category;
-      const matchesLocation = matchesManualLocation(est);
+        const matchesCategory = category === "todos" || est.category === category;
 
-      return matchesSearch && matchesCategory && matchesLocation;
-    })
-    .map((est) => ({
-      ...est,
-      distance: coordinates
-        ? calculateDistance(
-            coordinates.latitude,
-            coordinates.longitude,
-            Number(est.latitude),
-            Number(est.longitude)
-          )
-        : 0,
-    }))
-    .sort((a, b) => {
-      if (sortBy === "distance") return a.distance - b.distance;
-      if (sortBy === "name") return a.name.localeCompare(b.name);
-      if (sortBy === "price-asc") {
-        const aPrice = Math.min(...getEstablishmentProducts(a.id).map((p) => p.price), Infinity);
-        const bPrice = Math.min(...getEstablishmentProducts(b.id).map((p) => p.price), Infinity);
-        return aPrice - bPrice;
-      }
-      if (sortBy === "price-desc") {
-        const aPrice = Math.max(...getEstablishmentProducts(a.id).map((p) => p.price), 0);
-        const bPrice = Math.max(...getEstablishmentProducts(b.id).map((p) => p.price), 0);
-        return bPrice - aPrice;
-      }
-      return 0;
-    });
+        return matchesSearch && matchesCategory;
+      })
+      .map((est) => ({
+        ...est,
+        proximityScore: calculateProximityScore(est, selectedLocation),
+        proximityLabel: getProximityLabel(calculateProximityScore(est, selectedLocation))
+      }))
+      .sort((a, b) => {
+        // Paid establishments first
+        if (a.is_paid !== b.is_paid) {
+          return a.is_paid ? -1 : 1;
+        }
+        
+        if (sortBy === "proximity") {
+          return a.proximityScore - b.proximityScore;
+        }
+        if (sortBy === "name-asc") {
+          return a.name.localeCompare(b.name, 'pt-BR');
+        }
+        if (sortBy === "name-desc") {
+          return b.name.localeCompare(a.name, 'pt-BR');
+        }
+        if (sortBy === "price-asc") {
+          const aPrice = Math.min(...getEstablishmentProducts(a.id).map((p) => p.price), Infinity);
+          const bPrice = Math.min(...getEstablishmentProducts(b.id).map((p) => p.price), Infinity);
+          return aPrice - bPrice;
+        }
+        if (sortBy === "price-desc") {
+          const aPrice = Math.max(...getEstablishmentProducts(a.id).map((p) => p.price), 0);
+          const bPrice = Math.max(...getEstablishmentProducts(b.id).map((p) => p.price), 0);
+          return bPrice - aPrice;
+        }
+        return 0;
+      });
+  }, [establishments, searchTerm, category, sortBy, selectedLocation, products]);
 
   return (
     <div className="min-h-screen bg-background">
@@ -154,13 +229,17 @@ export default function Home() {
 
         {/* Search Section */}
         <div className="space-y-4 animate-fade-in" style={{ animationDelay: "0.1s" }}>
-          <SearchBar 
-            value={searchTerm} 
-            onChange={setSearchTerm}
-            locationValue={manualLocation}
-            onLocationChange={setManualLocation}
-            showLocation={true}
-          />
+          <div className="flex flex-col lg:flex-row gap-3">
+            <div className="flex-1">
+              <SearchBar 
+                value={searchTerm} 
+                onChange={setSearchTerm}
+              />
+            </div>
+            <div className="lg:w-[350px]">
+              <LocationSearch onLocationSelect={handleLocationSelect} />
+            </div>
+          </div>
           <FilterBar
             category={category}
             onCategoryChange={setCategory}
@@ -170,15 +249,29 @@ export default function Home() {
         </div>
 
         {/* Location Indicator */}
-        {!locationLoading && coordinates && (
+        {!locationLoading && (
           <div className="flex items-center gap-2 text-sm text-muted-foreground bg-secondary/50 px-4 py-2 rounded-full w-fit">
-            <MapPin className="h-4 w-4 text-primary" />
-            <span>
-              {manualLocation 
-                ? `Buscando em: ${manualLocation}` 
-                : "Ordenando por proximidade"
-              }
-            </span>
+            {hasPermission && selectedLocation ? (
+              <>
+                <Navigation className="h-4 w-4 text-primary" />
+                <span>Resultados na sua região</span>
+                {selectedLocation.neighborhood && (
+                  <Badge variant="secondary" className="ml-1">
+                    {selectedLocation.neighborhood}
+                  </Badge>
+                )}
+              </>
+            ) : selectedLocation ? (
+              <>
+                <MapPin className="h-4 w-4 text-primary" />
+                <span>Buscando em: {selectedLocation.city || selectedLocation.neighborhood}</span>
+              </>
+            ) : (
+              <>
+                <MapPin className="h-4 w-4 text-muted-foreground" />
+                <span>Informe sua localização para resultados mais relevantes</span>
+              </>
+            )}
           </div>
         )}
 
@@ -202,7 +295,7 @@ export default function Home() {
             <div className="text-center py-20 bg-secondary/30 rounded-2xl">
               <Store className="h-16 w-16 mx-auto text-muted-foreground mb-4" />
               <p className="text-xl font-medium text-muted-foreground">Nenhuma empresa encontrada</p>
-              <p className="text-sm text-muted-foreground mt-2">Tente ajustar os filtros ou busca</p>
+              <p className="text-sm text-muted-foreground mt-2">Tente ajustar os filtros ou localização</p>
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -217,7 +310,7 @@ export default function Home() {
                     name={est.name}
                     category={est.category}
                     address={est.address}
-                    distance={est.distance}
+                    proximityLabel={est.proximityLabel}
                     phone={est.phone}
                     whatsapp={est.whatsapp}
                     externalLink={est.external_link}

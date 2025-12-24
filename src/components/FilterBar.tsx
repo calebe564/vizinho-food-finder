@@ -17,8 +17,9 @@ const categories = [
 ];
 
 const sortOptions = [
-  { value: "distance", label: "Mais próximos" },
-  { value: "name", label: "Nome (A-Z)" },
+  { value: "proximity", label: "Mais próximos" },
+  { value: "name-asc", label: "Nome (A-Z)" },
+  { value: "name-desc", label: "Nome (Z-A)" },
   { value: "price-asc", label: "Menor preço" },
   { value: "price-desc", label: "Maior preço" },
 ];
@@ -37,7 +38,7 @@ export function FilterBar({
   onSortChange 
 }: FilterBarProps) {
   const actualCategory = category || "todos";
-  const actualSortBy = sortBy || "distance";
+  const actualSortBy = sortBy || "proximity";
   
   const handleCategoryChange = (value: string) => {
     if (onCategoryChange) onCategoryChange(value);
