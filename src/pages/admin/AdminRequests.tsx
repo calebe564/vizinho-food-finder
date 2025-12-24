@@ -34,6 +34,8 @@ interface Product {
   name: string;
   price: number;
   description?: string;
+  image?: string;
+  hasVariations?: boolean;
   variations?: ProductVariation[];
 }
 
@@ -160,13 +162,20 @@ export default function AdminRequests() {
       // Se houver produtos, criar na tabela products
       if (request.products_json && request.products_json.length > 0 && establishment) {
         for (const product of request.products_json) {
+          // For products with variations, calculate min price from variations
+          let productPrice = product.price;
+          if (product.hasVariations && product.variations && product.variations.length > 0) {
+            productPrice = Math.min(...product.variations.map(v => v.price));
+          }
+          
           const { data: productData, error: productError } = await supabase
             .from("products")
             .insert([{
               establishment_id: establishment.id,
               name: product.name,
-              price: product.price,
+              price: productPrice,
               description: product.description || null,
+              image: product.image || null,
             }])
             .select()
             .single();
