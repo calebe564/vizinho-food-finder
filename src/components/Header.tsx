@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { Home, Building2, Store, MoreVertical, UserPlus, LogIn, Heart } from "lucide-react";
+import { Home, Building2, Store, MoreVertical, UserPlus, LogIn, Heart, LogOut, User } from "lucide-react";
 import { ThemeToggle } from "./ThemeToggle";
 import { Button } from "./ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "./ui/sheet";
@@ -8,11 +8,20 @@ import { NavigationMenu, NavigationMenuItem, NavigationMenuLink, NavigationMenuL
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "./ui/dropdown-menu";
 import logo from "@/assets/logo.png";
 import { useFavorites } from "@/hooks/useFavorites";
+import { useAuth } from "@/contexts/AuthContext";
+import { toast } from "sonner";
 
 export function Header() {
   const [isOpen, setIsOpen] = useState(false);
   const { totalFavorites } = useFavorites();
+  const { isAuthenticated, user, signOut } = useAuth();
   const hasFavorites = totalFavorites > 0;
+
+  const handleLogout = async () => {
+    await signOut();
+    toast.success("Logout realizado com sucesso!");
+    setIsOpen(false);
+  };
   
   return (
     <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/80 backdrop-blur-xl">
@@ -78,12 +87,31 @@ export function Header() {
                 </Link>
               </DropdownMenuItem>
               <DropdownMenuSeparator />
-              <DropdownMenuItem asChild>
-                <Link to="/admin/login" className="flex items-center gap-2 cursor-pointer">
-                  <LogIn className="h-4 w-4" />
-                  Login
-                </Link>
-              </DropdownMenuItem>
+              {isAuthenticated ? (
+                <>
+                  <DropdownMenuItem className="flex items-center gap-2 text-muted-foreground cursor-default">
+                    <User className="h-4 w-4" />
+                    {user?.email}
+                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
+                    <Link to="/admin/login" className="flex items-center gap-2 cursor-pointer">
+                      <LogIn className="h-4 w-4" />
+                      Área Admin
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={handleLogout} className="flex items-center gap-2 cursor-pointer text-destructive">
+                    <LogOut className="h-4 w-4" />
+                    Sair
+                  </DropdownMenuItem>
+                </>
+              ) : (
+                <DropdownMenuItem asChild>
+                  <Link to="/auth" className="flex items-center gap-2 cursor-pointer">
+                    <LogIn className="h-4 w-4" />
+                    Login / Cadastro
+                  </Link>
+                </DropdownMenuItem>
+              )}
             </DropdownMenuContent>
           </DropdownMenu>
           
@@ -124,10 +152,31 @@ export function Header() {
                     <UserPlus className="h-5 w-5" />
                     <span className="font-medium">Cadastrar Empresa</span>
                   </Link>
-                  <Link to="/admin/login" onClick={() => setIsOpen(false)} className="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-secondary transition-colors">
-                    <LogIn className="h-5 w-5" />
-                    <span className="font-medium">Login</span>
-                  </Link>
+                </div>
+
+                <div className="border-t mt-4 pt-4">
+                  <p className="text-xs text-muted-foreground px-4 pb-2 uppercase tracking-wider">Conta</p>
+                  {isAuthenticated ? (
+                    <>
+                      <div className="flex items-center gap-3 px-4 py-3 text-muted-foreground">
+                        <User className="h-5 w-5" />
+                        <span className="font-medium text-sm truncate">{user?.email}</span>
+                      </div>
+                      <Link to="/admin/login" onClick={() => setIsOpen(false)} className="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-secondary transition-colors">
+                        <LogIn className="h-5 w-5" />
+                        <span className="font-medium">Área Admin</span>
+                      </Link>
+                      <button onClick={handleLogout} className="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-secondary transition-colors w-full text-destructive">
+                        <LogOut className="h-5 w-5" />
+                        <span className="font-medium">Sair</span>
+                      </button>
+                    </>
+                  ) : (
+                    <Link to="/auth" onClick={() => setIsOpen(false)} className="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-secondary transition-colors">
+                      <LogIn className="h-5 w-5" />
+                      <span className="font-medium">Login / Cadastro</span>
+                    </Link>
+                  )}
                 </div>
               </nav>
             </SheetContent>
