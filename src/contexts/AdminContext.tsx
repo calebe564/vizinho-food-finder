@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect, ReactNode } from "react";
+import React, { createContext, useContext, useState, useEffect, ReactNode } from "react";
 import { supabase } from "@/integrations/supabase/client";
 
 interface AdminContextType {
@@ -45,12 +45,16 @@ export function AdminProvider({ children }: { children: ReactNode }) {
   };
 
   const clearSession = () => {
-    sessionStorage.removeItem(ADMIN_SESSION_KEY);
-    sessionStorage.removeItem(ADMIN_SESSION_EXPIRY_KEY);
+    try {
+      sessionStorage.removeItem(ADMIN_SESSION_KEY);
+      sessionStorage.removeItem(ADMIN_SESSION_EXPIRY_KEY);
+    } catch (e) {
+      console.warn("Could not clear session", e);
+    }
     setIsAdmin(false);
   };
 
-  const login = async (password: string): Promise<{ success: boolean; message: string }> => {
+  const login = React.useCallback(async (password: string): Promise<{ success: boolean; message: string }> => {
     try {
       const { data, error } = await supabase.functions.invoke("validate-admin", {
         body: { password }
@@ -62,8 +66,12 @@ export function AdminProvider({ children }: { children: ReactNode }) {
       }
 
       if (data.success && data.sessionToken) {
-        sessionStorage.setItem(ADMIN_SESSION_KEY, data.sessionToken);
-        sessionStorage.setItem(ADMIN_SESSION_EXPIRY_KEY, (Date.now() + SESSION_DURATION).toString());
+        try {
+          sessionStorage.setItem(ADMIN_SESSION_KEY, data.sessionToken);
+          sessionStorage.setItem(ADMIN_SESSION_EXPIRY_KEY, (Date.now() + SESSION_DURATION).toString());
+        } catch (e) {
+          console.warn("Could not save session", e);
+        }
         setIsAdmin(true);
         return { success: true, message: data.message };
       }
@@ -73,13 +81,13 @@ export function AdminProvider({ children }: { children: ReactNode }) {
       console.error("Login error:", error);
       return { success: false, message: "Erro de conexão" };
     }
-  };
+  }, []);
 
-  const logout = () => {
+  const logout = React.useCallback(() => {
     clearSession();
-  };
+  }, []);
 
-  const validateSensitiveAction = async (password: string): Promise<boolean> => {
+  const validateSensitiveAction = React.useCallback(async (password: string): Promise<boolean> => {
     try {
       const { data, error } = await supabase.functions.invoke("validate-admin", {
         body: { password }
@@ -94,10 +102,18 @@ export function AdminProvider({ children }: { children: ReactNode }) {
       console.error("Validation error:", error);
       return false;
     }
-  };
+  }, []);
+
+  const value = React.useMemo(() => ({
+    isAdmin,
+    isLoading,
+    login,
+    logout,
+    validateSensitiveAction
+  }), [isAdmin, isLoading, login, logout, validateSensitiveAction]);
 
   return (
-    <AdminContext.Provider value={{ isAdmin, isLoading, login, logout, validateSensitiveAction }}>
+    <AdminContext.Provider value={value}>
       {children}
     </AdminContext.Provider>
   );

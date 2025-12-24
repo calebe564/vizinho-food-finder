@@ -1,3 +1,4 @@
+import React from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -34,44 +35,56 @@ const PageLoader = () => (
   </div>
 );
 
-const queryClient = new QueryClient();
+// Create QueryClient outside the component to avoid recreation on re-renders
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 5 * 60 * 1000,
+      retry: 1,
+    },
+  },
+});
 
-const App = () => (
-  <HelmetProvider>
-    <QueryClientProvider client={queryClient}>
-      <ThemeProvider>
-        <AdminProvider>
-          <TooltipProvider>
-            <Toaster />
-            <Sonner />
-            <BrowserRouter>
-              <LocationProvider>
-                <AIChatButton />
-                <Suspense fallback={<PageLoader />}>
-                  <Routes>
-                    <Route path="/" element={<Home />} />
-                    <Route path="/estabelecimento/:id" element={<EstablishmentDetail />} />
-                    <Route path="/produto/:id" element={<ProductDetail />} />
-                    <Route path="/categorias" element={<Categories />} />
-                    <Route path="/estabelecimentos" element={<AllEstablishments />} />
-                    <Route path="/favoritos" element={<Favorites />} />
-                    <Route path="/cadastrar" element={<PublicEstablishmentForm />} />
-                    <Route path="/informacoes" element={<Information />} />
-                    <Route path="/sobre" element={<About />} />
-                    <Route path="/termos-de-uso" element={<TermsOfUse />} />
-                    <Route path="/politica-de-privacidade" element={<PrivacyPolicy />} />
-                    <Route path="/admin/login" element={<AdminLogin />} />
-                    <Route path="/admin/dashboard/*" element={<ProtectedRoute><AdminDashboard /></ProtectedRoute>} />
-                    <Route path="*" element={<NotFound />} />
-                  </Routes>
-                </Suspense>
-              </LocationProvider>
-            </BrowserRouter>
-          </TooltipProvider>
-        </AdminProvider>
-      </ThemeProvider>
-    </QueryClientProvider>
-  </HelmetProvider>
-);
+function App() {
+  return (
+    <React.Fragment>
+      <HelmetProvider>
+        <QueryClientProvider client={queryClient}>
+          <ThemeProvider>
+            <AdminProvider>
+              <TooltipProvider>
+                <Toaster />
+                <Sonner />
+                <BrowserRouter>
+                  <LocationProvider>
+                    <AIChatButton />
+                    <Suspense fallback={<PageLoader />}>
+                      <Routes>
+                        <Route path="/" element={<Home />} />
+                        <Route path="/estabelecimento/:id" element={<EstablishmentDetail />} />
+                        <Route path="/produto/:id" element={<ProductDetail />} />
+                        <Route path="/categorias" element={<Categories />} />
+                        <Route path="/estabelecimentos" element={<AllEstablishments />} />
+                        <Route path="/favoritos" element={<Favorites />} />
+                        <Route path="/cadastrar" element={<PublicEstablishmentForm />} />
+                        <Route path="/informacoes" element={<Information />} />
+                        <Route path="/sobre" element={<About />} />
+                        <Route path="/termos-de-uso" element={<TermsOfUse />} />
+                        <Route path="/politica-de-privacidade" element={<PrivacyPolicy />} />
+                        <Route path="/admin/login" element={<AdminLogin />} />
+                        <Route path="/admin/dashboard/*" element={<ProtectedRoute><AdminDashboard /></ProtectedRoute>} />
+                        <Route path="*" element={<NotFound />} />
+                      </Routes>
+                    </Suspense>
+                  </LocationProvider>
+                </BrowserRouter>
+              </TooltipProvider>
+            </AdminProvider>
+          </ThemeProvider>
+        </QueryClientProvider>
+      </HelmetProvider>
+    </React.Fragment>
+  );
+}
 
 export default App;
