@@ -53,11 +53,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const checkAdminRole = useCallback(async (userId: string) => {
     try {
+      // Verificar se é admin ou adm_master
       const { data, error } = await supabase
         .from('user_roles')
         .select('role')
         .eq('user_id', userId)
-        .eq('role', 'admin')
+        .in('role', ['admin', 'adm_master'])
         .maybeSingle();
 
       if (!error && data) {
@@ -178,6 +179,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const { error } = await supabase.auth.signInWithPassword({
         email: normalizedEmail,
         password: formData.password,
+      });
+
+      // Registrar tentativa de login
+      await supabase.from('login_attempts').insert({
+        email: normalizedEmail,
+        success: !error,
+        user_agent: navigator.userAgent,
       });
 
       if (error) {
