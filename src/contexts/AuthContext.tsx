@@ -8,6 +8,8 @@ interface UserProfile {
   user_id: string;
   full_name: string;
   email: string;
+  birth_date?: string;
+  favorite_color?: string;
 }
 
 interface AuthContextType {
@@ -76,7 +78,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setUser(session?.user ?? null);
         
         if (session?.user) {
-          // Defer data fetching to avoid deadlock
           setTimeout(() => {
             fetchProfile(session.user.id);
             checkAdminRole(session.user.id);
@@ -142,7 +143,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       // Hash the recovery PIN
       const pinHash = await hashPin(formData.recoveryPin);
 
-      // Create profile with recovery PIN
+      // Create profile with all fields
       const { error: profileError } = await supabase
         .from('profiles')
         .insert({
@@ -150,6 +151,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           full_name: formData.fullName,
           email: formData.email,
           recovery_pin_hash: pinHash,
+          birth_date: formData.birthDate,
+          favorite_color: formData.favoriteColor,
         });
 
       if (profileError) {
@@ -196,41 +199,55 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       // Hash the provided PIN
       const pinHash = await hashPin(formData.recoveryPin);
 
-      // Verify PIN matches
-      const { data: profileData } = await supabase
-        .from('profiles')
-        .select('user_id, recovery_pin_hash')
-        .eq('email', formData.email)
-        .maybeSingle();
+      // Verify all data matches using the enhanced function
+      const { data: userId, error: verifyError } = await supabase
+        .rpc('verify_recovery_pin_enhanced', {
+          _email: formData.email,
+          _pin_hash: pinHash,
+          _full_name: formData.fullName,
+          _birth_date: formData.birthDate,
+        });
 
-      if (!profileData) {
-        return { success: false, message: 'Email não encontrado' };
-      }
-
-      if (profileData.recovery_pin_hash !== pinHash) {
-        return { success: false, message: 'PIN de recuperação incorreto' };
-      }
-
-      // Sign in with a temporary session to update password
-      // First, we need to use the admin API or a workaround
-      // Since we can't directly update password without being signed in,
-      // we'll use a different approach: store the new password hash request
-      
-      // For now, we'll use updateUser if the user can be authenticated
-      const { error: updateError } = await supabase.auth.updateUser({
-        password: formData.newPassword
+      // Log the attempt
+      await supabase.from('recovery_attempts').insert({
+        email: formData.email,
+        success: !!userId,
       });
 
-      if (updateError) {
-        // If user is not signed in, we need to handle this differently
-        // For MVP, inform user to contact support or use a different flow
+      if (verifyError || !userId) {
         return { 
           success: false, 
-          message: 'Para redefinir sua senha, faça login primeiro ou entre em contato com o suporte' 
+          message: 'Dados de recuperação incorretos. Verifique email, nome, data de nascimento e senha secundária.' 
         };
       }
 
-      return { success: true, message: 'Senha atualizada com sucesso!' };
+      // Since we verified the user, we can try to update the password
+      // For this to work, we need to use service role or admin API
+      // For MVP, we'll inform the user that they can now login with new credentials
+      // by using the updateUser method if they're logged in
+      
+      const { error: signInError } = await supabase.auth.signInWithPassword({
+        email: formData.email,
+        password: formData.recoveryPin, // Try with recovery pin as temporary auth
+      });
+
+      if (!signInError) {
+        // If they can sign in, update password
+        const { error: updateError } = await supabase.auth.updateUser({
+          password: formData.newPassword
+        });
+
+        if (!updateError) {
+          await supabase.auth.signOut();
+          return { success: true, message: 'Senha atualizada com sucesso! Faça login com sua nova senha.' };
+        }
+      }
+
+      // If we can't automatically update, inform user
+      return { 
+        success: false, 
+        message: 'Dados verificados, mas não foi possível atualizar automaticamente. Entre em contato com o administrador.' 
+      };
     } catch (error) {
       console.error('Recovery error:', error);
       return { success: false, message: 'Erro ao recuperar senha' };
