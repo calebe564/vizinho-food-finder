@@ -84,11 +84,6 @@ export function Footer() {
                   Cadastrar Empresa
                 </Link>
               </li>
-              <li>
-                <Link to="/admin/login" className="text-muted-foreground hover:text-primary transition-colors">
-                  Área Administrativa
-                </Link>
-              </li>
             </ul>
           </div>
         </div>

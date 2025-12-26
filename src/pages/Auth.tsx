@@ -13,6 +13,7 @@ import { Eye, EyeOff, Loader2, UserPlus, LogIn, AlertCircle } from 'lucide-react
 import { signupSchema, loginSchema, recoverySchema } from '@/lib/authUtils';
 import { z } from 'zod';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Checkbox } from '@/components/ui/checkbox';
 
 export default function Auth() {
   const { user, isLoading, signUp, signIn, recoverPassword } = useAuth();
@@ -25,11 +26,15 @@ export default function Auth() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [loginFailed, setLoginFailed] = useState(false);
   const [showRecoveryPrompt, setShowRecoveryPrompt] = useState(false);
+  const [saveLogin, setSaveLogin] = useState(false);
 
   const from = (location.state as { from?: string })?.from || '/';
 
-  // Form states
-  const [loginForm, setLoginForm] = useState({ email: '', password: '' });
+  // Form states - carregar email salvo do localStorage
+  const [loginForm, setLoginForm] = useState(() => {
+    const savedEmail = localStorage.getItem('comercio_vizinho_saved_email');
+    return { email: savedEmail || '', password: '' };
+  });
   const [signupForm, setSignupForm] = useState({ 
     fullName: '', 
     birthDate: '',
@@ -52,6 +57,14 @@ export default function Auth() {
   const [loginErrors, setLoginErrors] = useState<Record<string, string>>({});
   const [signupErrors, setSignupErrors] = useState<Record<string, string>>({});
   const [recoveryErrors, setRecoveryErrors] = useState<Record<string, string>>({});
+
+  // Carregar preferência de salvar login
+  useEffect(() => {
+    const savedEmail = localStorage.getItem('comercio_vizinho_saved_email');
+    if (savedEmail) {
+      setSaveLogin(true);
+    }
+  }, []);
 
   useEffect(() => {
     if (user) {
@@ -82,6 +95,12 @@ export default function Auth() {
     setIsSubmitting(false);
 
     if (result.success) {
+      // Salvar ou remover email do localStorage
+      if (saveLogin) {
+        localStorage.setItem('comercio_vizinho_saved_email', loginForm.email.toLowerCase().trim());
+      } else {
+        localStorage.removeItem('comercio_vizinho_saved_email');
+      }
       toast.success(result.message);
       setLoginFailed(false);
     } else {
@@ -221,6 +240,17 @@ export default function Auth() {
                     {loginErrors.password && (
                       <p className="text-sm text-destructive">{loginErrors.password}</p>
                     )}
+                  </div>
+
+                  <div className="flex items-center space-x-2">
+                    <Checkbox 
+                      id="save-login"
+                      checked={saveLogin}
+                      onCheckedChange={(checked) => setSaveLogin(checked === true)}
+                    />
+                    <Label htmlFor="save-login" className="text-sm font-normal cursor-pointer">
+                      Salvar login neste dispositivo
+                    </Label>
                   </div>
 
                   {showRecoveryPrompt && loginFailed && (
