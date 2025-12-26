@@ -11,3 +11,9 @@ verify_jwt = false
 
 [functions.ai-location-suggest]
 verify_jwt = false
+
+[functions.create-initial-admin]
+verify_jwt = false
+
+[functions.validate-admin]
+verify_jwt = false
