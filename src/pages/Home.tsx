@@ -225,8 +225,8 @@ export default function Home() {
         {/* Top Advertisements - compact on mobile */}
         <AdvertisementBanner advertisements={getAdsByPosition("top")} />
 
-        {/* Banner Carousel - hidden on mobile for cleaner experience */}
-        <div className="hidden md:block animate-fade-in">
+        {/* Banner Carousel - now visible on all devices with responsive design */}
+        <div className="animate-fade-in">
           <BannerCarousel />
         </div>
 
