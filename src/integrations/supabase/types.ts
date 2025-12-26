@@ -128,6 +128,8 @@ export type Database = {
         Row: {
           address: string
           admin_notes: string | null
+          approved_at: string | null
+          approved_by: string | null
           category: Database["public"]["Enums"]["establishment_category"]
           created_at: string | null
           description: string | null
@@ -142,13 +144,19 @@ export type Database = {
           products_json: Json | null
           profile_image: string | null
           region: string | null
+          rejected_at: string | null
+          rejected_by: string | null
+          rejection_reason: string | null
           schedule: string | null
           status: string | null
+          user_id: string | null
           whatsapp: string | null
         }
         Insert: {
           address: string
           admin_notes?: string | null
+          approved_at?: string | null
+          approved_by?: string | null
           category: Database["public"]["Enums"]["establishment_category"]
           created_at?: string | null
           description?: string | null
@@ -163,13 +171,19 @@ export type Database = {
           products_json?: Json | null
           profile_image?: string | null
           region?: string | null
+          rejected_at?: string | null
+          rejected_by?: string | null
+          rejection_reason?: string | null
           schedule?: string | null
           status?: string | null
+          user_id?: string | null
           whatsapp?: string | null
         }
         Update: {
           address?: string
           admin_notes?: string | null
+          approved_at?: string | null
+          approved_by?: string | null
           category?: Database["public"]["Enums"]["establishment_category"]
           created_at?: string | null
           description?: string | null
@@ -184,8 +198,12 @@ export type Database = {
           products_json?: Json | null
           profile_image?: string | null
           region?: string | null
+          rejected_at?: string | null
+          rejected_by?: string | null
+          rejection_reason?: string | null
           schedule?: string | null
           status?: string | null
+          user_id?: string | null
           whatsapp?: string | null
         }
         Relationships: []
@@ -562,6 +580,12 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      can_approve_establishments: {
+        Args: { _user_id: string }
+        Returns: boolean
+      }
+      can_manage_roles: { Args: { _user_id: string }; Returns: boolean }
+      get_user_role: { Args: { _user_id: string }; Returns: string }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -569,6 +593,7 @@ export type Database = {
         }
         Returns: boolean
       }
+      is_adm_master: { Args: { _user_id: string }; Returns: boolean }
       is_admin: { Args: { _user_id: string }; Returns: boolean }
       verify_recovery_pin: {
         Args: { _email: string; _pin_hash: string }

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { useAuth } from '@/contexts/AuthContext';
+import { useAuth, UserRole } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -15,8 +15,23 @@ import { z } from 'zod';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Checkbox } from '@/components/ui/checkbox';
 
+// Função para obter redirecionamento baseado na role
+function getRedirectForRole(role: UserRole): string {
+  switch (role) {
+    case 'adm_master':
+    case 'admin':
+    case 'pre_adm':
+      return '/admin/dashboard';
+    case 'empresario':
+      return '/minha-empresa';
+    case 'user':
+    default:
+      return '/';
+  }
+}
+
 export default function Auth() {
-  const { user, isLoading, signUp, signIn, recoverPassword } = useAuth();
+  const { user, isLoading, signUp, signIn, recoverPassword, userRole } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   
@@ -67,10 +82,12 @@ export default function Auth() {
   }, []);
 
   useEffect(() => {
-    if (user) {
-      navigate(from, { replace: true });
+    if (user && userRole) {
+      // Redirecionar baseado na role do usuário
+      const redirectPath = getRedirectForRole(userRole);
+      navigate(redirectPath, { replace: true });
     }
-  }, [user, navigate, from]);
+  }, [user, userRole, navigate]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -103,6 +120,12 @@ export default function Auth() {
       }
       toast.success(result.message);
       setLoginFailed(false);
+      
+      // Redirecionar baseado na role retornada
+      if (result.role) {
+        const redirectPath = getRedirectForRole(result.role);
+        navigate(redirectPath, { replace: true });
+      }
     } else {
       toast.error(result.message);
       setLoginFailed(true);

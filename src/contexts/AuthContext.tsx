@@ -3,6 +3,8 @@ import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { hashPin, SignupFormData, LoginFormData, RecoveryFormData } from '@/lib/authUtils';
 
+export type UserRole = 'adm_master' | 'admin' | 'pre_adm' | 'empresario' | 'user';
+
 interface UserProfile {
   id: string;
   user_id: string;
@@ -18,12 +20,13 @@ interface AuthContextType {
   profile: UserProfile | null;
   isLoading: boolean;
   isAdmin: boolean;
+  userRole: UserRole;
   signUp: (data: SignupFormData) => Promise<{ success: boolean; message: string }>;
-  signIn: (data: LoginFormData) => Promise<{ success: boolean; message: string }>;
+  signIn: (data: LoginFormData) => Promise<{ success: boolean; message: string; role?: UserRole }>;
   signOut: () => Promise<void>;
   recoverPassword: (data: RecoveryFormData) => Promise<{ success: boolean; message: string }>;
-  // Keep Google sign in available in code but not exposed in UI
   signInWithGoogle: () => Promise<void>;
+  refetchRole: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -34,6 +37,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [userRole, setUserRole] = useState<UserRole>('user');
 
   const fetchProfile = useCallback(async (userId: string) => {
     try {
@@ -51,26 +55,32 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }, []);
 
-  const checkAdminRole = useCallback(async (userId: string) => {
+  const fetchUserRole = useCallback(async (userId: string): Promise<UserRole> => {
     try {
-      // Verificar se é admin ou adm_master
-      const { data, error } = await supabase
-        .from('user_roles')
-        .select('role')
-        .eq('user_id', userId)
-        .in('role', ['admin', 'adm_master'])
-        .maybeSingle();
+      const { data, error } = await supabase.rpc('get_user_role', {
+        _user_id: userId
+      });
 
-      if (!error && data) {
-        setIsAdmin(true);
-      } else {
-        setIsAdmin(false);
+      if (error) {
+        console.error('Error fetching user role:', error);
+        return 'user';
       }
+      
+      const role = (data as UserRole) || 'user';
+      setUserRole(role);
+      setIsAdmin(role === 'adm_master' || role === 'admin');
+      return role;
     } catch (err) {
-      console.error('Error checking admin role:', err);
-      setIsAdmin(false);
+      console.error('Error in fetchUserRole:', err);
+      return 'user';
     }
   }, []);
+
+  const refetchRole = useCallback(async () => {
+    if (user) {
+      await fetchUserRole(user.id);
+    }
+  }, [user, fetchUserRole]);
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
@@ -81,11 +91,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         if (session?.user) {
           setTimeout(() => {
             fetchProfile(session.user.id);
-            checkAdminRole(session.user.id);
+            fetchUserRole(session.user.id);
           }, 0);
         } else {
           setProfile(null);
           setIsAdmin(false);
+          setUserRole('user');
         }
         
         setIsLoading(false);
@@ -98,21 +109,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       
       if (session?.user) {
         fetchProfile(session.user.id);
-        checkAdminRole(session.user.id);
+        fetchUserRole(session.user.id);
       }
       
       setIsLoading(false);
     });
 
     return () => subscription.unsubscribe();
-  }, [fetchProfile, checkAdminRole]);
+  }, [fetchProfile, fetchUserRole]);
 
   const signUp = async (formData: SignupFormData): Promise<{ success: boolean; message: string }> => {
     try {
-      // Normalizar email: lowercase e sem espaços
       const normalizedEmail = formData.email.toLowerCase().trim();
 
-      // Check if email already exists
       const { data: existingProfile } = await supabase
         .from('profiles')
         .select('email')
@@ -123,7 +132,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         return { success: false, message: 'Este email já está cadastrado' };
       }
 
-      // Create user in Supabase Auth
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email: normalizedEmail,
         password: formData.password,
@@ -144,10 +152,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         return { success: false, message: 'Erro ao criar usuário' };
       }
 
-      // Hash the recovery PIN
       const pinHash = await hashPin(formData.recoveryPin);
 
-      // Create profile with all fields (email já está normalizado acima)
       const { error: profileError } = await supabase
         .from('profiles')
         .insert({
@@ -171,17 +177,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  const signIn = async (formData: LoginFormData): Promise<{ success: boolean; message: string }> => {
+  const signIn = async (formData: LoginFormData): Promise<{ success: boolean; message: string; role?: UserRole }> => {
     try {
-      // Normalizar email: lowercase e sem espaços
       const normalizedEmail = formData.email.toLowerCase().trim();
 
-      const { error } = await supabase.auth.signInWithPassword({
+      const { data, error } = await supabase.auth.signInWithPassword({
         email: normalizedEmail,
         password: formData.password,
       });
 
-      // Registrar tentativa de login
       await supabase.from('login_attempts').insert({
         email: normalizedEmail,
         success: !error,
@@ -195,7 +199,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         return { success: false, message: error.message };
       }
 
-      return { success: true, message: 'Login realizado com sucesso!' };
+      // Buscar a role do usuário para redirecionamento
+      let role: UserRole = 'user';
+      if (data.user) {
+        role = await fetchUserRole(data.user.id);
+      }
+
+      return { success: true, message: 'Login realizado com sucesso!', role };
     } catch (error) {
       console.error('SignIn error:', error);
       return { success: false, message: 'Erro ao fazer login' };
@@ -206,17 +216,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     await supabase.auth.signOut();
     setProfile(null);
     setIsAdmin(false);
+    setUserRole('user');
   };
 
   const recoverPassword = async (formData: RecoveryFormData): Promise<{ success: boolean; message: string }> => {
     try {
-      // Normalizar email: lowercase e sem espaços
       const normalizedEmail = formData.email.toLowerCase().trim();
-
-      // Hash the provided PIN
       const pinHash = await hashPin(formData.recoveryPin);
 
-      // Verify all data matches using the enhanced function
       const { data: userId, error: verifyError } = await supabase
         .rpc('verify_recovery_pin_enhanced', {
           _email: normalizedEmail,
@@ -225,7 +232,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           _birth_date: formData.birthDate,
         });
 
-      // Log the attempt
       await supabase.from('recovery_attempts').insert({
         email: normalizedEmail,
         success: !!userId,
@@ -237,19 +243,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           message: 'Dados de recuperação incorretos. Verifique email, nome, data de nascimento e senha secundária.' 
         };
       }
-
-      // Since we verified the user, we can try to update the password
-      // For this to work, we need to use service role or admin API
-      // For MVP, we'll inform the user that they can now login with new credentials
-      // by using the updateUser method if they're logged in
       
       const { error: signInError } = await supabase.auth.signInWithPassword({
         email: normalizedEmail,
-        password: formData.recoveryPin, // Try with recovery pin as temporary auth
+        password: formData.recoveryPin,
       });
 
       if (!signInError) {
-        // If they can sign in, update password
         const { error: updateError } = await supabase.auth.updateUser({
           password: formData.newPassword
         });
@@ -260,7 +260,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         }
       }
 
-      // If we can't automatically update, inform user
       return { 
         success: false, 
         message: 'Dados verificados, mas não foi possível atualizar automaticamente. Entre em contato com o administrador.' 
@@ -288,11 +287,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       profile,
       isLoading, 
       isAdmin,
+      userRole,
       signUp,
       signIn,
       signOut,
       recoverPassword,
-      signInWithGoogle 
+      signInWithGoogle,
+      refetchRole,
     }}>
       {children}
     </AuthContext.Provider>

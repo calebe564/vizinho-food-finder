@@ -1,13 +1,12 @@
-import { useNavigate } from "react-router-dom";
-import { useAdmin } from "@/contexts/AdminContext";
 import { Navigate } from "react-router-dom";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
 }
 
 export function ProtectedRoute({ children }: ProtectedRouteProps) {
-  const { isAdmin, isLoading } = useAdmin();
+  const { user, isLoading, isAdmin } = useAuth();
 
   if (isLoading) {
     return (
@@ -20,8 +19,14 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
     );
   }
 
+  // Não autenticado - redirecionar para login
+  if (!user) {
+    return <Navigate to="/auth" replace />;
+  }
+
+  // Não é admin - redirecionar para home
   if (!isAdmin) {
-    return <Navigate to="/admin/login" replace />;
+    return <Navigate to="/" replace />;
   }
 
   return <>{children}</>;
