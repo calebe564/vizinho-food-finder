@@ -1,10 +1,12 @@
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { useNavigate, Routes, Route, Link, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
-import { LogOut, LayoutDashboard, Store, FileText, MessageSquare, Megaphone } from "lucide-react";
+import { LogOut, LayoutDashboard, Store, FileText, MessageSquare, Megaphone, Users, Crown, Loader2 } from "lucide-react";
 import { ThemeToggle } from "@/components/ThemeToggle";
-import { useAdmin } from "@/contexts/AdminContext";
+import { useAuth } from "@/contexts/AuthContext";
+import { useUserRole } from "@/hooks/useUserRole";
+import { Badge } from "@/components/ui/badge";
 import AdminDashboardHome from "./admin/AdminDashboardHome";
 import AdminEstablishments from "./admin/AdminEstablishments";
 import AdminEstablishmentForm from "./admin/AdminEstablishmentForm";
@@ -12,29 +14,62 @@ import AdminRequests from "./admin/AdminRequests";
 import AdminConversations from "./admin/AdminConversations";
 import AdminChat from "./admin/AdminChat";
 import AdminAdvertisements from "./admin/AdminAdvertisements";
+import AdminUsers from "./admin/AdminUsers";
+
+const roleLabels = {
+  adm_master: 'ADM Master',
+  admin: 'Administrador',
+  pre_adm: 'Pré-Administrador',
+  empresario: 'Empresário',
+  user: 'Usuário'
+};
 
 export default function AdminDashboard() {
   const navigate = useNavigate();
   const location = useLocation();
-  const { logout } = useAdmin();
+  const { signOut, profile } = useAuth();
+  const { role, isAdmMaster, canApproveEstablishments, isLoading: roleLoading } = useUserRole();
 
-  const handleLogout = () => {
-    logout();
+  const handleLogout = async () => {
+    await signOut();
     toast.success("Logout realizado com sucesso");
     navigate("/");
   };
 
   const isActive = (path: string) => location.pathname === path || location.pathname.startsWith(path + "/");
 
+  if (roleLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-background">
       <header className="border-b sticky top-0 z-50 bg-background">
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
-            <h1 className="text-2xl font-bold bg-gradient-primary bg-clip-text text-transparent">
-              Painel Administrativo
-            </h1>
+            <div className="flex items-center gap-3">
+              <h1 className="text-2xl font-bold bg-gradient-primary bg-clip-text text-transparent">
+                Painel Administrativo
+              </h1>
+              <Badge variant="outline" className={
+                isAdmMaster 
+                  ? 'bg-purple-500/10 text-purple-700 border-purple-200' 
+                  : 'bg-blue-500/10 text-blue-700 border-blue-200'
+              }>
+                {isAdmMaster && <Crown className="h-3 w-3 mr-1" />}
+                {roleLabels[role] || role}
+              </Badge>
+            </div>
             <div className="flex items-center gap-2">
+              {profile && (
+                <span className="text-sm text-muted-foreground hidden md:inline">
+                  {profile.full_name}
+                </span>
+              )}
               <ThemeToggle />
               <Button variant="outline" onClick={handleLogout}>
                 <LogOut className="h-4 w-4 mr-2" />
@@ -58,6 +93,8 @@ export default function AdminDashboard() {
                 Dashboard
               </Button>
             </Link>
+            
+            {/* Estabelecimentos - todos admin podem ver */}
             <Link to="/admin/dashboard/estabelecimentos">
               <Button 
                 variant={isActive("/admin/dashboard/estabelecimentos") ? "default" : "ghost"} 
@@ -67,15 +104,21 @@ export default function AdminDashboard() {
                 Estabelecimentos
               </Button>
             </Link>
-            <Link to="/admin/dashboard/solicitacoes">
-              <Button 
-                variant={isActive("/admin/dashboard/solicitacoes") ? "default" : "ghost"} 
-                className="w-full justify-start"
-              >
-                <FileText className="mr-2 h-4 w-4" />
-                Solicitações
-              </Button>
-            </Link>
+            
+            {/* Solicitações - apenas quem pode aprovar */}
+            {canApproveEstablishments && (
+              <Link to="/admin/dashboard/solicitacoes">
+                <Button 
+                  variant={isActive("/admin/dashboard/solicitacoes") ? "default" : "ghost"} 
+                  className="w-full justify-start"
+                >
+                  <FileText className="mr-2 h-4 w-4" />
+                  Solicitações
+                </Button>
+              </Link>
+            )}
+            
+            {/* Conversas */}
             <Link to="/admin/dashboard/conversas">
               <Button 
                 variant={isActive("/admin/dashboard/conversas") ? "default" : "ghost"} 
@@ -85,15 +128,32 @@ export default function AdminDashboard() {
                 Conversas
               </Button>
             </Link>
-            <Link to="/admin/dashboard/propagandas">
-              <Button 
-                variant={isActive("/admin/dashboard/propagandas") ? "default" : "ghost"} 
-                className="w-full justify-start"
-              >
-                <Megaphone className="mr-2 h-4 w-4" />
-                Propagandas
-              </Button>
-            </Link>
+            
+            {/* Propagandas - apenas admin completo */}
+            {canApproveEstablishments && (
+              <Link to="/admin/dashboard/propagandas">
+                <Button 
+                  variant={isActive("/admin/dashboard/propagandas") ? "default" : "ghost"} 
+                  className="w-full justify-start"
+                >
+                  <Megaphone className="mr-2 h-4 w-4" />
+                  Propagandas
+                </Button>
+              </Link>
+            )}
+            
+            {/* Gerenciar Usuários - apenas ADM_MASTER */}
+            {isAdmMaster && (
+              <Link to="/admin/dashboard/usuarios">
+                <Button 
+                  variant={isActive("/admin/dashboard/usuarios") ? "default" : "ghost"} 
+                  className="w-full justify-start"
+                >
+                  <Users className="mr-2 h-4 w-4" />
+                  Usuários
+                </Button>
+              </Link>
+            )}
           </nav>
         </aside>
 
@@ -108,6 +168,7 @@ export default function AdminDashboard() {
             <Route path="conversas" element={<AdminConversations />} />
             <Route path="conversas/:id" element={<AdminChat />} />
             <Route path="propagandas" element={<AdminAdvertisements />} />
+            <Route path="usuarios" element={<AdminUsers />} />
           </Routes>
         </main>
       </div>

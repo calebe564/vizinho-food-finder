@@ -30,6 +30,7 @@ const PrivacyPolicy = lazy(() => import("./pages/PrivacyPolicy"));
 const Favorites = lazy(() => import("./pages/Favorites"));
 const ProductDetail = lazy(() => import("./pages/ProductDetail"));
 const Auth = lazy(() => import("./pages/Auth"));
+const MyEstablishment = lazy(() => import("./pages/MyEstablishment"));
 
 // Loading component
 const PageLoader = () => (
@@ -72,6 +73,7 @@ function App() {
                             <Route path="/categorias" element={<Categories />} />
                             <Route path="/estabelecimentos" element={<AllEstablishments />} />
                             <Route path="/favoritos" element={<Favorites />} />
+                            <Route path="/minha-empresa" element={<MyEstablishment />} />
                             <Route path="/cadastrar" element={<PublicEstablishmentForm />} />
                             <Route path="/informacoes" element={<Information />} />
                             <Route path="/sobre" element={<About />} />
