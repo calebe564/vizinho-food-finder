@@ -35,35 +35,61 @@ export type Database = {
       advertisements: {
         Row: {
           active: boolean | null
+          behavior: string | null
           created_at: string
+          display_order: number | null
+          end_date: string | null
+          establishment_id: string | null
           id: string
           image: string
           link: string | null
           position: string
+          size: string | null
+          start_date: string | null
           text: string | null
           title: string | null
         }
         Insert: {
           active?: boolean | null
+          behavior?: string | null
           created_at?: string
+          display_order?: number | null
+          end_date?: string | null
+          establishment_id?: string | null
           id?: string
           image: string
           link?: string | null
           position: string
+          size?: string | null
+          start_date?: string | null
           text?: string | null
           title?: string | null
         }
         Update: {
           active?: boolean | null
+          behavior?: string | null
           created_at?: string
+          display_order?: number | null
+          end_date?: string | null
+          establishment_id?: string | null
           id?: string
           image?: string
           link?: string | null
           position?: string
+          size?: string | null
+          start_date?: string | null
           text?: string | null
           title?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "advertisements_establishment_id_fkey"
+            columns: ["establishment_id"]
+            isOneToOne: false
+            referencedRelation: "establishments"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       conversations: {
         Row: {

@@ -48,6 +48,9 @@ interface Advertisement {
   text: string | null;
   link: string | null;
   position: string;
+  size: string;
+  behavior: string;
+  display_order: number;
 }
 
 interface LocationSelection {
