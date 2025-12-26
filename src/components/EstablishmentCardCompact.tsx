@@ -36,13 +36,12 @@ export function EstablishmentCardCompact({
   bannerImage,
   isPaid,
 }: EstablishmentCardCompactProps) {
-  // Use banner image if available, otherwise profile image
   const displayImage = bannerImage || profileImage;
   
   return (
-    <Link to={`/estabelecimento/${id}`} className="block">
-      <Card className="overflow-hidden bg-card border border-border/50 hover:border-primary/30 hover:shadow-lg transition-all duration-200 rounded-xl h-full">
-        {/* Image area - full card image, not just circle */}
+    <Link to={`/estabelecimento/${id}`} className="block active:scale-[0.98] transition-transform">
+      <Card className="overflow-hidden bg-card border border-border/50 hover:border-primary/30 active:border-primary/50 shadow-sm hover:shadow-card transition-all duration-200 rounded-xl h-full">
+        {/* Image area - aspect ratio prevents distortion */}
         <div className="relative aspect-[4/3] bg-secondary/30 overflow-hidden">
           {displayImage ? (
             <img 
@@ -58,46 +57,46 @@ export function EstablishmentCardCompact({
             />
           ) : null}
           
-          {/* Fallback when no image or image fails to load */}
+          {/* Fallback when no image */}
           <div 
             className={`absolute inset-0 flex items-center justify-center bg-gradient-to-br from-primary/20 to-primary/5 ${displayImage ? 'hidden' : 'flex'}`}
           >
-            <div className="w-16 h-16 rounded-full bg-primary/20 flex items-center justify-center">
-              <Store className="h-8 w-8 text-primary" />
+            <div className="w-14 h-14 rounded-full bg-primary/20 flex items-center justify-center">
+              <Store className="h-7 w-7 text-primary" />
             </div>
           </div>
           
           {/* Sponsored badge */}
           {isPaid && (
-            <div className="absolute top-2 left-2">
-              <Badge className="bg-accent text-accent-foreground text-[10px] px-1.5 py-0.5 shadow-md">
+            <div className="absolute top-1.5 left-1.5">
+              <Badge className="bg-accent text-accent-foreground text-[9px] px-1.5 py-0.5 shadow-md">
                 <Star className="h-2.5 w-2.5 mr-0.5 fill-current" />
                 Destaque
               </Badge>
             </div>
           )}
           
-          {/* Gradient overlay for text readability */}
-          <div className="absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-black/60 to-transparent" />
+          {/* Gradient overlay */}
+          <div className="absolute inset-x-0 bottom-0 h-14 bg-gradient-to-t from-black/70 to-transparent" />
           
-          {/* Name overlay on image */}
-          <div className="absolute bottom-0 left-0 right-0 p-2.5">
-            <h3 className="text-sm font-semibold text-white leading-tight line-clamp-2 drop-shadow-md">
+          {/* Name overlay */}
+          <div className="absolute bottom-0 left-0 right-0 p-2">
+            <h3 className="text-[13px] font-semibold text-white leading-tight line-clamp-2 drop-shadow-md">
               {name}
             </h3>
           </div>
         </div>
 
-        {/* Content below image */}
-        <div className="p-2.5 space-y-1">
-          {/* Category */}
-          <p className="text-[11px] text-muted-foreground line-clamp-1">
+        {/* Content below image - larger touch target */}
+        <div className="p-2.5 min-h-[52px]">
+          {/* Category - larger text for readability */}
+          <p className="text-xs text-muted-foreground line-clamp-1 mb-1">
             {categoryLabels[category] || category}
           </p>
           
           {/* Proximity label */}
           {proximityLabel && (
-            <div className="flex items-center gap-1 text-[10px] text-primary font-medium">
+            <div className="flex items-center gap-1 text-[11px] text-primary font-medium">
               <MapPin className="h-3 w-3 flex-shrink-0" />
               <span className="line-clamp-1">{proximityLabel}</span>
             </div>
