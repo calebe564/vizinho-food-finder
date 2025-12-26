@@ -1,5 +1,5 @@
 import { Link, useNavigate } from "react-router-dom";
-import { Home, Building2, Store, MoreVertical, UserPlus, Heart, ShieldCheck, LogIn, LogOut, User } from "lucide-react";
+import { Home, Building2, Store, MoreVertical, UserPlus, Heart, LogIn, LogOut, User } from "lucide-react";
 import { ThemeToggle } from "./ThemeToggle";
 import { Button } from "./ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "./ui/sheet";
@@ -13,7 +13,7 @@ import { useAuth } from "@/contexts/AuthContext";
 export function Header() {
   const [isOpen, setIsOpen] = useState(false);
   const { totalFavorites } = useFavorites();
-  const { user, profile, signOut } = useAuth();
+  const { user, profile, signOut, isAdmin } = useAuth();
   const navigate = useNavigate();
   const hasFavorites = totalFavorites > 0;
 
@@ -96,10 +96,19 @@ export function Header() {
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               {user ? (
-                <DropdownMenuItem onClick={handleSignOut} className="flex items-center gap-2 cursor-pointer">
-                  <LogOut className="h-4 w-4" />
-                  Sair
-                </DropdownMenuItem>
+                <>
+                  {isAdmin && (
+                    <DropdownMenuItem asChild>
+                      <Link to="/admin/login" className="flex items-center gap-2 cursor-pointer text-primary">
+                        Painel Administrativo
+                      </Link>
+                    </DropdownMenuItem>
+                  )}
+                  <DropdownMenuItem onClick={handleSignOut} className="flex items-center gap-2 cursor-pointer">
+                    <LogOut className="h-4 w-4" />
+                    Sair
+                  </DropdownMenuItem>
+                </>
               ) : (
                 <DropdownMenuItem asChild>
                   <Link to="/auth" className="flex items-center gap-2 cursor-pointer">
@@ -108,13 +117,6 @@ export function Header() {
                   </Link>
                 </DropdownMenuItem>
               )}
-              <DropdownMenuSeparator />
-              <DropdownMenuItem asChild>
-                <Link to="/admin/login" className="flex items-center gap-2 cursor-pointer">
-                  <ShieldCheck className="h-4 w-4" />
-                  Área de Acesso
-                </Link>
-              </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
           
@@ -170,27 +172,26 @@ export function Header() {
                 <div className="border-t mt-4 pt-4">
                   <p className="text-xs text-muted-foreground px-4 pb-2 uppercase tracking-wider">Conta</p>
                   {user ? (
-                    <button 
-                      onClick={() => { handleSignOut(); setIsOpen(false); }} 
-                      className="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-secondary transition-colors w-full text-left"
-                    >
-                      <LogOut className="h-5 w-5" />
-                      <span className="font-medium">Sair</span>
-                    </button>
+                    <>
+                      {isAdmin && (
+                        <Link to="/admin/login" onClick={() => setIsOpen(false)} className="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-secondary transition-colors text-primary">
+                          <span className="font-medium">Painel Administrativo</span>
+                        </Link>
+                      )}
+                      <button 
+                        onClick={() => { handleSignOut(); setIsOpen(false); }} 
+                        className="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-secondary transition-colors w-full text-left"
+                      >
+                        <LogOut className="h-5 w-5" />
+                        <span className="font-medium">Sair</span>
+                      </button>
+                    </>
                   ) : (
                     <Link to="/auth" onClick={() => setIsOpen(false)} className="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-secondary transition-colors">
                       <LogIn className="h-5 w-5" />
                       <span className="font-medium">Entrar</span>
                     </Link>
                   )}
-                </div>
-
-                <div className="border-t mt-4 pt-4">
-                  <p className="text-xs text-muted-foreground px-4 pb-2 uppercase tracking-wider">Administração</p>
-                  <Link to="/admin/login" onClick={() => setIsOpen(false)} className="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-secondary transition-colors">
-                    <ShieldCheck className="h-5 w-5" />
-                    <span className="font-medium">Área de Acesso</span>
-                  </Link>
                 </div>
               </nav>
             </SheetContent>

@@ -24,6 +24,13 @@ export default function AdminLogin() {
     }
   }, [isAdminSession, adminLoading, navigate]);
 
+  // Auto-redirect if user is admin and already has session
+  useEffect(() => {
+    if (!authLoading && user && hasAdminRole && isAdminSession) {
+      navigate('/admin/dashboard');
+    }
+  }, [user, hasAdminRole, isAdminSession, authLoading, navigate]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!password.trim()) {
@@ -58,15 +65,16 @@ export default function AdminLogin() {
     return <div className="min-h-screen flex items-center justify-center"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>;
   }
 
+  // If user is not logged in at all, redirect to auth
   if (!user) {
     return (
       <>
-        <Helmet><title>Área de Acesso | Comércio Vizinho</title></Helmet>
+        <Helmet><title>Painel Administrativo | Comércio Vizinho</title></Helmet>
         <div className="min-h-screen flex items-center justify-center bg-background p-4">
           <Card className="w-full max-w-md border-0 shadow-elevated rounded-3xl">
             <CardHeader className="text-center">
               <img src={logo} alt="Logo" className="h-16 w-16 rounded-2xl mx-auto mb-4" />
-              <CardTitle>Área de Acesso</CardTitle>
+              <CardTitle>Painel Administrativo</CardTitle>
               <CardDescription className="flex items-center justify-center gap-2 text-amber-600"><AlertTriangle className="h-4 w-4" />Login necessário</CardDescription>
             </CardHeader>
             <CardContent className="space-y-3">
@@ -79,6 +87,7 @@ export default function AdminLogin() {
     );
   }
 
+  // If user doesn't have admin role
   if (!hasAdminRole) {
     return (
       <>
@@ -88,10 +97,10 @@ export default function AdminLogin() {
             <CardHeader className="text-center">
               <img src={logo} alt="Logo" className="h-16 w-16 rounded-2xl mx-auto mb-4" />
               <CardTitle>Acesso Restrito</CardTitle>
-              <CardDescription className="text-destructive flex items-center justify-center gap-2"><AlertTriangle className="h-4 w-4" />Sem permissão</CardDescription>
+              <CardDescription className="text-destructive flex items-center justify-center gap-2"><AlertTriangle className="h-4 w-4" />Área exclusiva para administradores</CardDescription>
             </CardHeader>
             <CardContent>
-              <Button variant="outline" asChild className="w-full"><Link to="/"><ArrowLeft className="mr-2 h-4 w-4" />Voltar</Link></Button>
+              <Button variant="outline" asChild className="w-full"><Link to="/"><ArrowLeft className="mr-2 h-4 w-4" />Voltar ao início</Link></Button>
             </CardContent>
           </Card>
         </div>
@@ -99,24 +108,25 @@ export default function AdminLogin() {
     );
   }
 
+  // Admin user - show password confirmation
   return (
     <>
-      <Helmet><title>Área de Acesso | Comércio Vizinho</title></Helmet>
+      <Helmet><title>Painel Administrativo | Comércio Vizinho</title></Helmet>
       <div className="min-h-screen flex items-center justify-center bg-background p-4">
         <Card className="w-full max-w-md border-0 shadow-elevated rounded-3xl">
           <CardHeader className="text-center">
             <img src={logo} alt="Logo" className="h-16 w-16 rounded-2xl mx-auto mb-4" />
-            <CardTitle className="flex items-center justify-center gap-2"><ShieldCheck className="h-6 w-6 text-primary" />Área de Acesso</CardTitle>
-            <CardDescription>Confirme sua senha administrativa</CardDescription>
+            <CardTitle className="flex items-center justify-center gap-2"><ShieldCheck className="h-6 w-6 text-primary" />Painel Administrativo</CardTitle>
+            <CardDescription>Confirme sua senha para continuar</CardDescription>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="password">Senha Administrativa</Label>
-                <Input id="password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Digite a senha" autoFocus />
+                <Input id="password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Digite sua senha" autoFocus />
               </div>
               <Button type="submit" className="w-full" disabled={isSubmitting}>
-                {isSubmitting ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Verificando...</> : 'Acessar'}
+                {isSubmitting ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Verificando...</> : 'Acessar Painel'}
               </Button>
               <Button variant="outline" asChild className="w-full"><Link to="/"><ArrowLeft className="mr-2 h-4 w-4" />Voltar</Link></Button>
             </form>

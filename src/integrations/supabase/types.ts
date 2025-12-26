@@ -390,8 +390,10 @@ export type Database = {
       }
       profiles: {
         Row: {
+          birth_date: string | null
           created_at: string | null
           email: string
+          favorite_color: string | null
           full_name: string
           id: string
           recovery_pin_hash: string
@@ -399,8 +401,10 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          birth_date?: string | null
           created_at?: string | null
           email: string
+          favorite_color?: string | null
           full_name: string
           id?: string
           recovery_pin_hash: string
@@ -408,13 +412,39 @@ export type Database = {
           user_id: string
         }
         Update: {
+          birth_date?: string | null
           created_at?: string | null
           email?: string
+          favorite_color?: string | null
           full_name?: string
           id?: string
           recovery_pin_hash?: string
           updated_at?: string | null
           user_id?: string
+        }
+        Relationships: []
+      }
+      recovery_attempts: {
+        Row: {
+          attempted_at: string | null
+          email: string
+          id: string
+          ip_address: string | null
+          success: boolean | null
+        }
+        Insert: {
+          attempted_at?: string | null
+          email: string
+          id?: string
+          ip_address?: string | null
+          success?: boolean | null
+        }
+        Update: {
+          attempted_at?: string | null
+          email?: string
+          id?: string
+          ip_address?: string | null
+          success?: boolean | null
         }
         Relationships: []
       }
@@ -454,6 +484,15 @@ export type Database = {
       is_admin: { Args: { _user_id: string }; Returns: boolean }
       verify_recovery_pin: {
         Args: { _email: string; _pin_hash: string }
+        Returns: string
+      }
+      verify_recovery_pin_enhanced: {
+        Args: {
+          _birth_date: string
+          _email: string
+          _full_name: string
+          _pin_hash: string
+        }
         Returns: string
       }
     }
