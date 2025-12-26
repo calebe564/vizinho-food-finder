@@ -1,5 +1,5 @@
-import { Link } from "react-router-dom";
-import { Home, Building2, Store, MoreVertical, UserPlus, Heart, ShieldCheck } from "lucide-react";
+import { Link, useNavigate } from "react-router-dom";
+import { Home, Building2, Store, MoreVertical, UserPlus, Heart, ShieldCheck, LogIn, LogOut, User } from "lucide-react";
 import { ThemeToggle } from "./ThemeToggle";
 import { Button } from "./ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "./ui/sheet";
@@ -8,11 +8,19 @@ import { NavigationMenu, NavigationMenuItem, NavigationMenuLink, NavigationMenuL
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "./ui/dropdown-menu";
 import logo from "@/assets/logo.png";
 import { useFavorites } from "@/hooks/useFavorites";
+import { useAuth } from "@/contexts/AuthContext";
 
 export function Header() {
   const [isOpen, setIsOpen] = useState(false);
   const { totalFavorites } = useFavorites();
+  const { user, profile, signOut } = useAuth();
+  const navigate = useNavigate();
   const hasFavorites = totalFavorites > 0;
+
+  const handleSignOut = async () => {
+    await signOut();
+    navigate('/');
+  };
   
   return (
     <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/80 backdrop-blur-xl">
@@ -65,6 +73,15 @@ export function Header() {
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-56 bg-popover">
+              {user ? (
+                <>
+                  <div className="px-2 py-1.5 text-sm font-medium text-muted-foreground flex items-center gap-2">
+                    <User className="h-4 w-4" />
+                    {profile?.full_name || user.email}
+                  </div>
+                  <DropdownMenuSeparator />
+                </>
+              ) : null}
               <DropdownMenuItem asChild>
                 <Link to="/favoritos" className="flex items-center gap-2 cursor-pointer">
                   <Heart className={`h-4 w-4 ${hasFavorites ? "text-red-500 fill-red-500" : ""}`} />
@@ -78,10 +95,24 @@ export function Header() {
                 </Link>
               </DropdownMenuItem>
               <DropdownMenuSeparator />
+              {user ? (
+                <DropdownMenuItem onClick={handleSignOut} className="flex items-center gap-2 cursor-pointer">
+                  <LogOut className="h-4 w-4" />
+                  Sair
+                </DropdownMenuItem>
+              ) : (
+                <DropdownMenuItem asChild>
+                  <Link to="/auth" className="flex items-center gap-2 cursor-pointer">
+                    <LogIn className="h-4 w-4" />
+                    Entrar
+                  </Link>
+                </DropdownMenuItem>
+              )}
+              <DropdownMenuSeparator />
               <DropdownMenuItem asChild>
                 <Link to="/admin/login" className="flex items-center gap-2 cursor-pointer">
                   <ShieldCheck className="h-4 w-4" />
-                  Área Admin
+                  Área de Acesso
                 </Link>
               </DropdownMenuItem>
             </DropdownMenuContent>
@@ -99,6 +130,16 @@ export function Header() {
                 <img src={logo} alt="Comércio Vizinho" className="h-10 w-10 rounded-xl" />
                 <span className="font-bold text-lg">Comércio Vizinho</span>
               </div>
+              
+              {user && (
+                <div className="px-6 py-3 border-b bg-muted/30">
+                  <div className="flex items-center gap-2 text-sm">
+                    <User className="h-4 w-4 text-muted-foreground" />
+                    <span className="font-medium truncate">{profile?.full_name || user.email}</span>
+                  </div>
+                </div>
+              )}
+              
               <nav className="flex flex-col gap-1 p-4">
                 <p className="text-xs text-muted-foreground px-4 pb-2 uppercase tracking-wider">Navegação</p>
                 <Link to="/" onClick={() => setIsOpen(false)} className="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-secondary transition-colors">
@@ -127,10 +168,28 @@ export function Header() {
                 </div>
 
                 <div className="border-t mt-4 pt-4">
+                  <p className="text-xs text-muted-foreground px-4 pb-2 uppercase tracking-wider">Conta</p>
+                  {user ? (
+                    <button 
+                      onClick={() => { handleSignOut(); setIsOpen(false); }} 
+                      className="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-secondary transition-colors w-full text-left"
+                    >
+                      <LogOut className="h-5 w-5" />
+                      <span className="font-medium">Sair</span>
+                    </button>
+                  ) : (
+                    <Link to="/auth" onClick={() => setIsOpen(false)} className="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-secondary transition-colors">
+                      <LogIn className="h-5 w-5" />
+                      <span className="font-medium">Entrar</span>
+                    </Link>
+                  )}
+                </div>
+
+                <div className="border-t mt-4 pt-4">
                   <p className="text-xs text-muted-foreground px-4 pb-2 uppercase tracking-wider">Administração</p>
                   <Link to="/admin/login" onClick={() => setIsOpen(false)} className="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-secondary transition-colors">
                     <ShieldCheck className="h-5 w-5" />
-                    <span className="font-medium">Área Admin</span>
+                    <span className="font-medium">Área de Acesso</span>
                   </Link>
                 </div>
               </nav>

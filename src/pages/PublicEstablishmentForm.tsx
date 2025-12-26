@@ -13,6 +13,8 @@ import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { Building2, Upload, CheckCircle, Plus, Trash2, Star, MapPin, Phone, Package, Image, Loader2 } from "lucide-react";
 import { Database } from "@/integrations/supabase/types";
+import { useAuth } from "@/contexts/AuthContext";
+import { AuthRequiredDialog } from "@/components/AuthRequiredDialog";
 
 type EstablishmentCategory = Database["public"]["Enums"]["establishment_category"];
 
@@ -73,8 +75,48 @@ interface AddressData {
 
 export default function PublicEstablishmentForm() {
   const navigate = useNavigate();
+  const { user, isLoading: authLoading } = useAuth();
+  const [showAuthDialog, setShowAuthDialog] = useState(false);
   const [loading, setLoading] = useState(false);
   const [loadingCep, setLoadingCep] = useState(false);
+
+  // Show auth dialog if user is not logged in
+  if (!authLoading && !user) {
+    return (
+      <div className="min-h-screen flex flex-col bg-background">
+        <Header />
+        <main className="flex-1 container px-4 py-8 flex items-center justify-center">
+          <Card className="max-w-md w-full border-0 shadow-elevated rounded-3xl">
+            <CardHeader className="text-center">
+              <div className="flex items-center justify-center mb-4">
+                <div className="p-4 rounded-2xl bg-primary/10">
+                  <Building2 className="h-10 w-10 text-primary" />
+                </div>
+              </div>
+              <CardTitle className="text-2xl font-bold">Login Necessário</CardTitle>
+              <CardDescription className="text-base">
+                Você precisa estar logado para cadastrar uma empresa.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="flex flex-col gap-3">
+              <Button onClick={() => navigate('/auth', { state: { from: '/cadastrar' } })} className="w-full">
+                Criar conta ou Entrar
+              </Button>
+              <Button variant="outline" onClick={() => navigate('/')} className="w-full">
+                Voltar para Início
+              </Button>
+            </CardContent>
+          </Card>
+        </main>
+        <Footer />
+        <AuthRequiredDialog 
+          open={showAuthDialog} 
+          onOpenChange={setShowAuthDialog}
+          redirectPath="/cadastrar"
+        />
+      </div>
+    );
+  }
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
   const [images, setImages] = useState<File[]>([]);
   const [imagePreviews, setImagePreviews] = useState<string[]>([]);

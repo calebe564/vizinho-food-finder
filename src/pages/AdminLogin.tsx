@@ -1,116 +1,128 @@
-import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { Label } from "@/components/ui/label";
-import { toast } from "sonner";
-import { ArrowLeft, Lock, ShieldCheck } from "lucide-react";
-import { useAdmin } from "@/contexts/AdminContext";
-import logo from "@/assets/logo.png";
+import { useState, useEffect } from 'react';
+import { useNavigate, Link } from 'react-router-dom';
+import { useAdmin } from '@/contexts/AdminContext';
+import { useAuth } from '@/contexts/AuthContext';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { toast } from 'sonner';
+import { Helmet } from 'react-helmet-async';
+import { ArrowLeft, ShieldCheck, Loader2, AlertTriangle } from 'lucide-react';
+import logo from '@/assets/logo.png';
 
 export default function AdminLogin() {
+  const [password, setPassword] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const navigate = useNavigate();
-  const { isAdmin, isLoading, login } = useAdmin();
-  const [password, setPassword] = useState("");
-  const [loading, setLoading] = useState(false);
+  const { isAdmin: isAdminSession, isLoading: adminLoading, login } = useAdmin();
+  const { user, isAdmin: hasAdminRole, isLoading: authLoading } = useAuth();
 
   useEffect(() => {
-    if (!isLoading && isAdmin) {
-      navigate("/admin/dashboard");
+    if (!adminLoading && isAdminSession) {
+      navigate('/admin/dashboard');
     }
-  }, [isAdmin, isLoading, navigate]);
+  }, [isAdminSession, adminLoading, navigate]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
     if (!password.trim()) {
-      toast.error("Digite a senha administrativa");
+      toast.error('Digite a senha administrativa');
       return;
     }
-
-    setLoading(true);
-
+    if (!user) {
+      toast.error('Você precisa estar logado');
+      return;
+    }
+    if (!hasAdminRole) {
+      toast.error('Sem permissão de administrador');
+      return;
+    }
+    setIsSubmitting(true);
     try {
       const result = await login(password);
-      
       if (result.success) {
-        toast.success("Acesso autorizado!");
-        navigate("/admin/dashboard");
+        toast.success(result.message);
+        navigate('/admin/dashboard');
       } else {
         toast.error(result.message);
       }
-    } catch (error) {
-      toast.error("Erro ao verificar senha");
+    } catch {
+      toast.error('Erro ao fazer login');
     } finally {
-      setLoading(false);
+      setIsSubmitting(false);
     }
   };
 
-  if (isLoading) {
+  if (adminLoading || authLoading) {
+    return <div className="min-h-screen flex items-center justify-center"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>;
+  }
+
+  if (!user) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
-      </div>
+      <>
+        <Helmet><title>Área de Acesso | Comércio Vizinho</title></Helmet>
+        <div className="min-h-screen flex items-center justify-center bg-background p-4">
+          <Card className="w-full max-w-md border-0 shadow-elevated rounded-3xl">
+            <CardHeader className="text-center">
+              <img src={logo} alt="Logo" className="h-16 w-16 rounded-2xl mx-auto mb-4" />
+              <CardTitle>Área de Acesso</CardTitle>
+              <CardDescription className="flex items-center justify-center gap-2 text-amber-600"><AlertTriangle className="h-4 w-4" />Login necessário</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <Button asChild className="w-full"><Link to="/auth" state={{ from: '/admin/login' }}>Fazer Login</Link></Button>
+              <Button variant="outline" asChild className="w-full"><Link to="/"><ArrowLeft className="mr-2 h-4 w-4" />Voltar</Link></Button>
+            </CardContent>
+          </Card>
+        </div>
+      </>
+    );
+  }
+
+  if (!hasAdminRole) {
+    return (
+      <>
+        <Helmet><title>Acesso Restrito | Comércio Vizinho</title></Helmet>
+        <div className="min-h-screen flex items-center justify-center bg-background p-4">
+          <Card className="w-full max-w-md border-0 shadow-elevated rounded-3xl">
+            <CardHeader className="text-center">
+              <img src={logo} alt="Logo" className="h-16 w-16 rounded-2xl mx-auto mb-4" />
+              <CardTitle>Acesso Restrito</CardTitle>
+              <CardDescription className="text-destructive flex items-center justify-center gap-2"><AlertTriangle className="h-4 w-4" />Sem permissão</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Button variant="outline" asChild className="w-full"><Link to="/"><ArrowLeft className="mr-2 h-4 w-4" />Voltar</Link></Button>
+            </CardContent>
+          </Card>
+        </div>
+      </>
     );
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background p-4">
-      <div className="w-full max-w-md">
-        <Button
-          variant="ghost"
-          onClick={() => navigate("/")}
-          className="mb-4 gap-2"
-        >
-          <ArrowLeft className="h-4 w-4" />
-          Voltar
-        </Button>
-        <Card>
-          <CardHeader className="space-y-1">
-            <div className="flex items-center justify-center mb-4">
-              <img 
-                src={logo} 
-                alt="Comércio Vizinho" 
-                className="h-20 w-20 object-contain"
-              />
-            </div>
-            <div className="flex items-center justify-center gap-2 mb-2">
-              <ShieldCheck className="h-6 w-6 text-primary" />
-              <CardTitle className="text-2xl">Área Administrativa</CardTitle>
-            </div>
-            <CardDescription className="text-center">
-              Digite a senha administrativa para acessar o painel
-            </CardDescription>
+    <>
+      <Helmet><title>Área de Acesso | Comércio Vizinho</title></Helmet>
+      <div className="min-h-screen flex items-center justify-center bg-background p-4">
+        <Card className="w-full max-w-md border-0 shadow-elevated rounded-3xl">
+          <CardHeader className="text-center">
+            <img src={logo} alt="Logo" className="h-16 w-16 rounded-2xl mx-auto mb-4" />
+            <CardTitle className="flex items-center justify-center gap-2"><ShieldCheck className="h-6 w-6 text-primary" />Área de Acesso</CardTitle>
+            <CardDescription>Confirme sua senha administrativa</CardDescription>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="password">Senha Administrativa</Label>
-                <div className="relative">
-                  <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                  <Input
-                    id="password"
-                    type="password"
-                    placeholder="••••••••"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    className="pl-10"
-                    required
-                    autoComplete="off"
-                  />
-                </div>
+                <Input id="password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Digite a senha" autoFocus />
               </div>
-              <Button type="submit" className="w-full" disabled={loading}>
-                {loading ? "Verificando..." : "Acessar Painel"}
+              <Button type="submit" className="w-full" disabled={isSubmitting}>
+                {isSubmitting ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Verificando...</> : 'Acessar'}
               </Button>
+              <Button variant="outline" asChild className="w-full"><Link to="/"><ArrowLeft className="mr-2 h-4 w-4" />Voltar</Link></Button>
             </form>
           </CardContent>
         </Card>
-        <p className="text-center text-xs text-muted-foreground mt-4">
-          Acesso restrito ao proprietário da plataforma
-        </p>
       </div>
-    </div>
+    </>
   );
 }
