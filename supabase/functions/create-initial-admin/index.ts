@@ -21,9 +21,9 @@ Deno.serve(async (req) => {
       },
     });
 
-    // Admin credentials
+    // Admin credentials (email normalizado para lowercase)
     const adminEmail = "johnvictorsf1512@gmail.com";
-    const adminPassword = "Jv151206";
+    const adminPassword = "Jv151206@";
     const adminPin = "Jo151206@";
     const adminName = "Administrador";
 

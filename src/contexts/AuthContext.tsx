@@ -108,11 +108,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const signUp = async (formData: SignupFormData): Promise<{ success: boolean; message: string }> => {
     try {
+      // Normalizar email: lowercase e sem espaços
+      const normalizedEmail = formData.email.toLowerCase().trim();
+
       // Check if email already exists
       const { data: existingProfile } = await supabase
         .from('profiles')
         .select('email')
-        .eq('email', formData.email)
+        .eq('email', normalizedEmail)
         .maybeSingle();
 
       if (existingProfile) {
@@ -121,7 +124,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       // Create user in Supabase Auth
       const { data: authData, error: authError } = await supabase.auth.signUp({
-        email: formData.email,
+        email: normalizedEmail,
         password: formData.password,
         options: {
           emailRedirectTo: `${window.location.origin}/`,
@@ -143,13 +146,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       // Hash the recovery PIN
       const pinHash = await hashPin(formData.recoveryPin);
 
-      // Create profile with all fields
+      // Create profile with all fields (email já está normalizado acima)
       const { error: profileError } = await supabase
         .from('profiles')
         .insert({
           user_id: authData.user.id,
           full_name: formData.fullName,
-          email: formData.email,
+          email: normalizedEmail,
           recovery_pin_hash: pinHash,
           birth_date: formData.birthDate,
           favorite_color: formData.favoriteColor,
@@ -169,8 +172,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const signIn = async (formData: LoginFormData): Promise<{ success: boolean; message: string }> => {
     try {
+      // Normalizar email: lowercase e sem espaços
+      const normalizedEmail = formData.email.toLowerCase().trim();
+
       const { error } = await supabase.auth.signInWithPassword({
-        email: formData.email,
+        email: normalizedEmail,
         password: formData.password,
       });
 
@@ -196,13 +202,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const recoverPassword = async (formData: RecoveryFormData): Promise<{ success: boolean; message: string }> => {
     try {
+      // Normalizar email: lowercase e sem espaços
+      const normalizedEmail = formData.email.toLowerCase().trim();
+
       // Hash the provided PIN
       const pinHash = await hashPin(formData.recoveryPin);
 
       // Verify all data matches using the enhanced function
       const { data: userId, error: verifyError } = await supabase
         .rpc('verify_recovery_pin_enhanced', {
-          _email: formData.email,
+          _email: normalizedEmail,
           _pin_hash: pinHash,
           _full_name: formData.fullName,
           _birth_date: formData.birthDate,
@@ -210,7 +219,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       // Log the attempt
       await supabase.from('recovery_attempts').insert({
-        email: formData.email,
+        email: normalizedEmail,
         success: !!userId,
       });
 
@@ -227,7 +236,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       // by using the updateUser method if they're logged in
       
       const { error: signInError } = await supabase.auth.signInWithPassword({
-        email: formData.email,
+        email: normalizedEmail,
         password: formData.recoveryPin, // Try with recovery pin as temporary auth
       });
 
