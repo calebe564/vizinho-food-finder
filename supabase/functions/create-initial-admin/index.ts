@@ -27,16 +27,63 @@ Deno.serve(async (req) => {
     const adminPin = "Jo151206@";
     const adminName = "Administrador";
 
-    // Check if admin already exists
-    const { data: existingProfile } = await supabaseAdmin
-      .from("profiles")
-      .select("email")
-      .eq("email", adminEmail)
-      .maybeSingle();
+    // Check if admin already exists in auth
+    const { data: existingUsers } = await supabaseAdmin.auth.admin.listUsers();
+    const existingUser = existingUsers?.users?.find(u => u.email === adminEmail);
 
-    if (existingProfile) {
+    if (existingUser) {
+      // Update password to ensure it's correct
+      const { error: updateError } = await supabaseAdmin.auth.admin.updateUserById(
+        existingUser.id,
+        { password: adminPassword, email_confirm: true }
+      );
+      
+      if (updateError) {
+        console.error("Update error:", updateError);
+      }
+
+      // Check if profile exists, create if not
+      const { data: existingProfile } = await supabaseAdmin
+        .from("profiles")
+        .select("email")
+        .eq("email", adminEmail)
+        .maybeSingle();
+
+      if (!existingProfile) {
+        // Hash the PIN
+        const encoder = new TextEncoder();
+        const data = encoder.encode(adminPin + "salt_comercio_vizinho");
+        const hashBuffer = await crypto.subtle.digest("SHA-256", data);
+        const hashArray = Array.from(new Uint8Array(hashBuffer));
+        const pinHash = hashArray.map((b) => b.toString(16).padStart(2, "0")).join("");
+
+        await supabaseAdmin.from("profiles").insert({
+          user_id: existingUser.id,
+          full_name: adminName,
+          email: adminEmail,
+          recovery_pin_hash: pinHash,
+          birth_date: "1990-01-01",
+          favorite_color: "azul",
+        });
+      }
+
+      // Check if admin role exists, create if not
+      const { data: existingRole } = await supabaseAdmin
+        .from("user_roles")
+        .select("role")
+        .eq("user_id", existingUser.id)
+        .eq("role", "admin")
+        .maybeSingle();
+
+      if (!existingRole) {
+        await supabaseAdmin.from("user_roles").insert({
+          user_id: existingUser.id,
+          role: "admin",
+        });
+      }
+
       return new Response(
-        JSON.stringify({ success: true, message: "Admin already exists" }),
+        JSON.stringify({ success: true, message: "Admin updated successfully" }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
