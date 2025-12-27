@@ -53,18 +53,23 @@ export function BannerCarousel() {
     fetchPaidEstablishments();
   }, []);
 
+  // Calcular quantos itens mostrar (sem exceder o número de empresas)
+  const actualItemsPerView = useMemo(() => {
+    return Math.min(itemsPerView, carouselItems.length || 1);
+  }, [itemsPerView, carouselItems.length]);
+
   useEffect(() => {
-    if (carouselItems.length === 0) return;
+    if (carouselItems.length <= actualItemsPerView) return;
 
     const interval = setInterval(() => {
       setCurrentIndex((prev) => {
-        const maxIndex = Math.max(0, carouselItems.length - itemsPerView);
+        const maxIndex = Math.max(0, carouselItems.length - actualItemsPerView);
         return prev >= maxIndex ? 0 : prev + 1;
       });
     }, 4000);
 
     return () => clearInterval(interval);
-  }, [carouselItems.length, itemsPerView]);
+  }, [carouselItems.length, actualItemsPerView]);
 
   const fetchPaidEstablishments = async () => {
     const { data, error } = await supabase
@@ -94,14 +99,14 @@ export function BannerCarousel() {
 
   const goToPrevious = () => {
     setCurrentIndex((prev) => {
-      if (prev <= 0) return Math.max(0, carouselItems.length - itemsPerView);
+      if (prev <= 0) return Math.max(0, carouselItems.length - actualItemsPerView);
       return prev - 1;
     });
   };
 
   const goToNext = () => {
     setCurrentIndex((prev) => {
-      const maxIndex = Math.max(0, carouselItems.length - itemsPerView);
+      const maxIndex = Math.max(0, carouselItems.length - actualItemsPerView);
       return prev >= maxIndex ? 0 : prev + 1;
     });
   };
@@ -110,21 +115,29 @@ export function BannerCarousel() {
     return null;
   }
 
-  // Get visible items
-  const visibleItems = carouselItems.slice(currentIndex, currentIndex + itemsPerView);
-  // Fill remaining slots if needed
-  while (visibleItems.length < itemsPerView && carouselItems.length > 0) {
-    const idx = visibleItems.length;
-    visibleItems.push(carouselItems[idx % carouselItems.length]);
+  // Get visible items - sem duplicar
+  const visibleItems = carouselItems.slice(currentIndex, currentIndex + actualItemsPerView);
+  
+  // Se não tem itens suficientes no final, pega do início (para rotação suave)
+  if (visibleItems.length < actualItemsPerView && carouselItems.length > actualItemsPerView) {
+    const remaining = actualItemsPerView - visibleItems.length;
+    visibleItems.push(...carouselItems.slice(0, remaining));
   }
+
+  // Determinar grid cols baseado no número real de itens
+  const gridColsClass = carouselItems.length === 1 
+    ? "grid-cols-1 max-w-md mx-auto" 
+    : carouselItems.length === 2 
+      ? "grid-cols-1 sm:grid-cols-2 max-w-2xl mx-auto"
+      : "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3";
 
   return (
     <div className="relative w-full">
       {/* Multi-item carousel grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4">
+      <div className={`grid ${gridColsClass} gap-3 md:gap-4`}>
         {visibleItems.map((item, idx) => (
           <Link 
-            key={`${item.establishmentId}-${idx}`}
+            key={`${item.establishmentId}-${currentIndex}-${idx}`}
             to={`/estabelecimento/${item.establishmentId}`} 
             className="block group"
           >
@@ -173,7 +186,7 @@ export function BannerCarousel() {
       </div>
 
       {/* Navigation arrows - only show if more items than view */}
-      {carouselItems.length > itemsPerView && (
+      {carouselItems.length > actualItemsPerView && (
         <>
           <Button
             variant="ghost"
@@ -194,12 +207,12 @@ export function BannerCarousel() {
 
           {/* Dots indicator */}
           <div className="flex justify-center gap-1.5 mt-3">
-            {Array.from({ length: Math.ceil(carouselItems.length / itemsPerView) }).map((_, index) => (
+            {Array.from({ length: Math.ceil(carouselItems.length / actualItemsPerView) }).map((_, index) => (
               <button
                 key={index}
-                onClick={() => setCurrentIndex(index * itemsPerView)}
+                onClick={() => setCurrentIndex(index * actualItemsPerView)}
                 className={`h-1.5 rounded-full transition-all ${
-                  Math.floor(currentIndex / itemsPerView) === index 
+                  Math.floor(currentIndex / actualItemsPerView) === index
                     ? "bg-primary w-4" 
                     : "bg-primary/30 w-1.5"
                 }`}
