@@ -503,7 +503,8 @@ export default function PublicEstablishmentForm() {
           products_json: productsJson,
           images: uploadedImages,
           favorite_images: favoriteImages,
-          profile_image: logoUrl || null
+          profile_image: logoUrl || null,
+          user_id: user?.id || null
         }]);
 
       if (error) throw error;
