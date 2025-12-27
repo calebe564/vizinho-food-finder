@@ -29,25 +29,26 @@ import {
   Image
 } from 'lucide-react';
 
-interface Establishment {
+interface EstablishmentData {
   id: string;
   name: string;
   description: string | null;
   address: string;
   phone: string;
   whatsapp: string | null;
-  schedule: string;
+  schedule: string | null;
   profile_image: string | null;
   category: string;
-  active: boolean;
+  images: string[];
+  products_json: ProductJson[];
 }
 
-interface Product {
-  id: string;
+interface ProductJson {
   name: string;
   price: number;
-  description: string | null;
   image: string | null;
+  hasVariations?: boolean;
+  variations?: { name: string; price: number }[];
 }
 
 export default function MyEstablishment() {
@@ -56,61 +57,86 @@ export default function MyEstablishment() {
   const { role, isEmpresario, isLoading: roleLoading } = useUserRole();
   const { request, hasPendingRequest, hasApprovedRequest, isLoading: requestLoading } = useEstablishmentRequest();
   
-  const [establishment, setEstablishment] = useState<Establishment | null>(null);
-  const [products, setProducts] = useState<Product[]>([]);
+  const [establishmentData, setEstablishmentData] = useState<EstablishmentData | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!user || roleLoading) return;
+    if (!user || roleLoading || requestLoading) return;
 
-    const fetchEstablishment = async () => {
+    const fetchEstablishmentData = async () => {
       try {
-        // Buscar vinculação do usuário com estabelecimento
-        const { data: userEstablishment, error: ueError } = await supabase
+        // Primeiro tentar buscar de user_establishments -> establishments
+        const { data: userEstablishment } = await supabase
           .from('user_establishments')
           .select('establishment_id')
           .eq('user_id', user.id)
           .maybeSingle();
 
-        if (ueError || !userEstablishment) {
-          setLoading(false);
-          return;
+        if (userEstablishment?.establishment_id) {
+          const { data: estData } = await supabase
+            .from('establishments')
+            .select('*')
+            .eq('id', userEstablishment.establishment_id)
+            .maybeSingle();
+
+          if (estData) {
+            setEstablishmentData({
+              id: estData.id,
+              name: estData.name,
+              description: estData.description,
+              address: estData.address,
+              phone: estData.phone,
+              whatsapp: estData.whatsapp,
+              schedule: estData.schedule,
+              profile_image: estData.profile_image,
+              category: estData.category,
+              images: Array.isArray(estData.images) ? estData.images as string[] : [],
+              products_json: []
+            });
+            setLoading(false);
+            return;
+          }
         }
 
-        // Buscar dados do estabelecimento
-        const { data: estData, error: estError } = await supabase
-          .from('establishments')
+        // Se não encontrou, buscar da solicitação aprovada mais recente
+        const { data: approvedRequest } = await supabase
+          .from('establishment_requests')
           .select('*')
-          .eq('id', userEstablishment.establishment_id)
-          .single();
+          .eq('user_id', user.id)
+          .eq('status', 'approved')
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .maybeSingle();
 
-        if (estError) {
-          console.error('Error fetching establishment:', estError);
-          setLoading(false);
-          return;
-        }
+        if (approvedRequest) {
+          const images = Array.isArray(approvedRequest.images) ? approvedRequest.images as string[] : [];
+          const productsJson = Array.isArray(approvedRequest.products_json) 
+            ? (approvedRequest.products_json as unknown as ProductJson[])
+            : [];
 
-        setEstablishment(estData);
-
-        // Buscar produtos
-        const { data: productsData, error: prodError } = await supabase
-          .from('products')
-          .select('*')
-          .eq('establishment_id', estData.id)
-          .order('name');
-
-        if (!prodError && productsData) {
-          setProducts(productsData);
+          setEstablishmentData({
+            id: approvedRequest.id,
+            name: approvedRequest.name,
+            description: approvedRequest.description,
+            address: approvedRequest.address,
+            phone: approvedRequest.phone,
+            whatsapp: approvedRequest.whatsapp,
+            schedule: approvedRequest.schedule,
+            profile_image: approvedRequest.profile_image,
+            category: approvedRequest.category,
+            images,
+            products_json: productsJson
+          });
         }
       } catch (err) {
-        console.error('Error:', err);
+        console.error('Error fetching establishment:', err);
       } finally {
         setLoading(false);
       }
     };
 
-    fetchEstablishment();
-  }, [user, roleLoading]);
+    fetchEstablishmentData();
+  }, [user, roleLoading, requestLoading]);
 
   if (authLoading || roleLoading || requestLoading) {
     return (
@@ -260,7 +286,7 @@ export default function MyEstablishment() {
     );
   }
 
-  if (!establishment) {
+  if (!establishmentData) {
     return (
       <>
         <Helmet>
@@ -289,10 +315,12 @@ export default function MyEstablishment() {
     );
   }
 
+  const products = establishmentData.products_json || [];
+
   return (
     <>
       <Helmet>
-        <title>Minha Empresa - {establishment.name} | Comércio Vizinho</title>
+        <title>Minha Empresa - {establishmentData.name} | Comércio Vizinho</title>
       </Helmet>
       <div className="min-h-screen flex flex-col bg-background">
         <Header />
@@ -302,10 +330,10 @@ export default function MyEstablishment() {
             <Card className="mb-6 border-0 shadow-elevated rounded-3xl overflow-hidden">
               <div className="bg-gradient-to-r from-primary/10 to-primary/5 p-6">
                 <div className="flex items-center gap-4">
-                  {establishment.profile_image ? (
+                  {establishmentData.profile_image ? (
                     <img 
-                      src={establishment.profile_image} 
-                      alt={establishment.name}
+                      src={establishmentData.profile_image} 
+                      alt={establishmentData.name}
                       className="w-20 h-20 rounded-2xl object-cover"
                     />
                   ) : (
@@ -315,12 +343,10 @@ export default function MyEstablishment() {
                   )}
                   <div className="flex-1">
                     <div className="flex items-center gap-2 mb-1">
-                      <h1 className="text-2xl font-bold">{establishment.name}</h1>
-                      <Badge variant={establishment.active ? "default" : "secondary"}>
-                        {establishment.active ? 'Ativo' : 'Inativo'}
-                      </Badge>
+                      <h1 className="text-2xl font-bold">{establishmentData.name}</h1>
+                      <Badge variant="default">Aprovado</Badge>
                     </div>
-                    <p className="text-muted-foreground">{establishment.category}</p>
+                    <p className="text-muted-foreground capitalize">{establishmentData.category}</p>
                   </div>
                 </div>
               </div>
@@ -355,28 +381,28 @@ export default function MyEstablishment() {
                         <Label className="text-muted-foreground text-sm">Endereço</Label>
                         <div className="flex items-start gap-2">
                           <MapPin className="h-4 w-4 mt-0.5 text-primary" />
-                          <p className="text-sm">{establishment.address}</p>
+                          <p className="text-sm">{establishmentData.address}</p>
                         </div>
                       </div>
                       <div className="space-y-2">
                         <Label className="text-muted-foreground text-sm">Telefone</Label>
                         <div className="flex items-center gap-2">
                           <Phone className="h-4 w-4 text-primary" />
-                          <p className="text-sm">{establishment.phone}</p>
+                          <p className="text-sm">{establishmentData.phone}</p>
                         </div>
                       </div>
                       <div className="space-y-2">
                         <Label className="text-muted-foreground text-sm">Horário</Label>
                         <div className="flex items-center gap-2">
                           <Clock className="h-4 w-4 text-primary" />
-                          <p className="text-sm">{establishment.schedule}</p>
+                          <p className="text-sm">{establishmentData.schedule || 'Não informado'}</p>
                         </div>
                       </div>
                     </div>
-                    {establishment.description && (
+                    {establishmentData.description && (
                       <div className="space-y-2">
                         <Label className="text-muted-foreground text-sm">Descrição</Label>
-                        <p className="text-sm">{establishment.description}</p>
+                        <p className="text-sm">{establishmentData.description}</p>
                       </div>
                     )}
                   </CardContent>
@@ -402,8 +428,8 @@ export default function MyEstablishment() {
                       </div>
                     ) : (
                       <div className="grid gap-4 md:grid-cols-2">
-                        {products.map(product => (
-                          <div key={product.id} className="flex items-center gap-3 p-3 bg-muted rounded-xl">
+                        {products.map((product, index) => (
+                          <div key={index} className="flex items-center gap-3 p-3 bg-muted rounded-xl">
                             {product.image ? (
                               <img 
                                 src={product.image} 
@@ -417,9 +443,15 @@ export default function MyEstablishment() {
                             )}
                             <div className="flex-1">
                               <p className="font-medium">{product.name}</p>
-                              <p className="text-primary font-semibold">
-                                R$ {product.price.toFixed(2).replace('.', ',')}
-                              </p>
+                              {product.hasVariations && product.variations ? (
+                                <p className="text-primary text-sm">
+                                  {product.variations.length} variações
+                                </p>
+                              ) : (
+                                <p className="text-primary font-semibold">
+                                  R$ {product.price.toFixed(2).replace('.', ',')}
+                                </p>
+                              )}
                             </div>
                             <Button variant="ghost" size="sm">
                               <Edit className="h-4 w-4" />
