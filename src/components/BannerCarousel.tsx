@@ -74,29 +74,20 @@ export function BannerCarousel() {
       .eq("active", true);
 
     if (!error && data) {
-      const items: CarouselItem[] = [];
-      data.forEach((est) => {
+      // Um slide por empresa - usar banner, primeira imagem favorita, ou profile
+      const items: CarouselItem[] = data.map((est) => {
         const favoriteImages = Array.isArray(est.favorite_images) ? est.favorite_images as string[] : [];
-        if (favoriteImages.length > 0) {
-          favoriteImages.forEach((img) => {
-            items.push({
-              establishmentId: est.id,
-              establishmentName: est.name,
-              category: est.category,
-              image: img,
-              profileImage: est.profile_image,
-            });
-          });
-        } else if (est.banner_image || est.profile_image) {
-          items.push({
-            establishmentId: est.id,
-            establishmentName: est.name,
-            category: est.category,
-            image: est.banner_image || est.profile_image || "",
-            profileImage: est.profile_image,
-          });
-        }
-      });
+        const mainImage = est.banner_image || favoriteImages[0] || est.profile_image || "";
+        
+        return {
+          establishmentId: est.id,
+          establishmentName: est.name,
+          category: est.category,
+          image: mainImage,
+          profileImage: est.profile_image,
+        };
+      }).filter(item => item.image); // Remove itens sem imagem
+      
       setCarouselItems(items);
     }
   };
