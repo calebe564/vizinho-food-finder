@@ -1,5 +1,5 @@
 import { Link, useNavigate } from "react-router-dom";
-import { Home, Building2, Store, MoreVertical, UserPlus, Heart, LogIn, LogOut, User } from "lucide-react";
+import { Home, Building2, Store, MoreVertical, UserPlus, Heart, LogIn, LogOut, User, Briefcase } from "lucide-react";
 import { ThemeToggle } from "./ThemeToggle";
 import { Button } from "./ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "./ui/sheet";
@@ -9,13 +9,20 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSepara
 import logo from "@/assets/logo.png";
 import { useFavorites } from "@/hooks/useFavorites";
 import { useAuth } from "@/contexts/AuthContext";
+import { useUserRole } from "@/hooks/useUserRole";
+import { useEstablishmentRequest } from "@/hooks/useEstablishmentRequest";
 
 export function Header() {
   const [isOpen, setIsOpen] = useState(false);
   const { totalFavorites } = useFavorites();
   const { user, profile, signOut, isAdmin } = useAuth();
+  const { isEmpresario, isLoading: roleLoading } = useUserRole();
+  const { hasApprovedRequest, isLoading: requestLoading } = useEstablishmentRequest();
   const navigate = useNavigate();
   const hasFavorites = totalFavorites > 0;
+  
+  // Mostrar "ADM espaço empresa" se o usuário é empresário ou tem solicitação aprovada
+  const showMyEstablishment = user && (isEmpresario || hasApprovedRequest) && !roleLoading && !requestLoading;
 
   const handleSignOut = async () => {
     await signOut();
@@ -88,12 +95,21 @@ export function Header() {
                   Favoritos {hasFavorites && `(${totalFavorites})`}
                 </Link>
               </DropdownMenuItem>
-              <DropdownMenuItem asChild>
-                <Link to="/cadastrar" className="flex items-center gap-2 cursor-pointer">
-                  <UserPlus className="h-4 w-4" />
-                  Cadastrar Empresa
-                </Link>
-              </DropdownMenuItem>
+              {showMyEstablishment ? (
+                <DropdownMenuItem asChild>
+                  <Link to="/minha-empresa" className="flex items-center gap-2 cursor-pointer">
+                    <Briefcase className="h-4 w-4" />
+                    ADM espaço empresa
+                  </Link>
+                </DropdownMenuItem>
+              ) : (
+                <DropdownMenuItem asChild>
+                  <Link to="/cadastrar" className="flex items-center gap-2 cursor-pointer">
+                    <UserPlus className="h-4 w-4" />
+                    Cadastrar Empresa
+                  </Link>
+                </DropdownMenuItem>
+              )}
               <DropdownMenuSeparator />
               {user ? (
                 <>
@@ -163,10 +179,17 @@ export function Header() {
                     <Heart className={`h-5 w-5 ${hasFavorites ? "text-red-500 fill-red-500" : ""}`} />
                     <span className="font-medium">Favoritos {hasFavorites && `(${totalFavorites})`}</span>
                   </Link>
-                  <Link to="/cadastrar" onClick={() => setIsOpen(false)} className="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-secondary transition-colors">
-                    <UserPlus className="h-5 w-5" />
-                    <span className="font-medium">Cadastrar Empresa</span>
-                  </Link>
+                  {showMyEstablishment ? (
+                    <Link to="/minha-empresa" onClick={() => setIsOpen(false)} className="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-secondary transition-colors">
+                      <Briefcase className="h-5 w-5" />
+                      <span className="font-medium">ADM espaço empresa</span>
+                    </Link>
+                  ) : (
+                    <Link to="/cadastrar" onClick={() => setIsOpen(false)} className="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-secondary transition-colors">
+                      <UserPlus className="h-5 w-5" />
+                      <span className="font-medium">Cadastrar Empresa</span>
+                    </Link>
+                  )}
                 </div>
 
                 <div className="border-t mt-4 pt-4">
