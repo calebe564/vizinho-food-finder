@@ -142,7 +142,7 @@ export default function AdminAdvertisements() {
       size: ad.size || "small",
       behavior: ad.behavior || "static",
       display_order: ad.display_order || 0,
-      establishment_id: ad.establishment_id || "",
+      establishment_id: ad.establishment_id || "none",
       start_date: ad.start_date ? ad.start_date.split('T')[0] : "",
       end_date: ad.end_date ? ad.end_date.split('T')[0] : "",
     });
@@ -203,9 +203,10 @@ export default function AdminAdvertisements() {
         size: formData.size,
         behavior: formData.behavior,
         display_order: formData.display_order,
-        establishment_id: formData.establishment_id || null,
+        establishment_id: formData.establishment_id === "none" ? null : formData.establishment_id || null,
         start_date: formData.start_date ? new Date(formData.start_date).toISOString() : null,
         end_date: formData.end_date ? new Date(formData.end_date).toISOString() : null,
+        active: true,
       };
 
       if (editingAd) {
@@ -515,12 +516,15 @@ export default function AdminAdvertisements() {
 
                     <div className="space-y-2">
                       <Label>Empresa vinculada</Label>
-                      <Select value={formData.establishment_id} onValueChange={(value) => setFormData(prev => ({ ...prev, establishment_id: value }))}>
+                      <Select 
+                        value={formData.establishment_id || "none"} 
+                        onValueChange={(value) => setFormData(prev => ({ ...prev, establishment_id: value === "none" ? "" : value }))}
+                      >
                         <SelectTrigger className="rounded-xl">
                           <SelectValue placeholder="Nenhuma (opcional)" />
                         </SelectTrigger>
                         <SelectContent className="bg-popover max-h-60">
-                          <SelectItem value="">Nenhuma</SelectItem>
+                          <SelectItem value="none">Nenhuma</SelectItem>
                           {establishments.map(est => (
                             <SelectItem key={est.id} value={est.id}>{est.name}</SelectItem>
                           ))}

@@ -26,8 +26,19 @@ import {
   Store,
   Phone,
   MapPin,
-  Image
+  Image,
+  Upload,
+  Trash2,
+  Camera,
+  ImagePlus,
+  X
 } from 'lucide-react';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 
 interface EstablishmentData {
   id: string;
@@ -41,6 +52,7 @@ interface EstablishmentData {
   category: string;
   images: string[];
   products_json: ProductJson[];
+  isFromRequest: boolean; // indica se os dados vem de establishment_requests
 }
 
 interface ProductJson {
@@ -55,88 +67,224 @@ export default function MyEstablishment() {
   const navigate = useNavigate();
   const { user, isLoading: authLoading } = useAuth();
   const { role, isEmpresario, isLoading: roleLoading } = useUserRole();
-  const { request, hasPendingRequest, hasApprovedRequest, isLoading: requestLoading } = useEstablishmentRequest();
+  const { request, hasPendingRequest, hasApprovedRequest, isLoading: requestLoading, refetch } = useEstablishmentRequest();
   
   const [establishmentData, setEstablishmentData] = useState<EstablishmentData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [uploadingLogo, setUploadingLogo] = useState(false);
+  const [uploadingPhotos, setUploadingPhotos] = useState(false);
+  const [deletingPhoto, setDeletingPhoto] = useState<string | null>(null);
+  const [photoDialogOpen, setPhotoDialogOpen] = useState(false);
+  const [selectedPhoto, setSelectedPhoto] = useState<string | null>(null);
+
+  const fetchEstablishmentData = async () => {
+    if (!user) return;
+    
+    try {
+      // Primeiro tentar buscar de user_establishments -> establishments
+      const { data: userEstablishment } = await supabase
+        .from('user_establishments')
+        .select('establishment_id')
+        .eq('user_id', user.id)
+        .maybeSingle();
+
+      if (userEstablishment?.establishment_id) {
+        const { data: estData } = await supabase
+          .from('establishments')
+          .select('*')
+          .eq('id', userEstablishment.establishment_id)
+          .maybeSingle();
+
+        if (estData) {
+          setEstablishmentData({
+            id: estData.id,
+            name: estData.name,
+            description: estData.description,
+            address: estData.address,
+            phone: estData.phone,
+            whatsapp: estData.whatsapp,
+            schedule: estData.schedule,
+            profile_image: estData.profile_image,
+            category: estData.category,
+            images: Array.isArray(estData.images) ? estData.images as string[] : [],
+            products_json: [],
+            isFromRequest: false
+          });
+          setLoading(false);
+          return;
+        }
+      }
+
+      // Se não encontrou, buscar da solicitação aprovada mais recente
+      const { data: approvedRequest } = await supabase
+        .from('establishment_requests')
+        .select('*')
+        .eq('user_id', user.id)
+        .eq('status', 'approved')
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (approvedRequest) {
+        const images = Array.isArray(approvedRequest.images) ? approvedRequest.images as string[] : [];
+        const productsJson = Array.isArray(approvedRequest.products_json) 
+          ? (approvedRequest.products_json as unknown as ProductJson[])
+          : [];
+
+        setEstablishmentData({
+          id: approvedRequest.id,
+          name: approvedRequest.name,
+          description: approvedRequest.description,
+          address: approvedRequest.address,
+          phone: approvedRequest.phone,
+          whatsapp: approvedRequest.whatsapp,
+          schedule: approvedRequest.schedule,
+          profile_image: approvedRequest.profile_image,
+          category: approvedRequest.category,
+          images,
+          products_json: productsJson,
+          isFromRequest: true
+        });
+      }
+    } catch (err) {
+      console.error('Error fetching establishment:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
     if (!user || roleLoading || requestLoading) return;
-
-    const fetchEstablishmentData = async () => {
-      try {
-        // Primeiro tentar buscar de user_establishments -> establishments
-        const { data: userEstablishment } = await supabase
-          .from('user_establishments')
-          .select('establishment_id')
-          .eq('user_id', user.id)
-          .maybeSingle();
-
-        if (userEstablishment?.establishment_id) {
-          const { data: estData } = await supabase
-            .from('establishments')
-            .select('*')
-            .eq('id', userEstablishment.establishment_id)
-            .maybeSingle();
-
-          if (estData) {
-            setEstablishmentData({
-              id: estData.id,
-              name: estData.name,
-              description: estData.description,
-              address: estData.address,
-              phone: estData.phone,
-              whatsapp: estData.whatsapp,
-              schedule: estData.schedule,
-              profile_image: estData.profile_image,
-              category: estData.category,
-              images: Array.isArray(estData.images) ? estData.images as string[] : [],
-              products_json: []
-            });
-            setLoading(false);
-            return;
-          }
-        }
-
-        // Se não encontrou, buscar da solicitação aprovada mais recente
-        const { data: approvedRequest } = await supabase
-          .from('establishment_requests')
-          .select('*')
-          .eq('user_id', user.id)
-          .eq('status', 'approved')
-          .order('created_at', { ascending: false })
-          .limit(1)
-          .maybeSingle();
-
-        if (approvedRequest) {
-          const images = Array.isArray(approvedRequest.images) ? approvedRequest.images as string[] : [];
-          const productsJson = Array.isArray(approvedRequest.products_json) 
-            ? (approvedRequest.products_json as unknown as ProductJson[])
-            : [];
-
-          setEstablishmentData({
-            id: approvedRequest.id,
-            name: approvedRequest.name,
-            description: approvedRequest.description,
-            address: approvedRequest.address,
-            phone: approvedRequest.phone,
-            whatsapp: approvedRequest.whatsapp,
-            schedule: approvedRequest.schedule,
-            profile_image: approvedRequest.profile_image,
-            category: approvedRequest.category,
-            images,
-            products_json: productsJson
-          });
-        }
-      } catch (err) {
-        console.error('Error fetching establishment:', err);
-      } finally {
-        setLoading(false);
-      }
-    };
-
     fetchEstablishmentData();
   }, [user, roleLoading, requestLoading]);
+
+  const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !establishmentData) return;
+
+    setUploadingLogo(true);
+    try {
+      const fileExt = file.name.split('.').pop();
+      const fileName = `logos/${crypto.randomUUID()}.${fileExt}`;
+      
+      const { error: uploadError } = await supabase.storage
+        .from('establishment-images')
+        .upload(fileName, file);
+
+      if (uploadError) throw uploadError;
+
+      const { data: { publicUrl } } = supabase.storage
+        .from('establishment-images')
+        .getPublicUrl(fileName);
+
+      // Atualizar no banco
+      if (establishmentData.isFromRequest) {
+        const { error } = await supabase
+          .from('establishment_requests')
+          .update({ profile_image: publicUrl })
+          .eq('id', establishmentData.id);
+        if (error) throw error;
+      } else {
+        const { error } = await supabase
+          .from('establishments')
+          .update({ profile_image: publicUrl })
+          .eq('id', establishmentData.id);
+        if (error) throw error;
+      }
+
+      setEstablishmentData(prev => prev ? { ...prev, profile_image: publicUrl } : null);
+      toast.success('Logo atualizada com sucesso!');
+    } catch (error) {
+      console.error('Error uploading logo:', error);
+      toast.error('Erro ao fazer upload da logo');
+    } finally {
+      setUploadingLogo(false);
+    }
+  };
+
+  const handlePhotosUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || files.length === 0 || !establishmentData) return;
+
+    setUploadingPhotos(true);
+    try {
+      const newUrls: string[] = [];
+
+      for (const file of Array.from(files)) {
+        const fileExt = file.name.split('.').pop();
+        const fileName = `photos/${crypto.randomUUID()}.${fileExt}`;
+        
+        const { error: uploadError } = await supabase.storage
+          .from('establishment-images')
+          .upload(fileName, file);
+
+        if (uploadError) throw uploadError;
+
+        const { data: { publicUrl } } = supabase.storage
+          .from('establishment-images')
+          .getPublicUrl(fileName);
+
+        newUrls.push(publicUrl);
+      }
+
+      const updatedImages = [...establishmentData.images, ...newUrls];
+
+      // Atualizar no banco
+      if (establishmentData.isFromRequest) {
+        const { error } = await supabase
+          .from('establishment_requests')
+          .update({ images: updatedImages })
+          .eq('id', establishmentData.id);
+        if (error) throw error;
+      } else {
+        const { error } = await supabase
+          .from('establishments')
+          .update({ images: updatedImages })
+          .eq('id', establishmentData.id);
+        if (error) throw error;
+      }
+
+      setEstablishmentData(prev => prev ? { ...prev, images: updatedImages } : null);
+      toast.success(`${newUrls.length} foto(s) adicionada(s) com sucesso!`);
+    } catch (error) {
+      console.error('Error uploading photos:', error);
+      toast.error('Erro ao fazer upload das fotos');
+    } finally {
+      setUploadingPhotos(false);
+    }
+  };
+
+  const handleDeletePhoto = async (photoUrl: string) => {
+    if (!establishmentData) return;
+
+    setDeletingPhoto(photoUrl);
+    try {
+      const updatedImages = establishmentData.images.filter(img => img !== photoUrl);
+
+      // Atualizar no banco
+      if (establishmentData.isFromRequest) {
+        const { error } = await supabase
+          .from('establishment_requests')
+          .update({ images: updatedImages })
+          .eq('id', establishmentData.id);
+        if (error) throw error;
+      } else {
+        const { error } = await supabase
+          .from('establishments')
+          .update({ images: updatedImages })
+          .eq('id', establishmentData.id);
+        if (error) throw error;
+      }
+
+      setEstablishmentData(prev => prev ? { ...prev, images: updatedImages } : null);
+      toast.success('Foto removida com sucesso!');
+    } catch (error) {
+      console.error('Error deleting photo:', error);
+      toast.error('Erro ao remover foto');
+    } finally {
+      setDeletingPhoto(null);
+    }
+  };
 
   if (authLoading || roleLoading || requestLoading) {
     return (
@@ -330,33 +478,59 @@ export default function MyEstablishment() {
             <Card className="mb-6 border-0 shadow-elevated rounded-3xl overflow-hidden">
               <div className="bg-gradient-to-r from-primary/10 to-primary/5 p-6">
                 <div className="flex items-center gap-4">
-                  {establishmentData.profile_image ? (
-                    <img 
-                      src={establishmentData.profile_image} 
-                      alt={establishmentData.name}
-                      className="w-20 h-20 rounded-2xl object-cover"
+                  {/* Logo com upload */}
+                  <div className="relative group">
+                    {establishmentData.profile_image ? (
+                      <img 
+                        src={establishmentData.profile_image} 
+                        alt={establishmentData.name}
+                        className="w-20 h-20 rounded-2xl object-cover"
+                      />
+                    ) : (
+                      <div className="w-20 h-20 rounded-2xl bg-primary/10 flex items-center justify-center">
+                        <Store className="h-10 w-10 text-primary" />
+                      </div>
+                    )}
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={handleLogoUpload}
+                      className="hidden"
+                      id="logo-upload"
+                      disabled={uploadingLogo}
                     />
-                  ) : (
-                    <div className="w-20 h-20 rounded-2xl bg-primary/10 flex items-center justify-center">
-                      <Store className="h-10 w-10 text-primary" />
-                    </div>
-                  )}
+                    <label
+                      htmlFor="logo-upload"
+                      className="absolute inset-0 flex items-center justify-center bg-black/50 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
+                    >
+                      {uploadingLogo ? (
+                        <Loader2 className="h-6 w-6 text-white animate-spin" />
+                      ) : (
+                        <Camera className="h-6 w-6 text-white" />
+                      )}
+                    </label>
+                  </div>
                   <div className="flex-1">
                     <div className="flex items-center gap-2 mb-1">
                       <h1 className="text-2xl font-bold">{establishmentData.name}</h1>
                       <Badge variant="default">Aprovado</Badge>
                     </div>
                     <p className="text-muted-foreground capitalize">{establishmentData.category}</p>
+                    <p className="text-xs text-muted-foreground mt-1">Clique na logo para alterar</p>
                   </div>
                 </div>
               </div>
             </Card>
 
             <Tabs defaultValue="info" className="space-y-4">
-              <TabsList className="grid w-full grid-cols-2">
+              <TabsList className="grid w-full grid-cols-3">
                 <TabsTrigger value="info">
                   <Building2 className="h-4 w-4 mr-2" />
                   Informações
+                </TabsTrigger>
+                <TabsTrigger value="photos">
+                  <Image className="h-4 w-4 mr-2" />
+                  Fotos ({establishmentData.images.length})
                 </TabsTrigger>
                 <TabsTrigger value="products">
                   <Package className="h-4 w-4 mr-2" />
@@ -403,6 +577,75 @@ export default function MyEstablishment() {
                       <div className="space-y-2">
                         <Label className="text-muted-foreground text-sm">Descrição</Label>
                         <p className="text-sm">{establishmentData.description}</p>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              </TabsContent>
+
+              <TabsContent value="photos">
+                <Card className="border-0 shadow-elevated rounded-3xl">
+                  <CardHeader>
+                    <CardTitle className="flex items-center justify-between">
+                      Fotos do Estabelecimento
+                      <div className="flex gap-2">
+                        <input
+                          type="file"
+                          accept="image/*"
+                          multiple
+                          onChange={handlePhotosUpload}
+                          className="hidden"
+                          id="photos-upload"
+                          disabled={uploadingPhotos}
+                        />
+                        <label htmlFor="photos-upload">
+                          <Button asChild size="sm" disabled={uploadingPhotos}>
+                            <span>
+                              {uploadingPhotos ? (
+                                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                              ) : (
+                                <ImagePlus className="h-4 w-4 mr-2" />
+                              )}
+                              Adicionar Fotos
+                            </span>
+                          </Button>
+                        </label>
+                      </div>
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    {establishmentData.images.length === 0 ? (
+                      <div className="text-center py-8">
+                        <Image className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                        <p className="text-muted-foreground">Nenhuma foto cadastrada</p>
+                        <p className="text-sm text-muted-foreground mt-1">Clique em "Adicionar Fotos" para começar</p>
+                      </div>
+                    ) : (
+                      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                        {establishmentData.images.map((image, index) => (
+                          <div key={index} className="relative group aspect-square rounded-xl overflow-hidden">
+                            <img 
+                              src={image} 
+                              alt={`Foto ${index + 1}`}
+                              className="w-full h-full object-cover cursor-pointer hover:scale-105 transition-transform"
+                              onClick={() => {
+                                setSelectedPhoto(image);
+                                setPhotoDialogOpen(true);
+                              }}
+                            />
+                            <button
+                              onClick={() => handleDeletePhoto(image)}
+                              disabled={deletingPhoto === image}
+                              className="absolute top-2 right-2 p-1.5 bg-destructive text-destructive-foreground rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                            >
+                              {deletingPhoto === image ? (
+                                <Loader2 className="h-4 w-4 animate-spin" />
+                              ) : (
+                                <Trash2 className="h-4 w-4" />
+                              )}
+                            </button>
+                          </div>
+                        ))}
                       </div>
                     )}
                   </CardContent>
@@ -468,6 +711,22 @@ export default function MyEstablishment() {
         </main>
         <Footer />
       </div>
+
+      {/* Dialog para visualizar foto em tamanho grande */}
+      <Dialog open={photoDialogOpen} onOpenChange={setPhotoDialogOpen}>
+        <DialogContent className="max-w-3xl p-2">
+          <DialogHeader className="sr-only">
+            <DialogTitle>Visualizar foto</DialogTitle>
+          </DialogHeader>
+          {selectedPhoto && (
+            <img 
+              src={selectedPhoto} 
+              alt="Foto ampliada"
+              className="w-full h-auto rounded-lg"
+            />
+          )}
+        </DialogContent>
+      </Dialog>
     </>
   );
 }
