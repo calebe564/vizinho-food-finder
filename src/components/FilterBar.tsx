@@ -13,6 +13,9 @@ const categories = [
   { value: "hamburgueria", label: "Hamburgueria" },
   { value: "bar", label: "Bar" },
   { value: "cafe", label: "Café" },
+  { value: "sorveteria", label: "Sorveteria" },
+  { value: "acai", label: "Açaí" },
+  { value: "espetinho", label: "Espetinho" },
   { value: "outro", label: "Outro" },
 ];
 
