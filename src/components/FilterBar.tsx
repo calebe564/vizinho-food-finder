@@ -57,7 +57,7 @@ export function FilterBar({
               <SelectValue placeholder="Categoria" />
             </div>
           </SelectTrigger>
-          <SelectContent className="rounded-xl">
+          <SelectContent className="rounded-xl max-h-[200px] overflow-y-auto">
             {categories.map((cat) => (
               <SelectItem key={cat.value} value={cat.value} className="rounded-lg">
                 {cat.label}
