@@ -26,6 +26,9 @@ const categories: EstablishmentCategory[] = [
   "hamburgueria",
   "bar",
   "cafe",
+  "sorveteria",
+  "acai",
+  "espetinho",
   "outro"
 ];
 
@@ -40,6 +43,9 @@ const categoryLabels: Record<string, string> = {
   hamburgueria: "Hamburgueria",
   bar: "Bar",
   cafe: "Café",
+  sorveteria: "Sorveteria",
+  acai: "Açaí",
+  espetinho: "Espetinho",
   outro: "Outro"
 };
 
@@ -592,7 +598,7 @@ export default function AdminEstablishmentForm() {
                   <SelectTrigger>
                     <SelectValue placeholder="Selecione a categoria" />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent className="max-h-[200px] overflow-y-auto">
                     {categories.map((cat) => (
                       <SelectItem key={cat} value={cat}>
                         {categoryLabels[cat]}
