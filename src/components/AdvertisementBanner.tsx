@@ -67,24 +67,24 @@ export function AdvertisementBanner({ advertisements, position }: AdvertisementB
     switch (size) {
       case 'large':
         return {
-          container: 'p-4 md:p-6',
-          image: 'w-24 h-24 md:w-32 md:h-32',
-          title: 'text-base md:text-lg font-semibold',
-          text: 'text-sm md:text-base',
-        };
-      case 'medium':
-        return {
-          container: 'p-3 md:p-4',
-          image: 'w-20 h-20 md:w-24 md:h-24',
+          container: 'p-2.5 md:p-3',
+          image: 'w-16 h-16 md:w-20 md:h-20',
           title: 'text-sm md:text-base font-semibold',
           text: 'text-xs md:text-sm',
         };
+      case 'medium':
+        return {
+          container: 'p-2 md:p-2.5',
+          image: 'w-14 h-14 md:w-16 md:h-16',
+          title: 'text-xs md:text-sm font-semibold',
+          text: 'text-[10px] md:text-xs',
+        };
       default: // small
         return {
-          container: 'p-2.5',
-          image: 'w-16 h-16',
-          title: 'text-sm font-medium',
-          text: 'text-xs',
+          container: 'p-2',
+          image: 'w-12 h-12',
+          title: 'text-xs font-medium',
+          text: 'text-[10px]',
         };
     }
   };
