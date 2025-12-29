@@ -97,6 +97,8 @@ export default function AdminEstablishmentForm() {
 
   // Images state
   const [profileImage, setProfileImage] = useState<string>("");
+  const [newProfileImage, setNewProfileImage] = useState<File | null>(null);
+  const [profilePreview, setProfilePreview] = useState<string | null>(null);
   const [bannerImage, setBannerImage] = useState<string>("");
   const [newBannerImage, setNewBannerImage] = useState<File | null>(null);
   const [bannerPreview, setBannerPreview] = useState<string | null>(null);
@@ -249,6 +251,16 @@ export default function AdminEstablishmentForm() {
     if (centralZone.some(b => bairroLower.includes(b.toLowerCase()))) return "Centro";
     
     return "";
+  };
+
+  const handleProfileImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setNewProfileImage(file);
+      const reader = new FileReader();
+      reader.onloadend = () => setProfilePreview(reader.result as string);
+      reader.readAsDataURL(file);
+    }
   };
 
   const handleBannerChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -405,6 +417,18 @@ export default function AdminEstablishmentForm() {
     setLoading(true);
 
     try {
+      // Upload new profile image (logo) if exists
+      let finalProfileImage = profileImage;
+      if (newProfileImage) {
+        const ext = newProfileImage.name.split(".").pop();
+        const path = `logos/${crypto.randomUUID()}.${ext}`;
+        const { error } = await supabase.storage.from("establishment-images").upload(path, newProfileImage);
+        if (!error) {
+          const { data } = supabase.storage.from("establishment-images").getPublicUrl(path);
+          finalProfileImage = data.publicUrl;
+        }
+      }
+
       // Upload new banner if exists
       let finalBannerImage = bannerImage;
       if (newBannerImage) {
@@ -447,6 +471,7 @@ export default function AdminEstablishmentForm() {
         reference_point: formData.reference_point || null,
         is_paid: formData.is_paid,
         active: formData.active,
+        profile_image: finalProfileImage || null,
         banner_image: finalBannerImage || null,
         images: allImages,
         favorite_images: favoriteImages,
@@ -570,16 +595,58 @@ export default function AdminEstablishmentForm() {
               <h3 className="text-lg font-semibold">Dados da Empresa</h3>
             </div>
 
-            {/* Logo (read-only) */}
-            {profileImage && (
-              <div className="space-y-2">
-                <Label className="text-base font-medium">Logo da Empresa (não editável)</Label>
-                <div className="flex items-center gap-4">
-                  <img src={profileImage} alt="Logo" className="w-20 h-20 rounded-xl object-cover border-2 border-muted" />
-                  <p className="text-sm text-muted-foreground">A logo não pode ser alterada após o cadastro.</p>
+            {/* Logo */}
+            <div className="space-y-2">
+              <Label className="text-base font-medium">Logo da Empresa</Label>
+              <div className="flex items-center gap-4">
+                {(profilePreview || profileImage) ? (
+                  <img 
+                    src={profilePreview || profileImage} 
+                    alt="Logo" 
+                    className="w-20 h-20 rounded-xl object-cover border-2 border-muted" 
+                  />
+                ) : (
+                  <div className="w-20 h-20 rounded-xl bg-muted flex items-center justify-center border-2 border-dashed border-muted-foreground/30">
+                    <Building2 className="h-8 w-8 text-muted-foreground/50" />
+                  </div>
+                )}
+                <div className="flex flex-col gap-2">
+                  <label className="cursor-pointer">
+                    <Input
+                      type="file"
+                      accept="image/*"
+                      onChange={handleProfileImageChange}
+                      className="hidden"
+                    />
+                    <Button type="button" variant="outline" size="sm" asChild>
+                      <span>
+                        <Upload className="h-4 w-4 mr-2" />
+                        {profileImage ? "Trocar Logo" : "Adicionar Logo"}
+                      </span>
+                    </Button>
+                  </label>
+                  {(profilePreview || profileImage) && (
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => {
+                        setProfileImage("");
+                        setNewProfileImage(null);
+                        setProfilePreview(null);
+                      }}
+                      className="text-destructive hover:text-destructive"
+                    >
+                      <Trash2 className="h-4 w-4 mr-2" />
+                      Remover
+                    </Button>
+                  )}
                 </div>
               </div>
-            )}
+              <p className="text-xs text-muted-foreground">
+                Recomendado: imagem quadrada (1:1) de pelo menos 200x200px
+              </p>
+            </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
