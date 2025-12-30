@@ -89,22 +89,39 @@ Informações do comerciante: "${input}"`;
     } else if (type === "produtos") {
       systemPrompt += `
 
-TAREFA: ORGANIZAR LISTA DE PRODUTOS
+TAREFA: ORGANIZAR LISTA DE PRODUTOS COM VARIAÇÕES
 
-Transforme a lista em formato estruturado.
+Você deve interpretar o texto do usuário e organizar os produtos de forma estruturada.
 Retorne APENAS um JSON válido no seguinte formato:
+
 {
   "produtos": [
-    { "nome": "Nome do produto", "preco": "0.00" ou null se não informado }
+    {
+      "nome": "Nome do produto",
+      "preco": "15.00" ou null se não informado,
+      "variacoes": [
+        { "nome": "Pequeno", "preco": "10.00" },
+        { "nome": "Grande", "preco": "15.00" }
+      ] ou null se não houver variações
+    }
   ]
 }
 
-Regras:
-- Sem criar preços irreais
-- Sem inventar variações que o usuário não citou
+REGRAS IMPORTANTES:
+- Se o produto tem variações (tamanhos, sabores com preços diferentes), NÃO coloque preço principal, apenas nas variações
+- Se o produto NÃO tem variações, coloque o preço no campo "preco" e "variacoes" como null
+- Nunca inventar produtos que não foram mencionados
+- Nunca inventar preços que não foram informados
+- Nunca inventar variações que não foram citadas
+- Use formato de preço com ponto: "15.00", "8.50"
 - Se o preço não foi informado, use null
 - Nunca gere imagens
-- Apenas organize os produtos mencionados`;
+- Linguagem sempre em português do Brasil
+
+EXEMPLOS:
+- "hambúrguer pequeno 5 reais, grande 8 reais" → produto com variações
+- "batata frita 12 reais" → produto sem variação
+- "refrigerante" → produto sem preço informado`;
 
       userPrompt = `Organize esta lista de produtos em JSON: "${input}"`;
 

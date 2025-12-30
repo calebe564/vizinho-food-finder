@@ -7,12 +7,23 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Sparkles, Clock, FileText, Package, Loader2, Copy, Check, ChevronDown, ChevronUp } from "lucide-react";
 
+interface ProductVariation {
+  nome: string;
+  preco: string;
+}
+
+interface ProductResult {
+  nome: string;
+  preco: string | null;
+  variacoes: ProductVariation[] | null;
+}
+
 interface CadastroAIHelperProps {
   companyName?: string;
   category?: string;
   onApplySchedule?: (schedule: string) => void;
   onApplyDescription?: (description: string) => void;
-  onApplyProducts?: (products: Array<{ name: string; price: string }>) => void;
+  onApplyProducts?: (products: Array<{ name: string; price: string; variations?: Array<{ name: string; price: string }> }>) => void;
 }
 
 export function CadastroAIHelper({
@@ -35,7 +46,7 @@ export function CadastroAIHelper({
   // Result states
   const [scheduleResult, setScheduleResult] = useState("");
   const [descriptionResult, setDescriptionResult] = useState("");
-  const [productsResult, setProductsResult] = useState<Array<{ nome: string; preco: string | null }>>([]);
+  const [productsResult, setProductsResult] = useState<ProductResult[]>([]);
 
   const callAI = async (type: string, input: string) => {
     if (!input.trim()) {
@@ -108,6 +119,10 @@ export function CadastroAIHelper({
       const formattedProducts = productsResult.map(p => ({
         name: p.nome,
         price: p.preco || "",
+        variations: p.variacoes?.map(v => ({
+          name: v.nome,
+          price: v.preco,
+        })),
       }));
       onApplyProducts(formattedProducts);
       toast.success("Produtos aplicados ao formulário!");
@@ -305,13 +320,28 @@ export function CadastroAIHelper({
               {productsResult.length > 0 && (
                 <div className="p-3 bg-background rounded-lg border space-y-2">
                   <p className="text-sm font-medium">Produtos encontrados:</p>
-                  <ul className="text-sm space-y-1">
+                  <ul className="text-sm space-y-2">
                     {productsResult.map((p, i) => (
-                      <li key={i} className="flex justify-between bg-muted p-2 rounded">
-                        <span>{p.nome}</span>
-                        <span className="text-muted-foreground">
-                          {p.preco ? `R$ ${p.preco}` : "Sem preço"}
-                        </span>
+                      <li key={i} className="bg-muted p-2 rounded">
+                        <div className="flex justify-between font-medium">
+                          <span>{p.nome}</span>
+                          {p.preco && !p.variacoes && (
+                            <span className="text-primary">R$ {p.preco}</span>
+                          )}
+                          {!p.preco && !p.variacoes && (
+                            <span className="text-muted-foreground">Sem preço</span>
+                          )}
+                        </div>
+                        {p.variacoes && p.variacoes.length > 0 && (
+                          <ul className="mt-1 pl-3 border-l-2 border-primary/20 space-y-1">
+                            {p.variacoes.map((v, vi) => (
+                              <li key={vi} className="flex justify-between text-sm">
+                                <span className="text-muted-foreground">{v.nome}</span>
+                                <span>R$ {v.preco}</span>
+                              </li>
+                            ))}
+                          </ul>
+                        )}
                       </li>
                     ))}
                   </ul>
