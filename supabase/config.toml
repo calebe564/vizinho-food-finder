@@ -17,3 +17,6 @@ verify_jwt = false
 
 [functions.validate-admin]
 verify_jwt = false
+
+[functions.ai-cadastro-helper]
+verify_jwt = false

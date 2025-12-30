@@ -15,6 +15,7 @@ import { Building2, Upload, CheckCircle, Plus, Trash2, Star, MapPin, Phone, Pack
 import { Database } from "@/integrations/supabase/types";
 import { useAuth } from "@/contexts/AuthContext";
 import { AuthRequiredDialog } from "@/components/AuthRequiredDialog";
+import { CadastroAIHelper } from "@/components/CadastroAIHelper";
 
 type EstablishmentCategory = Database["public"]["Enums"]["establishment_category"];
 
@@ -542,6 +543,35 @@ export default function PublicEstablishmentForm() {
             </CardDescription>
           </CardHeader>
           <CardContent>
+            {/* Assistente IA */}
+            <div className="mb-6">
+              <CadastroAIHelper
+                companyName={formData.name}
+                category={formData.category ? categoryLabels[formData.category] : undefined}
+                onApplySchedule={(schedule) => handleChange("schedule", schedule)}
+                onApplyDescription={(description) => handleChange("description", description)}
+                onApplyProducts={(aiProducts) => {
+                  const newProducts = aiProducts.map(p => ({
+                    id: crypto.randomUUID(),
+                    name: p.name,
+                    price: p.price,
+                    hasVariations: false,
+                    variations: [],
+                    image: null,
+                    imagePreview: null
+                  }));
+                  setProducts(prev => {
+                    // Se só tem um produto vazio, substitui
+                    if (prev.length === 1 && !prev[0].name.trim()) {
+                      return newProducts;
+                    }
+                    // Caso contrário, adiciona
+                    return [...prev, ...newProducts];
+                  });
+                }}
+              />
+            </div>
+            
             <form onSubmit={handleSubmit} className="space-y-8">
               
               {/* ========== SEÇÃO 1: DADOS DA EMPRESA ========== */}
