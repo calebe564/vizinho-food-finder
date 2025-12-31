@@ -8,89 +8,117 @@ All colors MUST be HSL.
 
 @layer base {
   :root {
-    /* Cores principais - Modo Claro */
-    --background: 0 0% 100%;
-    --foreground: 0 0% 13%;
+    /* Cores principais - Modo Claro - Design Azul Marinho Marketplace */
+    --background: 210 20% 98%;
+    --foreground: 215 25% 15%;
     
     --card: 0 0% 100%;
-    --card-foreground: 0 0% 13%;
+    --card-foreground: 215 25% 15%;
     
     --popover: 0 0% 100%;
-    --popover-foreground: 0 0% 13%;
+    --popover-foreground: 215 25% 15%;
     
-    /* Azul vibrante #0057FF como primária */
-    --primary: 220 100% 50%;
+    /* Azul marinho institucional #1e3a5f como primária */
+    --primary: 213 52% 24%;
     --primary-foreground: 0 0% 100%;
-    --primary-hover: 220 100% 45%;
+    --primary-hover: 213 52% 30%;
+    --primary-light: 210 60% 95%;
     
-    --secondary: 0 0% 95%;
-    --secondary-foreground: 0 0% 13%;
+    /* Azul claro secundário */
+    --secondary: 210 40% 96%;
+    --secondary-foreground: 215 25% 15%;
     
-    --muted: 0 0% 95%;
-    --muted-foreground: 0 0% 45%;
+    --muted: 210 20% 94%;
+    --muted-foreground: 215 15% 45%;
     
-    --accent: 220 100% 50%;
+    /* Azul vibrante para accent/destaque */
+    --accent: 210 90% 50%;
     --accent-foreground: 0 0% 100%;
     
     --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 100%;
     
-    --border: 0 0% 90%;
-    --input: 0 0% 90%;
-    --ring: 220 100% 50%;
+    --border: 210 20% 90%;
+    --input: 210 20% 94%;
+    --ring: 213 52% 24%;
     
     --radius: 0.75rem;
     
+    /* Status colors */
+    --success: 142 76% 36%;
+    --success-foreground: 0 0% 100%;
+    --warning: 38 92% 50%;
+    --warning-foreground: 0 0% 100%;
+    
     /* Gradientes e efeitos */
-    --gradient-primary: linear-gradient(135deg, hsl(220 100% 50%), hsl(220 100% 65%));
-    --gradient-subtle: linear-gradient(180deg, hsl(0 0% 100%), hsl(0 0% 98%));
-    --shadow-card: 0 4px 12px hsl(220 100% 50% / 0.1);
-    --shadow-elevated: 0 8px 24px hsl(220 100% 50% / 0.15);
-    --shadow-glow: 0 0 40px hsl(220 100% 50% / 0.2);
+    --gradient-primary: linear-gradient(135deg, hsl(213 52% 24%), hsl(213 52% 35%));
+    --gradient-hero: linear-gradient(135deg, hsl(213 52% 20%), hsl(210 60% 35%));
+    --gradient-subtle: linear-gradient(180deg, hsl(210 20% 98%), hsl(210 20% 96%));
+    --gradient-card: linear-gradient(145deg, hsl(0 0% 100%), hsl(210 20% 98%));
+    
+    /* Sombras suaves e elegantes */
+    --shadow-sm: 0 1px 2px hsl(213 52% 24% / 0.05);
+    --shadow-card: 0 2px 8px hsl(213 52% 24% / 0.08), 0 1px 3px hsl(213 52% 24% / 0.04);
+    --shadow-elevated: 0 8px 24px hsl(213 52% 24% / 0.12), 0 4px 12px hsl(213 52% 24% / 0.06);
+    --shadow-glow: 0 0 40px hsl(210 90% 50% / 0.15);
+    --shadow-button: 0 2px 4px hsl(213 52% 24% / 0.15);
     
     /* Animações */
+    --transition-fast: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
     --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     --transition-bounce: all 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55);
   }
 
   .dark {
     /* Cores principais - Modo Escuro */
-    --background: 0 0% 5%;
-    --foreground: 0 0% 95%;
+    --background: 215 25% 8%;
+    --foreground: 210 20% 95%;
     
-    --card: 0 0% 10%;
-    --card-foreground: 0 0% 95%;
+    --card: 215 25% 12%;
+    --card-foreground: 210 20% 95%;
     
-    --popover: 0 0% 10%;
-    --popover-foreground: 0 0% 95%;
+    --popover: 215 25% 12%;
+    --popover-foreground: 210 20% 95%;
     
-    /* Azul neon #2F8CFF para modo escuro */
-    --primary: 211 100% 59%;
+    /* Azul mais claro para modo escuro */
+    --primary: 210 70% 55%;
     --primary-foreground: 0 0% 100%;
-    --primary-hover: 211 100% 65%;
+    --primary-hover: 210 70% 60%;
+    --primary-light: 210 50% 20%;
     
-    --secondary: 0 0% 15%;
-    --secondary-foreground: 0 0% 95%;
+    --secondary: 215 25% 16%;
+    --secondary-foreground: 210 20% 95%;
     
-    --muted: 0 0% 15%;
-    --muted-foreground: 0 0% 60%;
+    --muted: 215 25% 18%;
+    --muted-foreground: 210 15% 55%;
     
-    --accent: 211 100% 59%;
+    --accent: 210 80% 60%;
     --accent-foreground: 0 0% 100%;
     
     --destructive: 0 62% 50%;
     --destructive-foreground: 0 0% 100%;
     
-    --border: 0 0% 20%;
-    --input: 0 0% 20%;
-    --ring: 211 100% 59%;
+    --border: 215 20% 22%;
+    --input: 215 25% 18%;
+    --ring: 210 70% 55%;
+    
+    /* Status colors */
+    --success: 142 70% 45%;
+    --success-foreground: 0 0% 100%;
+    --warning: 38 85% 55%;
+    --warning-foreground: 0 0% 100%;
     
     /* Gradientes e efeitos modo escuro */
-    --gradient-primary: linear-gradient(135deg, hsl(211 100% 59%), hsl(211 100% 75%));
-    --gradient-subtle: linear-gradient(180deg, hsl(0 0% 5%), hsl(0 0% 8%));
-    --shadow-card: 0 4px 12px hsl(211 100% 59% / 0.2);
-    --shadow-elevated: 0 8px 24px hsl(211 100% 59% / 0.25);
-    --shadow-glow: 0 0 40px hsl(211 100% 59% / 0.3);
+    --gradient-primary: linear-gradient(135deg, hsl(210 70% 50%), hsl(210 70% 65%));
+    --gradient-hero: linear-gradient(135deg, hsl(215 25% 10%), hsl(210 50% 25%));
+    --gradient-subtle: linear-gradient(180deg, hsl(215 25% 8%), hsl(215 25% 10%));
+    --gradient-card: linear-gradient(145deg, hsl(215 25% 14%), hsl(215 25% 12%));
+    
+    --shadow-sm: 0 1px 2px hsl(0 0% 0% / 0.2);
+    --shadow-card: 0 2px 8px hsl(0 0% 0% / 0.3), 0 1px 3px hsl(0 0% 0% / 0.15);
+    --shadow-elevated: 0 8px 24px hsl(0 0% 0% / 0.4), 0 4px 12px hsl(0 0% 0% / 0.2);
+    --shadow-glow: 0 0 40px hsl(210 70% 55% / 0.2);
+    --shadow-button: 0 2px 4px hsl(0 0% 0% / 0.3);
   }
 }
 
@@ -100,7 +128,7 @@ All colors MUST be HSL.
   }
 
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground antialiased;
   }
   
   /* Smooth scrolling */
@@ -116,7 +144,7 @@ All colors MUST be HSL.
   }
   
   .hover-scale:hover {
-    transform: scale(1.05);
+    transform: scale(1.02);
   }
   
   .hover-lift {
@@ -129,13 +157,13 @@ All colors MUST be HSL.
   }
   
   .animate-fade-in {
-    animation: fadeIn 0.5s ease-in;
+    animation: fadeIn 0.4s ease-out forwards;
   }
   
   @keyframes fadeIn {
     from {
       opacity: 0;
-      transform: translateY(20px);
+      transform: translateY(12px);
     }
     to {
       opacity: 1;
@@ -144,17 +172,32 @@ All colors MUST be HSL.
   }
   
   .animate-slide-in {
-    animation: slideIn 0.5s ease-out;
+    animation: slideIn 0.4s ease-out forwards;
   }
   
   @keyframes slideIn {
     from {
       opacity: 0;
-      transform: translateX(-20px);
+      transform: translateX(-12px);
     }
     to {
       opacity: 1;
       transform: translateX(0);
+    }
+  }
+  
+  .animate-scale-in {
+    animation: scaleIn 0.3s ease-out forwards;
+  }
+  
+  @keyframes scaleIn {
+    from {
+      opacity: 0;
+      transform: scale(0.95);
+    }
+    to {
+      opacity: 1;
+      transform: scale(1);
     }
   }
   
@@ -177,5 +220,48 @@ All colors MUST be HSL.
     100% {
       background-position: -200% 0;
     }
+  }
+  
+  /* Glass effect */
+  .glass {
+    background: hsl(var(--background) / 0.8);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+  }
+  
+  /* Primary gradient background */
+  .bg-primary-gradient {
+    background: var(--gradient-primary);
+  }
+  
+  /* Hero gradient */
+  .bg-hero-gradient {
+    background: var(--gradient-hero);
+  }
+}
+
+/* Custom scrollbar */
+@layer utilities {
+  .scrollbar-thin {
+    scrollbar-width: thin;
+    scrollbar-color: hsl(var(--muted)) transparent;
+  }
+  
+  .scrollbar-thin::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  
+  .scrollbar-thin::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  
+  .scrollbar-thin::-webkit-scrollbar-thumb {
+    background: hsl(var(--muted-foreground) / 0.3);
+    border-radius: 3px;
+  }
+  
+  .scrollbar-thin::-webkit-scrollbar-thumb:hover {
+    background: hsl(var(--muted-foreground) / 0.5);
   }
 }

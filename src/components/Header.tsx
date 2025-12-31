@@ -1,16 +1,16 @@
 import { Link, useNavigate } from "react-router-dom";
-import { Home, Building2, Store, MoreVertical, UserPlus, Heart, LogIn, LogOut, User, Briefcase } from "lucide-react";
+import { Home, Building2, Store, Menu, Heart, LogIn, LogOut, User, Briefcase, UserPlus, X } from "lucide-react";
 import { ThemeToggle } from "./ThemeToggle";
 import { Button } from "./ui/button";
-import { Sheet, SheetContent, SheetTrigger } from "./ui/sheet";
+import { Sheet, SheetContent, SheetTrigger, SheetClose } from "./ui/sheet";
 import { useState } from "react";
-import { NavigationMenu, NavigationMenuItem, NavigationMenuLink, NavigationMenuList } from "./ui/navigation-menu";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "./ui/dropdown-menu";
 import logo from "@/assets/logo.png";
 import { useFavorites } from "@/hooks/useFavorites";
 import { useAuth } from "@/contexts/AuthContext";
 import { useUserRole } from "@/hooks/useUserRole";
 import { useEstablishmentRequest } from "@/hooks/useEstablishmentRequest";
+import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
 
 export function Header() {
   const [isOpen, setIsOpen] = useState(false);
@@ -21,7 +21,6 @@ export function Header() {
   const navigate = useNavigate();
   const hasFavorites = totalFavorites > 0;
   
-  // Mostrar "ADM espaço empresa" se o usuário é empresário ou tem solicitação aprovada
   const showMyEstablishment = user && (isEmpresario || hasApprovedRequest) && !roleLoading && !requestLoading;
 
   const handleSignOut = async () => {
@@ -29,72 +28,80 @@ export function Header() {
     navigate('/');
   };
   
+  const navLinks = [
+    { to: "/", label: "Início", icon: Home },
+    { to: "/categorias", label: "Categorias", icon: Building2 },
+    { to: "/estabelecimentos", label: "Empresas", icon: Store },
+  ];
+  
   return (
-    <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/80 backdrop-blur-xl">
-      <div className="container flex h-16 items-center justify-between px-4">
-        <Link to="/informacoes" className="flex items-center gap-3 hover-scale cursor-pointer">
-          <img src={logo} alt="Comércio Vizinho" className="h-10 w-10 rounded-xl" />
-          <span className="font-bold text-lg hidden sm:inline-block">Comércio Vizinho</span>
+    <header className="sticky top-0 z-50 w-full border-b border-border/50 bg-card/95 backdrop-blur-xl shadow-sm">
+      <div className="container flex h-14 md:h-16 items-center justify-between">
+        {/* Logo */}
+        <Link to="/informacoes" className="flex items-center gap-2.5 hover:opacity-90 transition-opacity">
+          <img src={logo} alt="Comércio Vizinho" className="h-9 w-9 md:h-10 md:w-10 rounded-xl shadow-sm" />
+          <div className="hidden sm:flex flex-col">
+            <span className="font-bold text-base md:text-lg text-primary leading-tight">Comércio</span>
+            <span className="font-bold text-base md:text-lg text-foreground leading-tight -mt-1">Vizinho</span>
+          </div>
         </Link>
 
-        {/* Desktop Navigation - Only main items visible */}
-        <NavigationMenu className="hidden md:flex">
-          <NavigationMenuList className="gap-1">
-            <NavigationMenuItem>
-              <Link to="/">
-                <NavigationMenuLink className="group inline-flex h-10 w-max items-center justify-center rounded-xl bg-transparent px-4 py-2 text-sm font-medium transition-all hover:bg-secondary hover:text-foreground">
-                  <Home className="mr-2 h-4 w-4" />
-                  Início
-                </NavigationMenuLink>
-              </Link>
-            </NavigationMenuItem>
-
-            <NavigationMenuItem>
-              <Link to="/categorias">
-                <NavigationMenuLink className="group inline-flex h-10 w-max items-center justify-center rounded-xl bg-transparent px-4 py-2 text-sm font-medium transition-all hover:bg-secondary hover:text-foreground">
-                  <Building2 className="mr-2 h-4 w-4" />
-                  Categorias
-                </NavigationMenuLink>
-              </Link>
-            </NavigationMenuItem>
-
-            <NavigationMenuItem>
-              <Link to="/estabelecimentos">
-                <NavigationMenuLink className="group inline-flex h-10 w-max items-center justify-center rounded-xl bg-transparent px-4 py-2 text-sm font-medium transition-all hover:bg-secondary hover:text-foreground">
-                  <Store className="mr-2 h-4 w-4" />
-                  Empresas
-                </NavigationMenuLink>
-              </Link>
-            </NavigationMenuItem>
-          </NavigationMenuList>
-        </NavigationMenu>
+        {/* Desktop Navigation */}
+        <nav className="hidden md:flex items-center gap-1">
+          {navLinks.map((link) => (
+            <Link
+              key={link.to}
+              to={link.to}
+              className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-secondary/80 rounded-xl transition-all"
+            >
+              <link.icon className="h-4 w-4" />
+              {link.label}
+            </Link>
+          ))}
+        </nav>
 
         <div className="flex items-center gap-2">
           <ThemeToggle />
           
-          {/* Desktop Overflow Menu - Three vertical dots */}
+          {/* Favorites indicator - Desktop */}
+          <Link to="/favoritos" className="hidden md:flex">
+            <Button variant="ghost" size="icon" className="rounded-xl relative">
+              <Heart className={`h-5 w-5 ${hasFavorites ? "text-destructive fill-destructive" : ""}`} />
+              {hasFavorites && (
+                <span className="absolute -top-0.5 -right-0.5 h-4 w-4 rounded-full bg-destructive text-destructive-foreground text-[10px] font-bold flex items-center justify-center">
+                  {totalFavorites > 9 ? "9+" : totalFavorites}
+                </span>
+              )}
+            </Button>
+          </Link>
+          
+          {/* Desktop User Menu */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild className="hidden md:inline-flex">
-              <Button variant="ghost" size="icon" className="rounded-xl" title="Mais opções">
-                <MoreVertical className="h-5 w-5" />
+              <Button variant="ghost" size="icon" className="rounded-xl">
+                {user ? (
+                  <Avatar className="h-8 w-8">
+                    <AvatarImage src={undefined} />
+                    <AvatarFallback className="bg-primary text-primary-foreground text-xs font-semibold">
+                      {profile?.full_name?.charAt(0).toUpperCase() || user.email?.charAt(0).toUpperCase() || "U"}
+                    </AvatarFallback>
+                  </Avatar>
+                ) : (
+                  <User className="h-5 w-5" />
+                )}
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-56 bg-popover">
+            <DropdownMenuContent align="end" className="w-56 bg-popover shadow-elevated rounded-xl">
               {user ? (
                 <>
-                  <div className="px-2 py-1.5 text-sm font-medium text-muted-foreground flex items-center gap-2">
-                    <User className="h-4 w-4" />
-                    {profile?.full_name || user.email}
+                  <div className="px-3 py-2">
+                    <p className="text-sm font-medium truncate">{profile?.full_name || "Usuário"}</p>
+                    <p className="text-xs text-muted-foreground truncate">{user.email}</p>
                   </div>
                   <DropdownMenuSeparator />
                 </>
               ) : null}
-              <DropdownMenuItem asChild>
-                <Link to="/favoritos" className="flex items-center gap-2 cursor-pointer">
-                  <Heart className={`h-4 w-4 ${hasFavorites ? "text-red-500 fill-red-500" : ""}`} />
-                  Favoritos {hasFavorites && `(${totalFavorites})`}
-                </Link>
-              </DropdownMenuItem>
+              
               {showMyEstablishment ? (
                 <DropdownMenuItem asChild>
                   <Link to="/minha-empresa" className="flex items-center gap-2 cursor-pointer">
@@ -110,17 +117,19 @@ export function Header() {
                   </Link>
                 </DropdownMenuItem>
               )}
+              
               <DropdownMenuSeparator />
+              
               {user ? (
                 <>
                   {isAdmin && (
                     <DropdownMenuItem asChild>
-                      <Link to="/admin/login" className="flex items-center gap-2 cursor-pointer text-primary">
+                      <Link to="/admin/login" className="flex items-center gap-2 cursor-pointer text-primary font-medium">
                         Painel Administrativo
                       </Link>
                     </DropdownMenuItem>
                   )}
-                  <DropdownMenuItem onClick={handleSignOut} className="flex items-center gap-2 cursor-pointer">
+                  <DropdownMenuItem onClick={handleSignOut} className="flex items-center gap-2 cursor-pointer text-destructive">
                     <LogOut className="h-4 w-4" />
                     Sair
                   </DropdownMenuItem>
@@ -136,86 +145,135 @@ export function Header() {
             </DropdownMenuContent>
           </DropdownMenu>
           
-          {/* Mobile Menu */}
+          {/* Mobile Menu Button */}
           <Sheet open={isOpen} onOpenChange={setIsOpen}>
             <SheetTrigger asChild className="md:hidden">
               <Button variant="ghost" size="icon" className="rounded-xl">
-                <MoreVertical className="h-5 w-5" />
+                <Menu className="h-5 w-5" />
               </Button>
             </SheetTrigger>
-            <SheetContent side="right" className="w-[300px] p-0">
-              <div className="flex items-center gap-3 p-6 border-b">
-                <img src={logo} alt="Comércio Vizinho" className="h-10 w-10 rounded-xl" />
-                <span className="font-bold text-lg">Comércio Vizinho</span>
+            <SheetContent side="right" className="w-[300px] p-0 bg-card">
+              {/* Mobile menu header */}
+              <div className="flex items-center justify-between p-4 border-b border-border/50">
+                <div className="flex items-center gap-2.5">
+                  <img src={logo} alt="Comércio Vizinho" className="h-9 w-9 rounded-xl" />
+                  <div className="flex flex-col">
+                    <span className="font-bold text-sm text-primary leading-tight">Comércio</span>
+                    <span className="font-bold text-sm text-foreground leading-tight -mt-0.5">Vizinho</span>
+                  </div>
+                </div>
+                <SheetClose asChild>
+                  <Button variant="ghost" size="icon" className="rounded-xl h-8 w-8">
+                    <X className="h-4 w-4" />
+                  </Button>
+                </SheetClose>
               </div>
               
+              {/* User info */}
               {user && (
-                <div className="px-6 py-3 border-b bg-muted/30">
-                  <div className="flex items-center gap-2 text-sm">
-                    <User className="h-4 w-4 text-muted-foreground" />
-                    <span className="font-medium truncate">{profile?.full_name || user.email}</span>
+                <div className="px-4 py-3 border-b border-border/50 bg-secondary/30">
+                  <div className="flex items-center gap-3">
+                    <Avatar className="h-10 w-10">
+                      <AvatarFallback className="bg-primary text-primary-foreground font-semibold">
+                        {profile?.full_name?.charAt(0).toUpperCase() || user.email?.charAt(0).toUpperCase() || "U"}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium truncate">{profile?.full_name || "Usuário"}</p>
+                      <p className="text-xs text-muted-foreground truncate">{user.email}</p>
+                    </div>
                   </div>
                 </div>
               )}
               
-              <nav className="flex flex-col gap-1 p-4">
-                <p className="text-xs text-muted-foreground px-4 pb-2 uppercase tracking-wider">Navegação</p>
-                <Link to="/" onClick={() => setIsOpen(false)} className="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-secondary transition-colors">
-                  <Home className="h-5 w-5" />
-                  <span className="font-medium">Início</span>
-                </Link>
-                <Link to="/categorias" onClick={() => setIsOpen(false)} className="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-secondary transition-colors">
-                  <Building2 className="h-5 w-5" />
-                  <span className="font-medium">Categorias</span>
-                </Link>
-                <Link to="/estabelecimentos" onClick={() => setIsOpen(false)} className="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-secondary transition-colors">
-                  <Store className="h-5 w-5" />
-                  <span className="font-medium">Empresas</span>
+              <nav className="flex flex-col p-3 gap-1">
+                {/* Main navigation */}
+                <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-medium px-3 pt-2 pb-1">Navegação</p>
+                {navLinks.map((link) => (
+                  <Link
+                    key={link.to}
+                    to={link.to}
+                    onClick={() => setIsOpen(false)}
+                    className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-secondary/80 transition-colors"
+                  >
+                    <link.icon className="h-5 w-5 text-muted-foreground" />
+                    <span className="font-medium">{link.label}</span>
+                  </Link>
+                ))}
+                
+                <div className="h-px bg-border/50 my-2" />
+                
+                {/* Quick actions */}
+                <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-medium px-3 pt-1 pb-1">Ações rápidas</p>
+                
+                <Link
+                  to="/favoritos"
+                  onClick={() => setIsOpen(false)}
+                  className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-secondary/80 transition-colors"
+                >
+                  <Heart className={`h-5 w-5 ${hasFavorites ? "text-destructive fill-destructive" : "text-muted-foreground"}`} />
+                  <span className="font-medium">Favoritos</span>
+                  {hasFavorites && (
+                    <span className="ml-auto bg-destructive text-destructive-foreground text-xs font-bold px-2 py-0.5 rounded-full">
+                      {totalFavorites}
+                    </span>
+                  )}
                 </Link>
                 
-                <div className="border-t mt-4 pt-4">
-                  <p className="text-xs text-muted-foreground px-4 pb-2 uppercase tracking-wider">Mais opções</p>
-                  <Link to="/favoritos" onClick={() => setIsOpen(false)} className="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-secondary transition-colors">
-                    <Heart className={`h-5 w-5 ${hasFavorites ? "text-red-500 fill-red-500" : ""}`} />
-                    <span className="font-medium">Favoritos {hasFavorites && `(${totalFavorites})`}</span>
+                {showMyEstablishment ? (
+                  <Link
+                    to="/minha-empresa"
+                    onClick={() => setIsOpen(false)}
+                    className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-secondary/80 transition-colors"
+                  >
+                    <Briefcase className="h-5 w-5 text-muted-foreground" />
+                    <span className="font-medium">ADM espaço empresa</span>
                   </Link>
-                  {showMyEstablishment ? (
-                    <Link to="/minha-empresa" onClick={() => setIsOpen(false)} className="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-secondary transition-colors">
-                      <Briefcase className="h-5 w-5" />
-                      <span className="font-medium">ADM espaço empresa</span>
-                    </Link>
-                  ) : (
-                    <Link to="/cadastrar" onClick={() => setIsOpen(false)} className="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-secondary transition-colors">
-                      <UserPlus className="h-5 w-5" />
-                      <span className="font-medium">Cadastrar Empresa</span>
-                    </Link>
-                  )}
-                </div>
-
-                <div className="border-t mt-4 pt-4">
-                  <p className="text-xs text-muted-foreground px-4 pb-2 uppercase tracking-wider">Conta</p>
-                  {user ? (
-                    <>
-                      {isAdmin && (
-                        <Link to="/admin/login" onClick={() => setIsOpen(false)} className="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-secondary transition-colors text-primary">
-                          <span className="font-medium">Painel Administrativo</span>
-                        </Link>
-                      )}
-                      <button 
-                        onClick={() => { handleSignOut(); setIsOpen(false); }} 
-                        className="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-secondary transition-colors w-full text-left"
+                ) : (
+                  <Link
+                    to="/cadastrar"
+                    onClick={() => setIsOpen(false)}
+                    className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-secondary/80 transition-colors"
+                  >
+                    <UserPlus className="h-5 w-5 text-muted-foreground" />
+                    <span className="font-medium">Cadastrar Empresa</span>
+                  </Link>
+                )}
+                
+                <div className="h-px bg-border/50 my-2" />
+                
+                {/* Account */}
+                <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-medium px-3 pt-1 pb-1">Conta</p>
+                
+                {user ? (
+                  <>
+                    {isAdmin && (
+                      <Link
+                        to="/admin/login"
+                        onClick={() => setIsOpen(false)}
+                        className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-secondary/80 transition-colors text-primary"
                       >
-                        <LogOut className="h-5 w-5" />
-                        <span className="font-medium">Sair</span>
-                      </button>
-                    </>
-                  ) : (
-                    <Link to="/auth" onClick={() => setIsOpen(false)} className="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-secondary transition-colors">
-                      <LogIn className="h-5 w-5" />
-                      <span className="font-medium">Entrar</span>
-                    </Link>
-                  )}
-                </div>
+                        <span className="font-medium">Painel Administrativo</span>
+                      </Link>
+                    )}
+                    <button
+                      onClick={() => { handleSignOut(); setIsOpen(false); }}
+                      className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-destructive/10 transition-colors w-full text-left text-destructive"
+                    >
+                      <LogOut className="h-5 w-5" />
+                      <span className="font-medium">Sair</span>
+                    </button>
+                  </>
+                ) : (
+                  <Link
+                    to="/auth"
+                    onClick={() => setIsOpen(false)}
+                    className="flex items-center gap-3 px-3 py-2.5 rounded-xl bg-primary text-primary-foreground hover:bg-primary-hover transition-colors"
+                  >
+                    <LogIn className="h-5 w-5" />
+                    <span className="font-medium">Entrar</span>
+                  </Link>
+                )}
               </nav>
             </SheetContent>
           </Sheet>

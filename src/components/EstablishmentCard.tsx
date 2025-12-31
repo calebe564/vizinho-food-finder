@@ -42,7 +42,7 @@ interface EstablishmentCardProps {
   category?: string;
   address?: string;
   proximityLabel?: string;
-  distance?: number; // Kept for backward compatibility
+  distance?: number;
   phone?: string;
   whatsapp?: string | null;
   externalLink?: string | null;
@@ -66,7 +66,10 @@ const categoryLabels: Record<string, string> = {
   hamburgueria: "Hamburgueria",
   bar: "Bar",
   cafe: "Café",
-  outro: "Outro"
+  outro: "Outro",
+  sorveteria: "Sorveteria",
+  acai: "Açaí",
+  espetinho: "Espetinho",
 };
 
 export function EstablishmentCard({
@@ -87,7 +90,6 @@ export function EstablishmentCard({
   products,
   establishment,
 }: EstablishmentCardProps) {
-  // If no proximityLabel but distance exists, show distance-based label
   const displayLabel = proximityLabel || (distance !== undefined ? `${distance.toFixed(1)} km` : undefined);
   const { isFavorite, toggleFavorite } = useFavorites();
   
@@ -103,7 +105,6 @@ export function EstablishmentCard({
   const actualIsPaid = establishment?.is_paid ?? isPaid ?? false;
   const actualProducts = products || [];
   
-  // Determinar imagem de capa - prioridade: imagens > banner > profile > placeholder
   const getCoverImage = () => {
     const estImages = establishment?.images;
     if (estImages && Array.isArray(estImages) && estImages.length > 0) {
@@ -118,7 +119,6 @@ export function EstablishmentCard({
   };
   
   const coverImage = getCoverImage();
-
   const isFav = isFavorite(actualId);
 
   const formatWhatsApp = (phoneNumber: string) => {
@@ -174,66 +174,64 @@ export function EstablishmentCard({
   };
 
   return (
-    <Link to={`/estabelecimento/${actualId}`} className="block">
-      <Card className="overflow-hidden bg-card border-0 shadow-card hover:shadow-elevated transition-all duration-300 rounded-2xl cursor-pointer">
-        {/* Imagem de capa */}
+    <Link to={`/estabelecimento/${actualId}`} className="block group">
+      <Card className="overflow-hidden bg-card border border-border/50 hover:border-primary/20 shadow-card hover:shadow-elevated transition-all duration-300 rounded-2xl">
+        {/* Image */}
         <div className="relative">
           {coverImage ? (
             <img 
               src={coverImage} 
               alt={actualName} 
-              className="w-full h-40 object-cover"
+              className="w-full h-44 object-cover transition-transform duration-500 group-hover:scale-105"
             />
           ) : (
-            <div className="w-full h-40 bg-gradient-to-br from-primary/80 to-primary flex items-center justify-center">
-              <Store className="h-14 w-14 text-primary-foreground/80" />
+            <div className="w-full h-44 bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center">
+              <Store className="h-16 w-16 text-primary/40" />
             </div>
           )}
           
-          {/* Logo da empresa sobreposta */}
-          <div className="absolute -bottom-6 left-4">
-            <Avatar className="h-14 w-14 border-4 border-card shadow-lg">
+          {/* Logo */}
+          <div className="absolute -bottom-5 left-4">
+            <Avatar className="h-12 w-12 border-3 border-card shadow-elevated">
               <AvatarImage src={actualProfileImage || undefined} alt={actualName} />
-              <AvatarFallback className="bg-primary text-primary-foreground text-xl font-bold">
+              <AvatarFallback className="bg-primary text-primary-foreground text-lg font-bold">
                 {actualName.charAt(0).toUpperCase()}
               </AvatarFallback>
             </Avatar>
           </div>
           
-          {/* Badge de patrocinado */}
+          {/* Sponsored badge */}
           {actualIsPaid && (
-            <div className="absolute top-3 left-3">
-              <Badge className="bg-accent text-accent-foreground shadow-lg">
-                <Star className="h-3 w-3 mr-1" />
-                Patrocinado
-              </Badge>
-            </div>
+            <Badge className="absolute top-3 left-3 bg-accent text-accent-foreground shadow-md rounded-full">
+              <Star className="h-3 w-3 mr-1 fill-current" />
+              Destaque
+            </Badge>
           )}
 
-          {/* Three dots menu */}
+          {/* Actions menu */}
           <div className="absolute top-3 right-3">
             <DropdownMenu>
               <DropdownMenuTrigger asChild onClick={(e) => e.preventDefault()}>
                 <Button 
                   variant="ghost" 
                   size="icon" 
-                  className="h-8 w-8 bg-background/80 hover:bg-background rounded-full"
+                  className="h-8 w-8 bg-card/90 hover:bg-card rounded-full shadow-sm"
                   onClick={(e) => e.stopPropagation()}
                 >
                   <MoreVertical className="h-4 w-4" />
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="bg-popover">
-                <DropdownMenuItem onClick={handleToggleFavorite} className="cursor-pointer">
-                  <Heart className={`h-4 w-4 mr-2 ${isFav ? "fill-red-500 text-red-500" : ""}`} />
-                  {isFav ? "Remover dos favoritos" : "Favoritar empresa"}
+              <DropdownMenuContent align="end" className="bg-popover shadow-elevated rounded-xl">
+                <DropdownMenuItem onClick={handleToggleFavorite} className="cursor-pointer gap-2">
+                  <Heart className={`h-4 w-4 ${isFav ? "fill-destructive text-destructive" : ""}`} />
+                  {isFav ? "Remover dos favoritos" : "Favoritar"}
                 </DropdownMenuItem>
-                <DropdownMenuItem onClick={handleShare} className="cursor-pointer">
-                  <Share2 className="h-4 w-4 mr-2" />
+                <DropdownMenuItem onClick={handleShare} className="cursor-pointer gap-2">
+                  <Share2 className="h-4 w-4" />
                   Compartilhar
                 </DropdownMenuItem>
-                <DropdownMenuItem onClick={handleCopyLink} className="cursor-pointer">
-                  <Globe className="h-4 w-4 mr-2" />
+                <DropdownMenuItem onClick={handleCopyLink} className="cursor-pointer gap-2">
+                  <Globe className="h-4 w-4" />
                   Copiar link
                 </DropdownMenuItem>
               </DropdownMenuContent>
@@ -243,26 +241,25 @@ export function EstablishmentCard({
           {/* Favorite indicator */}
           {isFav && (
             <div className="absolute bottom-3 right-3">
-              <Badge className="bg-red-500 text-white shadow-lg">
-                <Heart className="h-3 w-3 mr-1 fill-white" />
+              <Badge className="bg-destructive text-destructive-foreground shadow-md rounded-full">
+                <Heart className="h-3 w-3 mr-1 fill-current" />
                 Favorito
               </Badge>
             </div>
           )}
         </div>
 
-        <CardContent className="pt-8 pb-5 px-5">
-          {/* Header com nome e categoria */}
-          <div className="flex items-start justify-between mb-3">
+        <CardContent className="pt-7 pb-4 px-4">
+          {/* Header */}
+          <div className="flex items-start justify-between gap-2 mb-3">
             <div className="flex-1 min-w-0">
-              <h3 className="text-lg font-bold line-clamp-1">{actualName}</h3>
-              <Badge variant="secondary" className="mt-1 text-xs font-medium">
+              <h3 className="text-base font-bold line-clamp-1">{actualName}</h3>
+              <p className="text-xs text-muted-foreground mt-0.5">
                 {categoryLabels[actualCategory] || actualCategory}
-              </Badge>
+              </p>
             </div>
-            {/* Proximity badge */}
             {displayLabel && (
-              <Badge variant="outline" className="ml-2 flex-shrink-0 text-xs">
+              <Badge variant="outline" className="flex-shrink-0 text-xs rounded-full border-primary/30 text-primary">
                 <MapPin className="h-3 w-3 mr-1" />
                 {displayLabel}
               </Badge>
@@ -270,21 +267,21 @@ export function EstablishmentCard({
           </div>
 
           {/* Info */}
-          <div className="space-y-2 text-sm text-muted-foreground mb-4">
+          <div className="space-y-1.5 text-sm text-muted-foreground mb-4">
             <div className="flex items-start gap-2">
-              <MapPin className="h-4 w-4 flex-shrink-0 mt-0.5" />
+              <MapPin className="h-4 w-4 flex-shrink-0 mt-0.5 text-muted-foreground/70" />
               <span className="line-clamp-1">{actualAddress}</span>
             </div>
             <div className="flex items-center gap-2">
-              <Clock className="h-4 w-4 flex-shrink-0" />
+              <Clock className="h-4 w-4 flex-shrink-0 text-muted-foreground/70" />
               <span className="line-clamp-1">{actualSchedule}</span>
             </div>
           </div>
 
-          {/* Produtos em destaque */}
+          {/* Products */}
           {actualProducts.length > 0 && (
-            <div className="mb-4 p-3 bg-secondary/50 rounded-xl">
-              <p className="text-xs font-medium text-muted-foreground mb-2">Produtos em destaque</p>
+            <div className="mb-4 p-3 bg-muted/50 rounded-xl">
+              <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-medium mb-2">Produtos em destaque</p>
               <div className="space-y-1.5">
                 {actualProducts.slice(0, 2).map((product, index) => (
                   <div key={index} className="flex justify-between text-sm">
@@ -296,13 +293,13 @@ export function EstablishmentCard({
             </div>
           )}
 
-          {/* Action buttons */}
+          {/* Buttons */}
           <div className="flex gap-2">
             {hasWhatsapp && (
               <Button 
                 variant="default" 
                 size="sm" 
-                className="flex-1 rounded-xl gap-2"
+                className="flex-1 rounded-xl gap-2 h-10 shadow-button"
                 onClick={handleWhatsAppClick}
               >
                 <MessageCircle className="h-4 w-4" />
@@ -313,7 +310,7 @@ export function EstablishmentCard({
               <Button 
                 variant="outline" 
                 size="sm" 
-                className="flex-1 rounded-xl gap-2"
+                className="flex-1 rounded-xl gap-2 h-10"
                 onClick={handleSiteClick}
               >
                 <Globe className="h-4 w-4" />
