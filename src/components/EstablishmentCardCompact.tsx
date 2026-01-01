@@ -44,7 +44,7 @@ export function EstablishmentCardCompact({
   
   return (
     <Link to={`/estabelecimento/${id}`} className="block active:scale-[0.98] transition-transform">
-      <Card className="overflow-hidden bg-card border border-border/50 hover:border-primary/30 active:border-primary/50 shadow-card hover:shadow-elevated transition-all duration-200 rounded-2xl h-full">
+      <Card className="overflow-hidden bg-card border border-border hover:border-accent/30 shadow-card hover:shadow-elevated transition-all duration-200 rounded-2xl h-full">
         {/* Image area */}
         <div className="relative aspect-[4/3] bg-muted overflow-hidden">
           {displayImage ? (
@@ -70,17 +70,9 @@ export function EstablishmentCardCompact({
             </div>
           </div>
           
-          {/* Sponsored badge */}
-          {isPaid && (
-            <Badge className="absolute top-2 left-2 bg-accent text-accent-foreground text-[10px] px-2 py-0.5 shadow-md rounded-full">
-              <Star className="h-2.5 w-2.5 mr-0.5 fill-current" />
-              Destaque
-            </Badge>
-          )}
-          
-          {/* Logo overlay */}
-          <div className="absolute -bottom-4 left-3">
-            <Avatar className="h-10 w-10 border-2 border-card shadow-md">
+          {/* Logo overlay - bottom left of image */}
+          <div className="absolute -bottom-5 left-3">
+            <Avatar className="h-12 w-12 border-2 border-card shadow-md">
               <AvatarImage src={profileImage || undefined} alt={name} />
               <AvatarFallback className="bg-primary text-primary-foreground text-sm font-bold">
                 {name.charAt(0).toUpperCase()}
@@ -90,24 +82,36 @@ export function EstablishmentCardCompact({
         </div>
 
         {/* Content */}
-        <div className="p-3 pt-6">
-          {/* Name */}
-          <h3 className="text-sm font-semibold line-clamp-1 mb-0.5">
-            {name}
-          </h3>
-          
-          {/* Category */}
-          <p className="text-xs text-muted-foreground line-clamp-1">
-            {categoryLabels[category] || category}
-          </p>
-          
-          {/* Proximity label */}
-          {proximityLabel && (
-            <div className="flex items-center gap-1 mt-2 text-xs text-primary font-medium">
-              <MapPin className="h-3 w-3 flex-shrink-0" />
-              <span className="line-clamp-1">{proximityLabel}</span>
+        <div className="p-3 pt-7">
+          <div className="flex items-start justify-between gap-2">
+            <div className="flex-1 min-w-0">
+              {/* Name */}
+              <h3 className="text-sm font-bold line-clamp-1 text-foreground">
+                {name}
+              </h3>
+              
+              {/* Category */}
+              <p className="text-xs text-muted-foreground line-clamp-1">
+                {categoryLabels[category] || category}
+              </p>
+              
+              {/* Proximity label */}
+              {proximityLabel && (
+                <div className="flex items-center gap-1 mt-1.5 text-xs text-muted-foreground">
+                  <MapPin className="h-3 w-3 flex-shrink-0" />
+                  <span className="line-clamp-1">{proximityLabel}</span>
+                </div>
+              )}
             </div>
-          )}
+            
+            {/* Sponsored badge - right side */}
+            {isPaid && (
+              <Badge className="flex-shrink-0 bg-accent text-accent-foreground text-[10px] px-2 py-0.5 rounded-full">
+                <Star className="h-2.5 w-2.5 mr-0.5 fill-current" />
+                Destaque
+              </Badge>
+            )}
+          </div>
         </div>
       </Card>
     </Link>

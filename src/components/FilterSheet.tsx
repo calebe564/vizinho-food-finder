@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { SlidersHorizontal, MapPin, Clock, Check, X } from "lucide-react";
+import { SlidersHorizontal, MapPin, Navigation, Check } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 
 const categories = [
@@ -63,36 +63,35 @@ export function FilterSheet({ category, onCategoryChange, sortBy, onSortChange }
     setIsOpen(open);
   };
 
-  // Quick filter chips for mobile
-  const quickFilters = [
-    { label: "Categoria", active: category !== "todos", value: category !== "todos" ? categories.find(c => c.value === category)?.label : null },
-    { label: "Mais próximos", active: sortBy === "proximity", icon: MapPin },
-  ];
-
   return (
     <div className="flex items-center gap-2 overflow-x-auto scrollbar-thin pb-1">
-      {/* Main Filter Button */}
+      {/* Inline filter buttons - matching the reference design */}
+      
+      {/* Categoria button - opens sheet */}
       <Sheet open={isOpen} onOpenChange={handleOpenChange}>
         <SheetTrigger asChild>
-          <Button
-            variant={activeFiltersCount > 0 ? "default" : "outline"}
-            size="sm"
-            className="rounded-full h-10 px-4 gap-2 flex-shrink-0 shadow-sm"
+          <button
+            className={`flex items-center gap-2 px-4 h-10 rounded-full text-sm font-medium transition-all flex-shrink-0 border ${
+              category !== "todos"
+                ? "bg-primary/10 text-primary border-primary/30"
+                : "bg-secondary text-foreground border-border hover:border-primary/30"
+            }`}
           >
             <SlidersHorizontal className="h-4 w-4" />
-            <span>Filtros</span>
-            {activeFiltersCount > 0 && (
-              <Badge variant="secondary" className="ml-1 h-5 w-5 p-0 flex items-center justify-center rounded-full text-xs">
-                {activeFiltersCount}
-              </Badge>
+            <span>Categoria</span>
+            {category !== "todos" && (
+              <>
+                <span className="text-border">|</span>
+                <span className="text-primary">{categories.find(c => c.value === category)?.label}</span>
+              </>
             )}
-          </Button>
+          </button>
         </SheetTrigger>
         <SheetContent 
           side={isMobile ? "bottom" : "right"} 
           className={`${isMobile ? "h-[85vh] rounded-t-3xl" : "w-[400px]"} p-0`}
         >
-          <SheetHeader className="p-4 md:p-6 border-b border-border/50">
+          <SheetHeader className="p-4 md:p-6 border-b border-border">
             <div className="flex items-center justify-between">
               <SheetTitle className="text-lg font-bold">Filtros</SheetTitle>
               <Button variant="ghost" size="sm" onClick={handleReset} className="text-muted-foreground">
@@ -112,8 +111,8 @@ export function FilterSheet({ category, onCategoryChange, sortBy, onSortChange }
                     onClick={() => setTempCategory(cat.value)}
                     className={`px-3 py-2 rounded-xl text-sm font-medium transition-all ${
                       tempCategory === cat.value
-                        ? "bg-primary text-primary-foreground shadow-button"
-                        : "bg-secondary text-secondary-foreground hover:bg-secondary/80"
+                        ? "bg-accent text-accent-foreground shadow-button"
+                        : "bg-secondary text-secondary-foreground hover:bg-muted"
                     }`}
                   >
                     {cat.label}
@@ -132,8 +131,8 @@ export function FilterSheet({ category, onCategoryChange, sortBy, onSortChange }
                     onClick={() => setTempSortBy(option.value)}
                     className={`w-full flex items-center justify-between px-4 py-3 rounded-xl text-sm font-medium transition-all ${
                       tempSortBy === option.value
-                        ? "bg-primary text-primary-foreground shadow-button"
-                        : "bg-secondary text-secondary-foreground hover:bg-secondary/80"
+                        ? "bg-accent text-accent-foreground shadow-button"
+                        : "bg-secondary text-secondary-foreground hover:bg-muted"
                     }`}
                   >
                     <div className="flex items-center gap-2">
@@ -148,42 +147,33 @@ export function FilterSheet({ category, onCategoryChange, sortBy, onSortChange }
           </div>
 
           {/* Apply Button */}
-          <div className="p-4 md:p-6 border-t border-border/50 bg-card">
-            <Button onClick={handleApply} className="w-full h-12 rounded-xl font-semibold shadow-button">
+          <div className="p-4 md:p-6 border-t border-border bg-card">
+            <Button onClick={handleApply} className="w-full h-12 rounded-xl font-semibold shadow-button bg-accent hover:bg-accent/90">
               Aplicar filtros
             </Button>
           </div>
         </SheetContent>
       </Sheet>
 
-      {/* Quick filter chips */}
-      <button
-        onClick={() => onCategoryChange(category === "todos" ? "todos" : "todos")}
-        className={`flex items-center gap-1.5 px-4 h-10 rounded-full text-sm font-medium transition-all flex-shrink-0 border ${
-          category !== "todos"
-            ? "bg-primary/10 text-primary border-primary/30"
-            : "bg-card text-muted-foreground border-border hover:border-primary/30 hover:text-foreground"
-        }`}
-      >
-        <SlidersHorizontal className="h-3.5 w-3.5" />
-        <span>Categoria</span>
-        {category !== "todos" && (
-          <Badge variant="secondary" className="ml-1 text-xs py-0 h-5">
-            {categories.find(c => c.value === category)?.label}
-          </Badge>
-        )}
-      </button>
-
+      {/* Mais Próximos button */}
       <button
         onClick={() => onSortChange(sortBy === "proximity" ? "name-asc" : "proximity")}
-        className={`flex items-center gap-1.5 px-4 h-10 rounded-full text-sm font-medium transition-all flex-shrink-0 border ${
+        className={`flex items-center gap-2 px-4 h-10 rounded-full text-sm font-medium transition-all flex-shrink-0 border ${
           sortBy === "proximity"
             ? "bg-primary/10 text-primary border-primary/30"
-            : "bg-card text-muted-foreground border-border hover:border-primary/30 hover:text-foreground"
+            : "bg-secondary text-foreground border-border hover:border-primary/30"
         }`}
       >
-        <MapPin className="h-3.5 w-3.5" />
+        <Navigation className="h-4 w-4" />
         <span>Mais Próximos</span>
+      </button>
+
+      {/* Localização button */}
+      <button
+        className="flex items-center gap-2 px-4 h-10 rounded-full text-sm font-medium transition-all flex-shrink-0 border bg-secondary text-foreground border-border hover:border-primary/30"
+      >
+        <MapPin className="h-4 w-4" />
+        <span>Localização</span>
       </button>
     </div>
   );

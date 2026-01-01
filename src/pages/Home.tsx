@@ -8,11 +8,9 @@ import { EstablishmentCardCompact } from "@/components/EstablishmentCardCompact"
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { AdvertisementBanner } from "@/components/AdvertisementBanner";
-import { LocationSearch } from "@/components/LocationSearch";
 import { useUserLocation } from "@/contexts/LocationContext";
 import { useSearchParams } from "react-router-dom";
-import { MapPin, Store, Loader2, Navigation } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
+import { Store, Loader2 } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 
 interface Establishment {
@@ -130,7 +128,6 @@ export default function Home() {
 
   const getAdsByPosition = (position: string) => advertisements.filter(ad => ad.position === position);
   const getEstablishmentProducts = (establishmentId: string) => products.filter((p) => p.establishment_id === establishmentId);
-  const handleLocationSelect = (location: LocationSelection | null) => setSelectedLocation(location);
 
   const filteredEstablishments = useMemo(() => {
     return establishments
@@ -157,7 +154,7 @@ export default function Home() {
   return (
     <div className="min-h-screen bg-background">
       <Header />
-      <main className="container py-4 md:py-6 space-y-5 md:space-y-8">
+      <main className="container py-4 md:py-6 space-y-4 md:space-y-6">
         <AdvertisementBanner advertisements={getAdsByPosition("top")} />
         
         {/* Hero Carousel */}
@@ -165,54 +162,43 @@ export default function Home() {
           <HeroCarousel />
         </div>
 
-        {/* Search Section */}
-        <div className="space-y-3 animate-fade-in" style={{ animationDelay: "0.1s" }}>
-          <div className="flex flex-col lg:flex-row gap-3">
-            <div className="flex-1">
-              <SearchBar value={searchTerm} onChange={setSearchTerm} />
-            </div>
-            <div className="lg:w-[320px]">
-              <LocationSearch onLocationSelect={handleLocationSelect} />
-            </div>
-          </div>
-          <FilterSheet category={category} onCategoryChange={setCategory} sortBy={sortBy} onSortChange={setSortBy} />
+        {/* Search Bar */}
+        <div className="animate-fade-in" style={{ animationDelay: "0.1s" }}>
+          <SearchBar value={searchTerm} onChange={setSearchTerm} />
         </div>
 
-        {/* Location Indicator */}
-        {!locationLoading && selectedLocation && (
-          <div className="flex items-center gap-2 text-sm text-muted-foreground bg-primary-light px-4 py-2 rounded-full w-fit">
-            <Navigation className="h-4 w-4 text-primary" />
-            <span>{selectedLocation.neighborhood || selectedLocation.city}</span>
-          </div>
-        )}
+        {/* Inline Filters */}
+        <div className="animate-fade-in" style={{ animationDelay: "0.15s" }}>
+          <FilterSheet category={category} onCategoryChange={setCategory} sortBy={sortBy} onSortChange={setSortBy} />
+        </div>
 
         {/* Establishments List */}
         <div className="animate-fade-in" style={{ animationDelay: "0.2s" }}>
           <div className="flex items-center gap-2 mb-4">
             <Store className="h-5 w-5 text-primary" />
-            <h2 className="text-lg md:text-xl font-bold">
+            <h2 className="text-lg md:text-xl font-bold text-foreground">
               {loading ? "Carregando..." : `${filteredEstablishments.length} ${filteredEstablishments.length === 1 ? 'empresa' : 'empresas'}`}
             </h2>
           </div>
 
           {loading ? (
             <div className="flex items-center justify-center py-16">
-              <Loader2 className="h-8 w-8 animate-spin text-primary" />
+              <Loader2 className="h-8 w-8 animate-spin text-accent" />
             </div>
           ) : filteredEstablishments.length === 0 ? (
-            <div className="text-center py-16 bg-muted/30 rounded-2xl">
+            <div className="text-center py-16 bg-secondary rounded-2xl">
               <Store className="h-14 w-14 mx-auto text-muted-foreground mb-3" />
               <p className="text-lg font-medium text-muted-foreground">Nenhuma empresa encontrada</p>
               <p className="text-sm text-muted-foreground mt-1">Tente ajustar os filtros</p>
             </div>
           ) : isMobile ? (
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 gap-4">
               {filteredEstablishments.map((est) => (
                 <EstablishmentCardCompact key={est.id} id={est.id} name={est.name} category={est.category} proximityLabel={est.proximityLabel} profileImage={est.profile_image} bannerImage={est.banner_image} isPaid={est.is_paid} />
               ))}
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
               {filteredEstablishments.map((est) => (
                 <EstablishmentCard key={est.id} id={est.id} name={est.name} category={est.category} address={est.address} proximityLabel={est.proximityLabel} phone={est.phone} whatsapp={est.whatsapp} externalLink={est.external_link} schedule={est.schedule} profileImage={est.profile_image} bannerImage={est.banner_image} images={Array.isArray(est.images) ? est.images as string[] : null} isPaid={est.is_paid} products={getEstablishmentProducts(est.id)} />
               ))}
