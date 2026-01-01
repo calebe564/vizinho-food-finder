@@ -4,45 +4,51 @@
 
 /* Definition of the design system. All colors, gradients, fonts, etc should be defined here. 
 All colors MUST be HSL.
+Design: Azul marinho institucional #0B1E2D, Azul médio #1E6FD9, Fundo #F5F7FA
 */
 
 @layer base {
   :root {
-    /* Cores principais - Modo Claro - Design Azul Marinho Marketplace */
-    --background: 210 20% 98%;
-    --foreground: 215 25% 15%;
+    /* Cores principais - Modo Claro - Design Marketplace */
+    /* Fundo principal: #FFFFFF */
+    --background: 0 0% 100%;
+    /* Texto primário: #1F2933 */
+    --foreground: 210 16% 16%;
     
+    /* Card: branco puro */
     --card: 0 0% 100%;
-    --card-foreground: 215 25% 15%;
+    --card-foreground: 210 16% 16%;
     
     --popover: 0 0% 100%;
-    --popover-foreground: 215 25% 15%;
+    --popover-foreground: 210 16% 16%;
     
-    /* Azul marinho institucional #1e3a5f como primária */
-    --primary: 213 52% 24%;
+    /* Azul marinho institucional #0B1E2D */
+    --primary: 209 61% 11%;
     --primary-foreground: 0 0% 100%;
-    --primary-hover: 213 52% 30%;
-    --primary-light: 210 60% 95%;
+    --primary-hover: 209 61% 16%;
+    /* Fundo secundário: #F5F7FA */
+    --primary-light: 216 33% 97%;
     
-    /* Azul claro secundário */
-    --secondary: 210 40% 96%;
-    --secondary-foreground: 215 25% 15%;
+    /* Secondary: Fundo cinza muito claro #F5F7FA */
+    --secondary: 216 33% 97%;
+    --secondary-foreground: 210 16% 16%;
     
-    --muted: 210 20% 94%;
-    --muted-foreground: 215 15% 45%;
+    --muted: 216 33% 97%;
+    --muted-foreground: 210 10% 45%;
     
-    /* Azul vibrante para accent/destaque */
-    --accent: 210 90% 50%;
+    /* Azul médio #1E6FD9 para accent/destaque */
+    --accent: 212 76% 48%;
     --accent-foreground: 0 0% 100%;
     
     --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 100%;
     
-    --border: 210 20% 90%;
-    --input: 210 20% 94%;
-    --ring: 213 52% 24%;
+    /* Bordas: #E5E7EB */
+    --border: 218 14% 91%;
+    --input: 216 33% 97%;
+    --ring: 212 76% 48%;
     
-    --radius: 0.75rem;
+    --radius: 1rem;
     
     /* Status colors */
     --success: 142 76% 36%;
@@ -51,17 +57,17 @@ All colors MUST be HSL.
     --warning-foreground: 0 0% 100%;
     
     /* Gradientes e efeitos */
-    --gradient-primary: linear-gradient(135deg, hsl(213 52% 24%), hsl(213 52% 35%));
-    --gradient-hero: linear-gradient(135deg, hsl(213 52% 20%), hsl(210 60% 35%));
-    --gradient-subtle: linear-gradient(180deg, hsl(210 20% 98%), hsl(210 20% 96%));
-    --gradient-card: linear-gradient(145deg, hsl(0 0% 100%), hsl(210 20% 98%));
+    --gradient-primary: linear-gradient(135deg, hsl(209 61% 11%), hsl(209 61% 20%));
+    --gradient-hero: linear-gradient(to top, hsl(209 61% 11% / 0.9), hsl(209 61% 11% / 0.4) 50%, transparent);
+    --gradient-subtle: linear-gradient(180deg, hsl(0 0% 100%), hsl(216 33% 97%));
+    --gradient-card: linear-gradient(145deg, hsl(0 0% 100%), hsl(216 33% 98%));
     
     /* Sombras suaves e elegantes */
-    --shadow-sm: 0 1px 2px hsl(213 52% 24% / 0.05);
-    --shadow-card: 0 2px 8px hsl(213 52% 24% / 0.08), 0 1px 3px hsl(213 52% 24% / 0.04);
-    --shadow-elevated: 0 8px 24px hsl(213 52% 24% / 0.12), 0 4px 12px hsl(213 52% 24% / 0.06);
-    --shadow-glow: 0 0 40px hsl(210 90% 50% / 0.15);
-    --shadow-button: 0 2px 4px hsl(213 52% 24% / 0.15);
+    --shadow-sm: 0 1px 2px hsl(209 61% 11% / 0.04);
+    --shadow-card: 0 2px 8px hsl(209 61% 11% / 0.06), 0 1px 3px hsl(209 61% 11% / 0.03);
+    --shadow-elevated: 0 8px 24px hsl(209 61% 11% / 0.1), 0 4px 12px hsl(209 61% 11% / 0.05);
+    --shadow-glow: 0 0 40px hsl(212 76% 48% / 0.12);
+    --shadow-button: 0 2px 4px hsl(209 61% 11% / 0.12);
     
     /* Animações */
     --transition-fast: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
@@ -71,36 +77,36 @@ All colors MUST be HSL.
 
   .dark {
     /* Cores principais - Modo Escuro */
-    --background: 215 25% 8%;
+    --background: 209 40% 8%;
     --foreground: 210 20% 95%;
     
-    --card: 215 25% 12%;
+    --card: 209 35% 12%;
     --card-foreground: 210 20% 95%;
     
-    --popover: 215 25% 12%;
+    --popover: 209 35% 12%;
     --popover-foreground: 210 20% 95%;
     
     /* Azul mais claro para modo escuro */
-    --primary: 210 70% 55%;
+    --primary: 212 76% 55%;
     --primary-foreground: 0 0% 100%;
-    --primary-hover: 210 70% 60%;
-    --primary-light: 210 50% 20%;
+    --primary-hover: 212 76% 60%;
+    --primary-light: 209 40% 16%;
     
-    --secondary: 215 25% 16%;
+    --secondary: 209 35% 16%;
     --secondary-foreground: 210 20% 95%;
     
-    --muted: 215 25% 18%;
+    --muted: 209 35% 18%;
     --muted-foreground: 210 15% 55%;
     
-    --accent: 210 80% 60%;
+    --accent: 212 80% 60%;
     --accent-foreground: 0 0% 100%;
     
     --destructive: 0 62% 50%;
     --destructive-foreground: 0 0% 100%;
     
-    --border: 215 20% 22%;
-    --input: 215 25% 18%;
-    --ring: 210 70% 55%;
+    --border: 209 30% 22%;
+    --input: 209 35% 18%;
+    --ring: 212 76% 55%;
     
     /* Status colors */
     --success: 142 70% 45%;
@@ -109,15 +115,15 @@ All colors MUST be HSL.
     --warning-foreground: 0 0% 100%;
     
     /* Gradientes e efeitos modo escuro */
-    --gradient-primary: linear-gradient(135deg, hsl(210 70% 50%), hsl(210 70% 65%));
-    --gradient-hero: linear-gradient(135deg, hsl(215 25% 10%), hsl(210 50% 25%));
-    --gradient-subtle: linear-gradient(180deg, hsl(215 25% 8%), hsl(215 25% 10%));
-    --gradient-card: linear-gradient(145deg, hsl(215 25% 14%), hsl(215 25% 12%));
+    --gradient-primary: linear-gradient(135deg, hsl(212 76% 50%), hsl(212 76% 65%));
+    --gradient-hero: linear-gradient(to top, hsl(209 40% 6% / 0.95), hsl(209 40% 10% / 0.5) 50%, transparent);
+    --gradient-subtle: linear-gradient(180deg, hsl(209 40% 8%), hsl(209 35% 10%));
+    --gradient-card: linear-gradient(145deg, hsl(209 35% 14%), hsl(209 35% 12%));
     
     --shadow-sm: 0 1px 2px hsl(0 0% 0% / 0.2);
     --shadow-card: 0 2px 8px hsl(0 0% 0% / 0.3), 0 1px 3px hsl(0 0% 0% / 0.15);
     --shadow-elevated: 0 8px 24px hsl(0 0% 0% / 0.4), 0 4px 12px hsl(0 0% 0% / 0.2);
-    --shadow-glow: 0 0 40px hsl(210 70% 55% / 0.2);
+    --shadow-glow: 0 0 40px hsl(212 76% 55% / 0.2);
     --shadow-button: 0 2px 4px hsl(0 0% 0% / 0.3);
   }
 }

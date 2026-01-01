@@ -147,9 +147,6 @@ export default function AllEstablishments() {
             <SearchBar 
               value={searchQuery}
               onSearch={setSearchQuery}
-              locationValue={manualLocation}
-              onLocationChange={setManualLocation}
-              showLocation={true}
             />
             <FilterBar
               category={selectedCategory}

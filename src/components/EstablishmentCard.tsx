@@ -90,7 +90,7 @@ export function EstablishmentCard({
   products,
   establishment,
 }: EstablishmentCardProps) {
-  const displayLabel = proximityLabel || (distance !== undefined ? `${distance.toFixed(1)} km` : undefined);
+  const displayLabel = proximityLabel || (distance !== undefined ? `${distance.toFixed(1)} km de você` : undefined);
   const { isFavorite, toggleFavorite } = useFavorites();
   
   const actualId = establishment?.id || id || "";
@@ -175,7 +175,7 @@ export function EstablishmentCard({
 
   return (
     <Link to={`/estabelecimento/${actualId}`} className="block group">
-      <Card className="overflow-hidden bg-card border border-border/50 hover:border-primary/20 shadow-card hover:shadow-elevated transition-all duration-300 rounded-2xl">
+      <Card className="overflow-hidden bg-card border border-border hover:border-accent/30 shadow-card hover:shadow-elevated transition-all duration-300 rounded-2xl">
         {/* Image */}
         <div className="relative">
           {coverImage ? (
@@ -190,23 +190,15 @@ export function EstablishmentCard({
             </div>
           )}
           
-          {/* Logo */}
-          <div className="absolute -bottom-5 left-4">
-            <Avatar className="h-12 w-12 border-3 border-card shadow-elevated">
+          {/* Logo - bottom left overlapping */}
+          <div className="absolute -bottom-6 left-4">
+            <Avatar className="h-14 w-14 border-3 border-card shadow-elevated">
               <AvatarImage src={actualProfileImage || undefined} alt={actualName} />
               <AvatarFallback className="bg-primary text-primary-foreground text-lg font-bold">
                 {actualName.charAt(0).toUpperCase()}
               </AvatarFallback>
             </Avatar>
           </div>
-          
-          {/* Sponsored badge */}
-          {actualIsPaid && (
-            <Badge className="absolute top-3 left-3 bg-accent text-accent-foreground shadow-md rounded-full">
-              <Star className="h-3 w-3 mr-1 fill-current" />
-              Destaque
-            </Badge>
-          )}
 
           {/* Actions menu */}
           <div className="absolute top-3 right-3">
@@ -249,44 +241,42 @@ export function EstablishmentCard({
           )}
         </div>
 
-        <CardContent className="pt-7 pb-4 px-4">
-          {/* Header */}
+        <CardContent className="pt-8 pb-4 px-4">
+          {/* Header with name, category and badge */}
           <div className="flex items-start justify-between gap-2 mb-3">
             <div className="flex-1 min-w-0">
-              <h3 className="text-base font-bold line-clamp-1">{actualName}</h3>
-              <p className="text-xs text-muted-foreground mt-0.5">
+              <h3 className="text-base font-bold line-clamp-1 text-foreground">{actualName}</h3>
+              <p className="text-sm text-muted-foreground mt-0.5">
                 {categoryLabels[actualCategory] || actualCategory}
               </p>
             </div>
-            {displayLabel && (
-              <Badge variant="outline" className="flex-shrink-0 text-xs rounded-full border-primary/30 text-primary">
-                <MapPin className="h-3 w-3 mr-1" />
-                {displayLabel}
-              </Badge>
-            )}
           </div>
 
-          {/* Info */}
-          <div className="space-y-1.5 text-sm text-muted-foreground mb-4">
-            <div className="flex items-start gap-2">
-              <MapPin className="h-4 w-4 flex-shrink-0 mt-0.5 text-muted-foreground/70" />
-              <span className="line-clamp-1">{actualAddress}</span>
+          {/* Distance */}
+          {displayLabel && (
+            <div className="flex items-center gap-1.5 text-sm text-muted-foreground mb-3">
+              <MapPin className="h-4 w-4 flex-shrink-0" />
+              <span>{displayLabel}</span>
             </div>
-            <div className="flex items-center gap-2">
-              <Clock className="h-4 w-4 flex-shrink-0 text-muted-foreground/70" />
-              <span className="line-clamp-1">{actualSchedule}</span>
-            </div>
-          </div>
+          )}
+
+          {/* Sponsored badge */}
+          {actualIsPaid && (
+            <Badge className="bg-accent text-accent-foreground shadow-sm rounded-full mb-3">
+              <Star className="h-3 w-3 mr-1 fill-current" />
+              Destaque
+            </Badge>
+          )}
 
           {/* Products */}
           {actualProducts.length > 0 && (
-            <div className="mb-4 p-3 bg-muted/50 rounded-xl">
+            <div className="mb-4 p-3 bg-secondary rounded-xl">
               <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-medium mb-2">Produtos em destaque</p>
               <div className="space-y-1.5">
                 {actualProducts.slice(0, 2).map((product, index) => (
                   <div key={index} className="flex justify-between text-sm">
                     <span className="text-foreground line-clamp-1">{product.name}</span>
-                    <span className="font-semibold text-primary">R$ {product.price.toFixed(2)}</span>
+                    <span className="font-semibold text-accent">R$ {product.price.toFixed(2)}</span>
                   </div>
                 ))}
               </div>
@@ -299,7 +289,7 @@ export function EstablishmentCard({
               <Button 
                 variant="default" 
                 size="sm" 
-                className="flex-1 rounded-xl gap-2 h-10 shadow-button"
+                className="flex-1 rounded-xl gap-2 h-10 shadow-button bg-accent hover:bg-accent/90"
                 onClick={handleWhatsAppClick}
               >
                 <MessageCircle className="h-4 w-4" />
@@ -310,7 +300,7 @@ export function EstablishmentCard({
               <Button 
                 variant="outline" 
                 size="sm" 
-                className="flex-1 rounded-xl gap-2 h-10"
+                className="flex-1 rounded-xl gap-2 h-10 border-border"
                 onClick={handleSiteClick}
               >
                 <Globe className="h-4 w-4" />
