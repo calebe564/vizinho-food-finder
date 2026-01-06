@@ -91,6 +91,33 @@ export type Database = {
           },
         ]
       }
+      business_notes: {
+        Row: {
+          content: string
+          created_at: string
+          establishment_id: string | null
+          id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          establishment_id?: string | null
+          id?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          establishment_id?: string | null
+          id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       conversations: {
         Row: {
           category: string
