@@ -89,9 +89,9 @@ export function FilterSheet({ category, onCategoryChange, sortBy, onSortChange }
         </SheetTrigger>
         <SheetContent 
           side={isMobile ? "bottom" : "right"} 
-          className={`${isMobile ? "h-[85vh] rounded-t-3xl" : "w-[400px]"} p-0`}
+          className={`${isMobile ? "h-[70vh] max-h-[70vh] rounded-t-3xl" : "w-[400px]"} p-0 flex flex-col`}
         >
-          <SheetHeader className="p-4 md:p-6 border-b border-border">
+          <SheetHeader className="p-4 md:p-6 border-b border-border flex-shrink-0">
             <div className="flex items-center justify-between">
               <SheetTitle className="text-lg font-bold">Filtros</SheetTitle>
               <Button variant="ghost" size="sm" onClick={handleReset} className="text-muted-foreground">
@@ -146,8 +146,8 @@ export function FilterSheet({ category, onCategoryChange, sortBy, onSortChange }
             </div>
           </div>
 
-          {/* Apply Button */}
-          <div className="p-4 md:p-6 border-t border-border bg-card">
+          {/* Apply Button - Fixed at bottom */}
+          <div className="flex-shrink-0 p-4 md:p-6 border-t border-border bg-card safe-area-bottom">
             <Button onClick={handleApply} className="w-full h-12 rounded-xl font-semibold shadow-button bg-accent hover:bg-accent/90">
               Aplicar filtros
             </Button>

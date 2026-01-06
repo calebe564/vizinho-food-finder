@@ -99,7 +99,7 @@ export function HeroCarousel() {
         to={`/estabelecimento/${currentItem.establishmentId}`}
         className="block group"
       >
-        <div className="relative h-[200px] md:h-[320px] rounded-2xl overflow-hidden shadow-card">
+        <div className="relative h-[140px] sm:h-[160px] md:h-[200px] lg:h-[240px] rounded-2xl overflow-hidden shadow-card">
           {/* Background Image */}
           <img
             src={currentItem.image}
@@ -111,20 +111,20 @@ export function HeroCarousel() {
           <div className="absolute inset-0 bg-gradient-hero" />
           
           {/* Content - positioned at bottom left */}
-          <div className="absolute bottom-0 left-0 right-0 p-5 md:p-8">
+          <div className="absolute bottom-0 left-0 right-0 p-3 sm:p-4 md:p-6">
             {/* Title */}
-            <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-white mb-1 line-clamp-2 drop-shadow-lg">
+            <h2 className="text-lg sm:text-xl md:text-2xl lg:text-3xl font-bold text-white mb-0.5 line-clamp-1 drop-shadow-lg">
               {currentItem.establishmentName}
             </h2>
             
             {/* Category */}
-            <p className="text-base md:text-lg text-white/80 mb-3">
+            <p className="text-xs sm:text-sm md:text-base text-white/80 mb-2">
               {categoryLabels[currentItem.category] || currentItem.category}
             </p>
             
             {/* Badge */}
-            <Badge className="bg-accent text-accent-foreground shadow-lg">
-              <Star className="h-3 w-3 mr-1 fill-current" />
+            <Badge className="bg-accent text-accent-foreground shadow-lg text-xs">
+              <Star className="h-2.5 w-2.5 mr-1 fill-current" />
               Destaque
             </Badge>
           </div>
