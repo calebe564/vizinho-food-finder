@@ -522,6 +522,67 @@ export default function MyEstablishment() {
               </div>
             </Card>
 
+            {/* Profile Completion Indicator */}
+            {(() => {
+              const hasLogo = !!establishmentData.profile_image;
+              const hasDescription = !!establishmentData.description && establishmentData.description.length > 10;
+              const hasCategory = !!establishmentData.category;
+              const hasPhotos = establishmentData.images.length > 0;
+              const hasSchedule = !!establishmentData.schedule;
+              const hasProducts = products.length > 0;
+              
+              const completedItems = [hasLogo, hasDescription, hasCategory, hasPhotos, hasSchedule, hasProducts].filter(Boolean).length;
+              const totalItems = 6;
+              const percentage = Math.round((completedItems / totalItems) * 100);
+              
+              const missingItems = [];
+              if (!hasLogo) missingItems.push('logo');
+              if (!hasDescription) missingItems.push('descrição');
+              if (!hasPhotos) missingItems.push('fotos');
+              if (!hasSchedule) missingItems.push('horário');
+              if (!hasProducts) missingItems.push('produtos');
+
+              return (
+                <Card className="mb-6 border-0 shadow-elevated rounded-3xl">
+                  <CardContent className="p-4 md:p-6">
+                    <div className="flex items-center justify-between mb-3">
+                      <div className="flex items-center gap-2">
+                        <CheckCircle className={`h-5 w-5 ${percentage === 100 ? 'text-green-500' : 'text-primary'}`} />
+                        <span className="font-semibold text-sm">Perfil da empresa completo:</span>
+                      </div>
+                      <Badge variant={percentage === 100 ? "default" : "secondary"} className="text-sm">
+                        {percentage}%
+                      </Badge>
+                    </div>
+                    
+                    {/* Progress bar */}
+                    <div className="h-2 bg-muted rounded-full overflow-hidden mb-3">
+                      <div 
+                        className="h-full bg-gradient-to-r from-primary to-accent transition-all duration-500"
+                        style={{ width: `${percentage}%` }}
+                      />
+                    </div>
+                    
+                    {/* Educational message */}
+                    {percentage < 100 && missingItems.length > 0 && (
+                      <p className="text-xs text-muted-foreground">
+                        💡 {missingItems.includes('fotos') 
+                          ? 'Adicionar mais fotos aumenta a visibilidade da sua empresa'
+                          : `Complete seu perfil adicionando: ${missingItems.join(', ')}`
+                        }
+                      </p>
+                    )}
+                    
+                    {percentage === 100 && (
+                      <p className="text-xs text-green-600 font-medium">
+                        ✅ Parabéns! Seu perfil está completo e otimizado.
+                      </p>
+                    )}
+                  </CardContent>
+                </Card>
+              );
+            })()}
+
             <Tabs defaultValue="info" className="space-y-4">
               <TabsList className="grid w-full grid-cols-3">
                 <TabsTrigger value="info">

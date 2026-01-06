@@ -72,12 +72,23 @@ export function EstablishmentCardCompact({
           
           {/* Logo overlay - bottom left of image */}
           <div className="absolute -bottom-5 left-3">
-            <Avatar className="h-12 w-12 border-2 border-card shadow-md">
-              <AvatarImage src={profileImage || undefined} alt={name} />
-              <AvatarFallback className="bg-primary text-primary-foreground text-sm font-bold">
+            <div className="h-12 w-12 rounded-full border-2 border-card shadow-md bg-card overflow-hidden flex items-center justify-center">
+              {profileImage ? (
+                <img 
+                  src={profileImage} 
+                  alt={name}
+                  className="w-full h-full object-contain p-1"
+                  onError={(e) => {
+                    e.currentTarget.style.display = 'none';
+                    const fallback = e.currentTarget.nextElementSibling;
+                    if (fallback) (fallback as HTMLElement).style.display = 'flex';
+                  }}
+                />
+              ) : null}
+              <div className={`w-full h-full bg-primary text-primary-foreground text-sm font-bold flex items-center justify-center ${profileImage ? 'hidden' : ''}`}>
                 {name.charAt(0).toUpperCase()}
-              </AvatarFallback>
-            </Avatar>
+              </div>
+            </div>
           </div>
         </div>
 
