@@ -8,9 +8,7 @@ import { Header } from '@/components/Header';
 import { Footer } from '@/components/Footer';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
@@ -19,7 +17,6 @@ import {
   Building2, 
   Package, 
   Clock, 
-  CheckCircle, 
   XCircle, 
   Edit, 
   Loader2,
@@ -27,11 +24,11 @@ import {
   Phone,
   MapPin,
   Image,
-  Upload,
   Trash2,
   Camera,
   ImagePlus,
-  X
+  Settings,
+  User
 } from 'lucide-react';
 import {
   Dialog,
@@ -39,6 +36,11 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
+import { EstablishmentStatusCard } from '@/components/business/EstablishmentStatusCard';
+import { EditEstablishmentDialog } from '@/components/business/EditEstablishmentDialog';
+import { ProductFormDialog, type ProductJson } from '@/components/business/ProductFormDialog';
+import { BusinessNotesSheet } from '@/components/business/BusinessNotesSheet';
+import { ProfileCompletionCard } from '@/components/business/ProfileCompletionCard';
 
 interface EstablishmentData {
   id: string;
@@ -52,22 +54,14 @@ interface EstablishmentData {
   category: string;
   images: string[];
   products_json: ProductJson[];
-  isFromRequest: boolean; // indica se os dados vem de establishment_requests
-}
-
-interface ProductJson {
-  name: string;
-  price: number;
-  image: string | null;
-  hasVariations?: boolean;
-  variations?: { name: string; price: number }[];
+  isFromRequest: boolean;
 }
 
 export default function MyEstablishment() {
   const navigate = useNavigate();
   const { user, isLoading: authLoading } = useAuth();
-  const { role, isEmpresario, isLoading: roleLoading } = useUserRole();
-  const { request, hasPendingRequest, hasApprovedRequest, isLoading: requestLoading, refetch } = useEstablishmentRequest();
+  const { role, isLoading: roleLoading } = useUserRole();
+  const { request, hasPendingRequest, hasApprovedRequest, isLoading: requestLoading } = useEstablishmentRequest();
   
   const [establishmentData, setEstablishmentData] = useState<EstablishmentData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -76,6 +70,12 @@ export default function MyEstablishment() {
   const [deletingPhoto, setDeletingPhoto] = useState<string | null>(null);
   const [photoDialogOpen, setPhotoDialogOpen] = useState(false);
   const [selectedPhoto, setSelectedPhoto] = useState<string | null>(null);
+  
+  // Dialog states
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [productDialogOpen, setProductDialogOpen] = useState(false);
+  const [editingProduct, setEditingProduct] = useState<ProductJson | null>(null);
+  const [editingProductIndex, setEditingProductIndex] = useState<number | undefined>(undefined);
 
   const fetchEstablishmentData = async () => {
     if (!user) return;
@@ -286,6 +286,31 @@ export default function MyEstablishment() {
     }
   };
 
+  const handleDeleteProduct = async (index: number) => {
+    if (!establishmentData) return;
+
+    try {
+      const updatedProducts = [...establishmentData.products_json];
+      updatedProducts.splice(index, 1);
+
+      const productsJson = JSON.parse(JSON.stringify(updatedProducts));
+      const table = establishmentData.isFromRequest ? 'establishment_requests' : 'establishments';
+      
+      const { error } = await supabase
+        .from(table)
+        .update({ products_json: productsJson })
+        .eq('id', establishmentData.id);
+
+      if (error) throw error;
+
+      setEstablishmentData(prev => prev ? { ...prev, products_json: updatedProducts } : null);
+      toast.success('Produto removido!');
+    } catch (error) {
+      console.error('Error deleting product:', error);
+      toast.error('Erro ao remover produto');
+    }
+  };
+
   if (authLoading || roleLoading || requestLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -464,6 +489,17 @@ export default function MyEstablishment() {
   }
 
   const products = establishmentData.products_json || [];
+  
+  // Calculate profile completion
+  const hasLogo = !!establishmentData.profile_image;
+  const hasDescription = !!establishmentData.description && establishmentData.description.length > 10;
+  const hasCategory = !!establishmentData.category;
+  const hasPhotos = establishmentData.images.length > 0;
+  const hasSchedule = !!establishmentData.schedule;
+  const hasProducts = products.length > 0;
+  
+  const completedItems = [hasLogo, hasDescription, hasCategory, hasPhotos, hasSchedule, hasProducts].filter(Boolean).length;
+  const profilePercentage = Math.round((completedItems / 6) * 100);
 
   return (
     <>
@@ -472,11 +508,18 @@ export default function MyEstablishment() {
       </Helmet>
       <div className="min-h-screen flex flex-col bg-background">
         <Header />
-        <main className="flex-1 container px-4 py-8">
-          <div className="max-w-4xl mx-auto">
+        <main className="flex-1 container px-4 py-6">
+          <div className="max-w-4xl mx-auto space-y-4">
+            
+            {/* 1. Status da Empresa */}
+            <EstablishmentStatusCard 
+              isActive={true}
+              profileComplete={profilePercentage}
+            />
+
             {/* Header da empresa */}
-            <Card className="mb-6 border-0 shadow-elevated rounded-3xl overflow-hidden">
-              <div className="bg-gradient-to-r from-primary/10 to-primary/5 p-6">
+            <Card className="border-0 shadow-elevated rounded-2xl overflow-hidden">
+              <div className="bg-gradient-to-r from-primary/10 to-primary/5 p-5">
                 <div className="flex items-center gap-4">
                   {/* Logo com upload */}
                   <div className="relative group">
@@ -512,8 +555,8 @@ export default function MyEstablishment() {
                   </div>
                   <div className="flex-1">
                     <div className="flex items-center gap-2 mb-1">
-                      <h1 className="text-2xl font-bold">{establishmentData.name}</h1>
-                      <Badge variant="default">Aprovado</Badge>
+                      <h1 className="text-xl md:text-2xl font-bold">{establishmentData.name}</h1>
+                      <Badge variant="default" className="bg-green-500">Aprovado</Badge>
                     </div>
                     <p className="text-muted-foreground capitalize">{establishmentData.category}</p>
                     <p className="text-xs text-muted-foreground mt-1">Clique na logo para alterar</p>
@@ -522,89 +565,48 @@ export default function MyEstablishment() {
               </div>
             </Card>
 
-            {/* Profile Completion Indicator */}
-            {(() => {
-              const hasLogo = !!establishmentData.profile_image;
-              const hasDescription = !!establishmentData.description && establishmentData.description.length > 10;
-              const hasCategory = !!establishmentData.category;
-              const hasPhotos = establishmentData.images.length > 0;
-              const hasSchedule = !!establishmentData.schedule;
-              const hasProducts = products.length > 0;
-              
-              const completedItems = [hasLogo, hasDescription, hasCategory, hasPhotos, hasSchedule, hasProducts].filter(Boolean).length;
-              const totalItems = 6;
-              const percentage = Math.round((completedItems / totalItems) * 100);
-              
-              const missingItems = [];
-              if (!hasLogo) missingItems.push('logo');
-              if (!hasDescription) missingItems.push('descrição');
-              if (!hasPhotos) missingItems.push('fotos');
-              if (!hasSchedule) missingItems.push('horário');
-              if (!hasProducts) missingItems.push('produtos');
+            {/* 7. Indicador de Perfil + Orientações */}
+            <ProfileCompletionCard
+              hasLogo={hasLogo}
+              hasDescription={hasDescription}
+              hasCategory={hasCategory}
+              hasPhotos={hasPhotos}
+              hasSchedule={hasSchedule}
+              hasProducts={hasProducts}
+            />
 
-              return (
-                <Card className="mb-6 border-0 shadow-elevated rounded-3xl">
-                  <CardContent className="p-4 md:p-6">
-                    <div className="flex items-center justify-between mb-3">
-                      <div className="flex items-center gap-2">
-                        <CheckCircle className={`h-5 w-5 ${percentage === 100 ? 'text-green-500' : 'text-primary'}`} />
-                        <span className="font-semibold text-sm">Perfil da empresa completo:</span>
-                      </div>
-                      <Badge variant={percentage === 100 ? "default" : "secondary"} className="text-sm">
-                        {percentage}%
-                      </Badge>
-                    </div>
-                    
-                    {/* Progress bar */}
-                    <div className="h-2 bg-muted rounded-full overflow-hidden mb-3">
-                      <div 
-                        className="h-full bg-gradient-to-r from-primary to-accent transition-all duration-500"
-                        style={{ width: `${percentage}%` }}
-                      />
-                    </div>
-                    
-                    {/* Educational message */}
-                    {percentage < 100 && missingItems.length > 0 && (
-                      <p className="text-xs text-muted-foreground">
-                        💡 {missingItems.includes('fotos') 
-                          ? 'Adicionar mais fotos aumenta a visibilidade da sua empresa'
-                          : `Complete seu perfil adicionando: ${missingItems.join(', ')}`
-                        }
-                      </p>
-                    )}
-                    
-                    {percentage === 100 && (
-                      <p className="text-xs text-green-600 font-medium">
-                        ✅ Parabéns! Seu perfil está completo e otimizado.
-                      </p>
-                    )}
-                  </CardContent>
-                </Card>
-              );
-            })()}
+            {/* 6. Ferramentas do Empresário */}
+            <BusinessNotesSheet establishmentId={establishmentData.id} />
 
             <Tabs defaultValue="info" className="space-y-4">
-              <TabsList className="grid w-full grid-cols-3">
-                <TabsTrigger value="info">
-                  <Building2 className="h-4 w-4 mr-2" />
-                  Informações
+              <TabsList className="grid w-full grid-cols-4">
+                <TabsTrigger value="info" className="text-xs md:text-sm">
+                  <Building2 className="h-4 w-4 md:mr-2" />
+                  <span className="hidden md:inline">Informações</span>
                 </TabsTrigger>
-                <TabsTrigger value="photos">
-                  <Image className="h-4 w-4 mr-2" />
-                  Fotos ({establishmentData.images.length})
+                <TabsTrigger value="products" className="text-xs md:text-sm">
+                  <Package className="h-4 w-4 md:mr-2" />
+                  <span className="hidden md:inline">Produtos</span>
+                  <Badge variant="secondary" className="ml-1 text-xs">{products.length}</Badge>
                 </TabsTrigger>
-                <TabsTrigger value="products">
-                  <Package className="h-4 w-4 mr-2" />
-                  Produtos ({products.length})
+                <TabsTrigger value="photos" className="text-xs md:text-sm">
+                  <Image className="h-4 w-4 md:mr-2" />
+                  <span className="hidden md:inline">Fotos</span>
+                  <Badge variant="secondary" className="ml-1 text-xs">{establishmentData.images.length}</Badge>
+                </TabsTrigger>
+                <TabsTrigger value="settings" className="text-xs md:text-sm">
+                  <Settings className="h-4 w-4 md:mr-2" />
+                  <span className="hidden md:inline">Config</span>
                 </TabsTrigger>
               </TabsList>
 
+              {/* 2. Informações da Empresa */}
               <TabsContent value="info">
-                <Card className="border-0 shadow-elevated rounded-3xl">
+                <Card className="border-0 shadow-elevated rounded-2xl">
                   <CardHeader>
                     <CardTitle className="flex items-center justify-between">
                       Informações da Empresa
-                      <Button variant="outline" size="sm">
+                      <Button variant="outline" size="sm" onClick={() => setEditDialogOpen(true)}>
                         <Edit className="h-4 w-4 mr-2" />
                         Editar
                       </Button>
@@ -644,8 +646,89 @@ export default function MyEstablishment() {
                 </Card>
               </TabsContent>
 
+              {/* 3. Produtos */}
+              <TabsContent value="products">
+                <Card className="border-0 shadow-elevated rounded-2xl">
+                  <CardHeader>
+                    <CardTitle className="flex items-center justify-between">
+                      Produtos
+                      <Button size="sm" onClick={() => {
+                        setEditingProduct(null);
+                        setEditingProductIndex(undefined);
+                        setProductDialogOpen(true);
+                      }}>
+                        <Package className="h-4 w-4 mr-2" />
+                        Adicionar Produto
+                      </Button>
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    {products.length === 0 ? (
+                      <div className="text-center py-8">
+                        <Package className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                        <p className="text-muted-foreground">Nenhum produto cadastrado</p>
+                        <p className="text-sm text-muted-foreground mt-1">Clique em "Adicionar Produto" para começar</p>
+                      </div>
+                    ) : (
+                      <div className="grid gap-3 md:grid-cols-2">
+                        {products.map((product, index) => (
+                          <div key={index} className="flex items-center gap-3 p-3 bg-muted rounded-xl">
+                            {product.image ? (
+                              <img 
+                                src={product.image} 
+                                alt={product.name}
+                                className="w-16 h-16 rounded-lg object-cover"
+                              />
+                            ) : (
+                              <div className="w-16 h-16 rounded-lg bg-background flex items-center justify-center">
+                                <Image className="h-6 w-6 text-muted-foreground" />
+                              </div>
+                            )}
+                            <div className="flex-1 min-w-0">
+                              <p className="font-medium truncate">{product.name}</p>
+                              {product.hasVariations && product.variations ? (
+                                <p className="text-primary text-sm">
+                                  {product.variations.length} variações
+                                </p>
+                              ) : (
+                                <p className="text-primary font-semibold">
+                                  R$ {product.price.toFixed(2).replace('.', ',')}
+                                </p>
+                              )}
+                            </div>
+                            <div className="flex gap-1">
+                              <Button 
+                                variant="ghost" 
+                                size="icon"
+                                className="h-8 w-8"
+                                onClick={() => {
+                                  setEditingProduct(product);
+                                  setEditingProductIndex(index);
+                                  setProductDialogOpen(true);
+                                }}
+                              >
+                                <Edit className="h-4 w-4" />
+                              </Button>
+                              <Button 
+                                variant="ghost" 
+                                size="icon"
+                                className="h-8 w-8 text-destructive"
+                                onClick={() => handleDeleteProduct(index)}
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              </TabsContent>
+
+              {/* 4. Fotos */}
               <TabsContent value="photos">
-                <Card className="border-0 shadow-elevated rounded-3xl">
+                <Card className="border-0 shadow-elevated rounded-2xl">
                   <CardHeader>
                     <CardTitle className="flex items-center justify-between">
                       Fotos do Estabelecimento
@@ -673,6 +756,9 @@ export default function MyEstablishment() {
                         </label>
                       </div>
                     </CardTitle>
+                    <CardDescription>
+                      💡 Empresas com mais fotos recebem mais visualizações.
+                    </CardDescription>
                   </CardHeader>
                   <CardContent>
                     {establishmentData.images.length === 0 ? (
@@ -713,57 +799,34 @@ export default function MyEstablishment() {
                 </Card>
               </TabsContent>
 
-              <TabsContent value="products">
-                <Card className="border-0 shadow-elevated rounded-3xl">
+              {/* 5. Configurações do Perfil do Empresário */}
+              <TabsContent value="settings">
+                <Card className="border-0 shadow-elevated rounded-2xl">
                   <CardHeader>
-                    <CardTitle className="flex items-center justify-between">
-                      Produtos
-                      <Button size="sm">
-                        <Package className="h-4 w-4 mr-2" />
-                        Adicionar Produto
-                      </Button>
+                    <CardTitle className="flex items-center gap-2">
+                      <User className="h-5 w-5" />
+                      Perfil do Empresário
                     </CardTitle>
+                    <CardDescription>
+                      Informações do responsável pela empresa
+                    </CardDescription>
                   </CardHeader>
-                  <CardContent>
-                    {products.length === 0 ? (
-                      <div className="text-center py-8">
-                        <Package className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                        <p className="text-muted-foreground">Nenhum produto cadastrado</p>
+                  <CardContent className="space-y-4">
+                    <div className="grid gap-4 md:grid-cols-2">
+                      <div className="space-y-2">
+                        <Label className="text-muted-foreground text-sm">Email</Label>
+                        <p className="text-sm">{user?.email}</p>
                       </div>
-                    ) : (
-                      <div className="grid gap-4 md:grid-cols-2">
-                        {products.map((product, index) => (
-                          <div key={index} className="flex items-center gap-3 p-3 bg-muted rounded-xl">
-                            {product.image ? (
-                              <img 
-                                src={product.image} 
-                                alt={product.name}
-                                className="w-16 h-16 rounded-lg object-cover"
-                              />
-                            ) : (
-                              <div className="w-16 h-16 rounded-lg bg-background flex items-center justify-center">
-                                <Image className="h-6 w-6 text-muted-foreground" />
-                              </div>
-                            )}
-                            <div className="flex-1">
-                              <p className="font-medium">{product.name}</p>
-                              {product.hasVariations && product.variations ? (
-                                <p className="text-primary text-sm">
-                                  {product.variations.length} variações
-                                </p>
-                              ) : (
-                                <p className="text-primary font-semibold">
-                                  R$ {product.price.toFixed(2).replace('.', ',')}
-                                </p>
-                              )}
-                            </div>
-                            <Button variant="ghost" size="sm">
-                              <Edit className="h-4 w-4" />
-                            </Button>
-                          </div>
-                        ))}
+                      <div className="space-y-2">
+                        <Label className="text-muted-foreground text-sm">Tipo de conta</Label>
+                        <Badge variant="outline">Empresário</Badge>
                       </div>
-                    )}
+                    </div>
+                    <div className="pt-4 border-t">
+                      <p className="text-xs text-muted-foreground">
+                        Para alterar informações de acesso, entre em contato com o suporte.
+                      </p>
+                    </div>
                   </CardContent>
                 </Card>
               </TabsContent>
@@ -788,6 +851,38 @@ export default function MyEstablishment() {
           )}
         </DialogContent>
       </Dialog>
+
+      {/* Dialog para editar informações */}
+      <EditEstablishmentDialog
+        open={editDialogOpen}
+        onOpenChange={setEditDialogOpen}
+        establishmentId={establishmentData.id}
+        isFromRequest={establishmentData.isFromRequest}
+        initialData={{
+          name: establishmentData.name,
+          description: establishmentData.description,
+          category: establishmentData.category,
+          phone: establishmentData.phone,
+          whatsapp: establishmentData.whatsapp,
+          schedule: establishmentData.schedule,
+          address: establishmentData.address,
+        }}
+        onSuccess={fetchEstablishmentData}
+      />
+
+      {/* Dialog para adicionar/editar produto */}
+      <ProductFormDialog
+        open={productDialogOpen}
+        onOpenChange={setProductDialogOpen}
+        establishmentId={establishmentData.id}
+        isFromRequest={establishmentData.isFromRequest}
+        existingProducts={products}
+        editingProduct={editingProduct}
+        editingIndex={editingProductIndex}
+        onSuccess={(updatedProducts) => {
+          setEstablishmentData(prev => prev ? { ...prev, products_json: updatedProducts } : null);
+        }}
+      />
     </>
   );
 }
