@@ -31,6 +31,8 @@ const Favorites = lazy(() => import("./pages/Favorites"));
 const ProductDetail = lazy(() => import("./pages/ProductDetail"));
 const Auth = lazy(() => import("./pages/Auth"));
 const MyEstablishment = lazy(() => import("./pages/MyEstablishment"));
+const UserConversations = lazy(() => import("./pages/UserConversations"));
+const UserChat = lazy(() => import("./pages/UserChat"));
 
 // Loading component
 const PageLoader = () => (
@@ -74,6 +76,8 @@ function App() {
                             <Route path="/estabelecimentos" element={<AllEstablishments />} />
                             <Route path="/favoritos" element={<Favorites />} />
                             <Route path="/minha-empresa" element={<MyEstablishment />} />
+                            <Route path="/conversas" element={<UserConversations />} />
+                            <Route path="/conversas/:id" element={<UserChat />} />
                             <Route path="/cadastrar" element={<PublicEstablishmentForm />} />
                             <Route path="/informacoes" element={<Information />} />
                             <Route path="/sobre" element={<About />} />

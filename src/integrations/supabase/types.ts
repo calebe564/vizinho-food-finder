@@ -124,9 +124,12 @@ export type Database = {
           city_neighborhood: string
           created_at: string
           id: string
+          last_message_at: string | null
           status: string | null
+          unread_count: number | null
           updated_at: string
           user_email: string
+          user_id: string | null
           user_name: string
         }
         Insert: {
@@ -134,9 +137,12 @@ export type Database = {
           city_neighborhood: string
           created_at?: string
           id?: string
+          last_message_at?: string | null
           status?: string | null
+          unread_count?: number | null
           updated_at?: string
           user_email: string
+          user_id?: string | null
           user_name: string
         }
         Update: {
@@ -144,9 +150,12 @@ export type Database = {
           city_neighborhood?: string
           created_at?: string
           id?: string
+          last_message_at?: string | null
           status?: string | null
+          unread_count?: number | null
           updated_at?: string
           user_email?: string
+          user_id?: string | null
           user_name?: string
         }
         Relationships: []

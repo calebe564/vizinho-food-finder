@@ -41,6 +41,7 @@ import { EditEstablishmentDialog } from '@/components/business/EditEstablishment
 import { ProductFormDialog, type ProductJson } from '@/components/business/ProductFormDialog';
 import { BusinessNotesSheet } from '@/components/business/BusinessNotesSheet';
 import { ProfileCompletionCard } from '@/components/business/ProfileCompletionCard';
+import { InviteAdminDialog } from '@/components/business/InviteAdminDialog';
 
 interface EstablishmentData {
   id: string;
