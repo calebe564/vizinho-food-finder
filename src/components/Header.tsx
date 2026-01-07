@@ -1,5 +1,5 @@
 import { Link, useNavigate } from "react-router-dom";
-import { Home, Building2, Store, Menu, Heart, LogIn, LogOut, User, Briefcase, UserPlus, X, MapPin, MoreVertical } from "lucide-react";
+import { Home, Building2, Store, Menu, Heart, LogIn, LogOut, User, Briefcase, UserPlus, X, MapPin, MoreVertical, MessageSquare } from "lucide-react";
 import { ThemeToggle } from "./ThemeToggle";
 import { Button } from "./ui/button";
 import { Sheet, SheetContent, SheetTrigger, SheetClose } from "./ui/sheet";
@@ -11,6 +11,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useUserRole } from "@/hooks/useUserRole";
 import { useEstablishmentRequest } from "@/hooks/useEstablishmentRequest";
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
+import { useUnreadConversations } from "@/hooks/useUnreadConversations";
 
 export function Header() {
   const [isOpen, setIsOpen] = useState(false);
@@ -27,6 +28,8 @@ export function Header() {
     await signOut();
     navigate('/');
   };
+  
+  const { unreadCount } = useUnreadConversations();
   
   const navLinks = [
     { to: "/", label: "Início" },
@@ -110,6 +113,20 @@ export function Header() {
                   <Link to="/cadastrar" className="flex items-center gap-2 cursor-pointer">
                     <UserPlus className="h-4 w-4" />
                     Cadastrar Empresa
+                  </Link>
+                </DropdownMenuItem>
+              )}
+              
+              {user && (
+                <DropdownMenuItem asChild>
+                  <Link to="/conversas" className="flex items-center gap-2 cursor-pointer relative">
+                    <MessageSquare className="h-4 w-4" />
+                    Conversas
+                    {unreadCount > 0 && (
+                      <span className="absolute -top-1 -right-1 h-5 w-5 bg-destructive text-destructive-foreground text-xs font-bold rounded-full flex items-center justify-center">
+                        {unreadCount > 9 ? "9+" : unreadCount}
+                      </span>
+                    )}
                   </Link>
                 </DropdownMenuItem>
               )}
@@ -232,6 +249,22 @@ export function Header() {
                   >
                     <UserPlus className="h-5 w-5 text-muted-foreground" />
                     <span className="font-medium">Cadastrar Empresa</span>
+                  </Link>
+                )}
+
+                {user && (
+                  <Link
+                    to="/conversas"
+                    onClick={() => setIsOpen(false)}
+                    className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-secondary transition-colors relative"
+                  >
+                    <MessageSquare className="h-5 w-5 text-muted-foreground" />
+                    <span className="font-medium">Conversas</span>
+                    {unreadCount > 0 && (
+                      <span className="ml-auto bg-destructive text-destructive-foreground text-xs font-bold px-2 py-0.5 rounded-full">
+                        {unreadCount}
+                      </span>
+                    )}
                   </Link>
                 )}
                 

@@ -8,6 +8,7 @@ import { EstablishmentCardCompact } from "@/components/EstablishmentCardCompact"
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { AdvertisementBanner } from "@/components/AdvertisementBanner";
+import { TalkToAdminButton } from "@/components/TalkToAdminButton";
 import { useUserLocation } from "@/contexts/LocationContext";
 import { useSearchParams } from "react-router-dom";
 import { Store, Loader2 } from "lucide-react";
@@ -206,6 +207,7 @@ export default function Home() {
           )}
         </div>
       </main>
+      <TalkToAdminButton />
       <Footer />
     </div>
   );

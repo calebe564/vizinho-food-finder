@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { ImageCarousel } from "@/components/ImageCarousel";
 import { ProductCard } from "@/components/ProductCard";
+import { TalkToAdminButton } from "@/components/TalkToAdminButton";
 import { getScheduleStatus } from "@/lib/scheduleUtils";
 import { toast } from "sonner";
 import { useFavorites } from "@/hooks/useFavorites";
@@ -435,6 +436,7 @@ export default function EstablishmentDetail() {
           </div>
         </div>
       </main>
+      <TalkToAdminButton />
     </div>
   );
 }
