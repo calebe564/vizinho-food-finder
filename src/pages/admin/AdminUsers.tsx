@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useUserRole, UserRole } from '@/hooks/useUserRole';
 import { supabase } from '@/integrations/supabase/client';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
@@ -11,8 +11,12 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Switch } from '@/components/ui/switch';
+import { Textarea } from '@/components/ui/textarea';
 import { toast } from 'sonner';
 import { Helmet } from 'react-helmet-async';
+import { format, formatDistanceToNow } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
 import { 
   Users, 
   Shield, 
@@ -22,8 +26,19 @@ import {
   UserCog,
   User,
   Building2,
-  ChevronLeft
+  ChevronLeft,
+  Settings,
+  Clock
 } from 'lucide-react';
+
+interface AdminPermissions {
+  can_edit_establishments: boolean;
+  can_approve_requests: boolean;
+  can_manage_ads: boolean;
+  can_view_conversations: boolean;
+  can_manage_users: boolean;
+  notes: string;
+}
 
 interface UserWithRole {
   id: string;
@@ -32,6 +47,8 @@ interface UserWithRole {
   email: string;
   role: UserRole;
   created_at: string;
+  last_login_at: string | null;
+  permissions?: AdminPermissions;
 }
 
 const roleLabels: Record<UserRole, string> = {
@@ -58,6 +75,15 @@ const roleIcons: Record<UserRole, React.ReactNode> = {
   user: <User className="h-3 w-3" />
 };
 
+const defaultPermissions: AdminPermissions = {
+  can_edit_establishments: true,
+  can_approve_requests: false,
+  can_manage_ads: false,
+  can_view_conversations: true,
+  can_manage_users: false,
+  notes: ''
+};
+
 export default function AdminUsers() {
   const navigate = useNavigate();
   const { user } = useAuth();
@@ -69,7 +95,9 @@ export default function AdminUsers() {
   const [selectedUser, setSelectedUser] = useState<UserWithRole | null>(null);
   const [newRole, setNewRole] = useState<UserRole>('user');
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isPermissionsDialogOpen, setIsPermissionsDialogOpen] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [permissions, setPermissions] = useState<AdminPermissions>(defaultPermissions);
 
   useEffect(() => {
     if (!roleLoading && !canManageRoles) {
@@ -82,10 +110,9 @@ export default function AdminUsers() {
 
   const fetchUsers = async () => {
     try {
-      // Buscar todos os perfis
       const { data: profiles, error: profilesError } = await supabase
         .from('profiles')
-        .select('id, user_id, full_name, email, created_at')
+        .select('id, user_id, full_name, email, created_at, last_login_at')
         .order('full_name');
 
       if (profilesError) {
@@ -93,7 +120,6 @@ export default function AdminUsers() {
         return;
       }
 
-      // Para cada perfil, buscar a role
       const usersWithRoles: UserWithRole[] = [];
       
       for (const profile of profiles || []) {
@@ -103,13 +129,28 @@ export default function AdminUsers() {
           .eq('user_id', profile.user_id)
           .maybeSingle();
 
+        const { data: permData } = await supabase
+          .from('admin_permissions')
+          .select('*')
+          .eq('user_id', profile.user_id)
+          .maybeSingle();
+
         usersWithRoles.push({
           id: profile.id,
           user_id: profile.user_id,
           full_name: profile.full_name,
           email: profile.email,
           role: (roleData?.role as UserRole) || 'user',
-          created_at: profile.created_at || ''
+          created_at: profile.created_at || '',
+          last_login_at: profile.last_login_at,
+          permissions: permData ? {
+            can_edit_establishments: permData.can_edit_establishments,
+            can_approve_requests: permData.can_approve_requests,
+            can_manage_ads: permData.can_manage_ads,
+            can_view_conversations: permData.can_view_conversations,
+            can_manage_users: permData.can_manage_users,
+            notes: permData.notes || ''
+          } : undefined
         });
       }
 
@@ -125,7 +166,6 @@ export default function AdminUsers() {
   const handleChangeRole = async () => {
     if (!selectedUser || !isAdmMaster) return;
 
-    // Não permitir alterar role do ADM_MASTER
     if (selectedUser.email === 'johnvictorsf1512@gmail.com') {
       toast.error('Não é possível alterar a role do ADM Master');
       setIsDialogOpen(false);
@@ -134,13 +174,11 @@ export default function AdminUsers() {
 
     setSaving(true);
     try {
-      // Deletar role existente
       await supabase
         .from('user_roles')
         .delete()
         .eq('user_id', selectedUser.user_id);
 
-      // Inserir nova role
       const { error } = await supabase
         .from('user_roles')
         .insert({
@@ -148,13 +186,20 @@ export default function AdminUsers() {
           role: newRole
         });
 
-      if (error) {
-        throw error;
+      if (error) throw error;
+
+      // Se virou admin, criar permissões padrão
+      if (newRole === 'admin') {
+        await supabase
+          .from('admin_permissions')
+          .upsert({
+            user_id: selectedUser.user_id,
+            ...defaultPermissions
+          });
       }
 
       toast.success(`Role de ${selectedUser.full_name} alterada para ${roleLabels[newRole]}`);
       
-      // Atualizar lista local
       setUsers(prev => prev.map(u => 
         u.user_id === selectedUser.user_id 
           ? { ...u, role: newRole }
@@ -165,6 +210,44 @@ export default function AdminUsers() {
     } catch (err) {
       console.error('Error changing role:', err);
       toast.error('Erro ao alterar role');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleOpenPermissions = (u: UserWithRole) => {
+    setSelectedUser(u);
+    setPermissions(u.permissions || defaultPermissions);
+    setIsPermissionsDialogOpen(true);
+  };
+
+  const handleSavePermissions = async () => {
+    if (!selectedUser) return;
+
+    setSaving(true);
+    try {
+      const { error } = await supabase
+        .from('admin_permissions')
+        .upsert({
+          user_id: selectedUser.user_id,
+          ...permissions,
+          updated_at: new Date().toISOString()
+        });
+
+      if (error) throw error;
+
+      toast.success('Permissões atualizadas');
+      
+      setUsers(prev => prev.map(u => 
+        u.user_id === selectedUser.user_id 
+          ? { ...u, permissions }
+          : u
+      ));
+      
+      setIsPermissionsDialogOpen(false);
+    } catch (err) {
+      console.error('Error saving permissions:', err);
+      toast.error('Erro ao salvar permissões');
     } finally {
       setSaving(false);
     }
@@ -200,13 +283,13 @@ export default function AdminUsers() {
           </Button>
           <div>
             <h1 className="text-2xl font-bold">Gerenciar Usuários</h1>
-            <p className="text-muted-foreground">Promover ou rebaixar roles de usuários</p>
+            <p className="text-muted-foreground">Usuários cadastrados, roles e permissões</p>
           </div>
         </div>
 
         <Card className="border-0 shadow-elevated rounded-3xl">
           <CardHeader>
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between flex-wrap gap-4">
               <CardTitle className="flex items-center gap-2">
                 <Users className="h-5 w-5" />
                 Usuários ({users.length})
@@ -223,55 +306,85 @@ export default function AdminUsers() {
             </div>
           </CardHeader>
           <CardContent>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Nome</TableHead>
-                  <TableHead>Email</TableHead>
-                  <TableHead>Role</TableHead>
-                  <TableHead className="text-right">Ações</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filteredUsers.map(u => (
-                  <TableRow key={u.id}>
-                    <TableCell className="font-medium">{u.full_name}</TableCell>
-                    <TableCell className="text-muted-foreground">{u.email}</TableCell>
-                    <TableCell>
-                      <Badge variant="outline" className={roleColors[u.role]}>
-                        {roleIcons[u.role]}
-                        <span className="ml-1">{roleLabels[u.role]}</span>
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="text-right">
-                      {u.email !== 'johnvictorsf1512@gmail.com' ? (
-                        <Button 
-                          variant="outline" 
-                          size="sm"
-                          onClick={() => {
-                            setSelectedUser(u);
-                            setNewRole(u.role);
-                            setIsDialogOpen(true);
-                          }}
-                        >
-                          <UserCog className="h-4 w-4 mr-1" />
-                          Alterar Role
-                        </Button>
-                      ) : (
-                        <Badge variant="outline" className="bg-purple-500/10 text-purple-700">
-                          <Crown className="h-3 w-3 mr-1" />
-                          Protegido
-                        </Badge>
-                      )}
-                    </TableCell>
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Nome</TableHead>
+                    <TableHead>Email</TableHead>
+                    <TableHead>Role</TableHead>
+                    <TableHead>Último Acesso</TableHead>
+                    <TableHead className="text-right">Ações</TableHead>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+                </TableHeader>
+                <TableBody>
+                  {filteredUsers.map(u => (
+                    <TableRow key={u.id}>
+                      <TableCell className="font-medium">{u.full_name}</TableCell>
+                      <TableCell className="text-muted-foreground">{u.email}</TableCell>
+                      <TableCell>
+                        <Badge variant="outline" className={roleColors[u.role]}>
+                          {roleIcons[u.role]}
+                          <span className="ml-1">{roleLabels[u.role]}</span>
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        {u.last_login_at ? (
+                          <div className="flex items-center gap-1 text-sm text-muted-foreground">
+                            <Clock className="h-3 w-3" />
+                            <span title={format(new Date(u.last_login_at), "dd/MM/yyyy HH:mm", { locale: ptBR })}>
+                              {formatDistanceToNow(new Date(u.last_login_at), { addSuffix: true, locale: ptBR })}
+                            </span>
+                          </div>
+                        ) : (
+                          <span className="text-xs text-muted-foreground">Nunca</span>
+                        )}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <div className="flex items-center justify-end gap-2">
+                          {u.email !== 'johnvictorsf1512@gmail.com' ? (
+                            <>
+                              <Button 
+                                variant="outline" 
+                                size="sm"
+                                onClick={() => {
+                                  setSelectedUser(u);
+                                  setNewRole(u.role);
+                                  setIsDialogOpen(true);
+                                }}
+                              >
+                                <UserCog className="h-4 w-4 mr-1" />
+                                Role
+                              </Button>
+                              {(u.role === 'admin' || u.role === 'pre_adm') && (
+                                <Button 
+                                  variant="outline" 
+                                  size="sm"
+                                  onClick={() => handleOpenPermissions(u)}
+                                >
+                                  <Settings className="h-4 w-4 mr-1" />
+                                  Permissões
+                                </Button>
+                              )}
+                            </>
+                          ) : (
+                            <Badge variant="outline" className="bg-purple-500/10 text-purple-700">
+                              <Crown className="h-3 w-3 mr-1" />
+                              Protegido
+                            </Badge>
+                          )}
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
           </CardContent>
         </Card>
       </div>
 
+      {/* Dialog para alterar role */}
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
         <DialogContent>
           <DialogHeader>
@@ -304,8 +417,8 @@ export default function AdminUsers() {
                 </SelectContent>
               </Select>
               <p className="text-xs text-muted-foreground">
-                {newRole === 'admin' && 'Pode aprovar/recusar empresas e editar estabelecimentos.'}
-                {newRole === 'pre_adm' && 'Pode criar empresas sem produtos, não pode aprovar.'}
+                {newRole === 'admin' && 'Administrador com permissões configuráveis.'}
+                {newRole === 'pre_adm' && 'Pré-Administrador com acesso limitado.'}
                 {newRole === 'empresario' && 'Administra apenas a própria empresa.'}
                 {newRole === 'user' && 'Usuário comum sem permissões administrativas.'}
               </p>
@@ -323,7 +436,102 @@ export default function AdminUsers() {
                   Salvando...
                 </>
               ) : (
-                'Confirmar Alteração'
+                'Confirmar'
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Dialog para configurar permissões */}
+      <Dialog open={isPermissionsDialogOpen} onOpenChange={setIsPermissionsDialogOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Permissões do Administrador</DialogTitle>
+            <DialogDescription>
+              Configurar permissões de <strong>{selectedUser?.full_name}</strong>
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4 py-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <Label>Editar Estabelecimentos</Label>
+                <p className="text-xs text-muted-foreground">Criar e editar empresas</p>
+              </div>
+              <Switch
+                checked={permissions.can_edit_establishments}
+                onCheckedChange={(v) => setPermissions(p => ({ ...p, can_edit_establishments: v }))}
+              />
+            </div>
+            
+            <div className="flex items-center justify-between">
+              <div>
+                <Label>Aprovar Solicitações</Label>
+                <p className="text-xs text-muted-foreground">Aprovar ou recusar cadastros</p>
+              </div>
+              <Switch
+                checked={permissions.can_approve_requests}
+                onCheckedChange={(v) => setPermissions(p => ({ ...p, can_approve_requests: v }))}
+              />
+            </div>
+            
+            <div className="flex items-center justify-between">
+              <div>
+                <Label>Gerenciar Propagandas</Label>
+                <p className="text-xs text-muted-foreground">Criar e editar anúncios</p>
+              </div>
+              <Switch
+                checked={permissions.can_manage_ads}
+                onCheckedChange={(v) => setPermissions(p => ({ ...p, can_manage_ads: v }))}
+              />
+            </div>
+            
+            <div className="flex items-center justify-between">
+              <div>
+                <Label>Ver Conversas</Label>
+                <p className="text-xs text-muted-foreground">Acessar chat de suporte</p>
+              </div>
+              <Switch
+                checked={permissions.can_view_conversations}
+                onCheckedChange={(v) => setPermissions(p => ({ ...p, can_view_conversations: v }))}
+              />
+            </div>
+            
+            <div className="flex items-center justify-between">
+              <div>
+                <Label>Gerenciar Usuários</Label>
+                <p className="text-xs text-muted-foreground">Alterar roles de outros usuários</p>
+              </div>
+              <Switch
+                checked={permissions.can_manage_users}
+                onCheckedChange={(v) => setPermissions(p => ({ ...p, can_manage_users: v }))}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label>Observações</Label>
+              <Textarea
+                value={permissions.notes}
+                onChange={(e) => setPermissions(p => ({ ...p, notes: e.target.value }))}
+                placeholder="Anotações sobre este administrador..."
+                rows={3}
+              />
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsPermissionsDialogOpen(false)}>
+              Cancelar
+            </Button>
+            <Button onClick={handleSavePermissions} disabled={saving}>
+              {saving ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Salvando...
+                </>
+              ) : (
+                'Salvar Permissões'
               )}
             </Button>
           </DialogFooter>

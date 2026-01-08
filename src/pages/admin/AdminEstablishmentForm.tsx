@@ -9,9 +9,10 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
-import { ArrowLeft, Upload, Trash2, Plus, Star, Package, Image, Building2, MapPin, Loader2 } from "lucide-react";
+import { ArrowLeft, Upload, Trash2, Plus, Star, Package, Image, Building2, MapPin, Loader2, UserPlus } from "lucide-react";
 import { Database } from "@/integrations/supabase/types";
 import { ConfirmPasswordDialog } from "@/components/ConfirmPasswordDialog";
+import { InviteAdminDialog } from "@/components/business/InviteAdminDialog";
 
 type EstablishmentCategory = Database["public"]["Enums"]["establishment_category"];
 
@@ -1099,13 +1100,16 @@ export default function AdminEstablishmentForm() {
           </Card>
         )}
 
-        <div className="flex gap-4">
+        <div className="flex flex-wrap gap-4 items-center">
           <Button type="submit" disabled={loading}>
             {loading ? "Salvando..." : id ? "Salvar Alterações" : "Cadastrar Empresa"}
           </Button>
           <Button type="button" variant="outline" onClick={() => navigate("/admin/dashboard/estabelecimentos")}>
             Cancelar
           </Button>
+          {id && formData.name && (
+            <InviteAdminDialog establishmentId={id} establishmentName={formData.name} />
+          )}
         </div>
       </form>
 

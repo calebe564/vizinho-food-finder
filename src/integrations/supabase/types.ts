@@ -14,6 +14,45 @@ export type Database = {
   }
   public: {
     Tables: {
+      admin_permissions: {
+        Row: {
+          can_approve_requests: boolean | null
+          can_edit_establishments: boolean | null
+          can_manage_ads: boolean | null
+          can_manage_users: boolean | null
+          can_view_conversations: boolean | null
+          created_at: string
+          id: string
+          notes: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          can_approve_requests?: boolean | null
+          can_edit_establishments?: boolean | null
+          can_manage_ads?: boolean | null
+          can_manage_users?: boolean | null
+          can_view_conversations?: boolean | null
+          created_at?: string
+          id?: string
+          notes?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          can_approve_requests?: boolean | null
+          can_edit_establishments?: boolean | null
+          can_manage_ads?: boolean | null
+          can_manage_users?: boolean | null
+          can_view_conversations?: boolean | null
+          created_at?: string
+          id?: string
+          notes?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       admin_users: {
         Row: {
           created_at: string | null
@@ -503,6 +542,7 @@ export type Database = {
           favorite_color: string | null
           full_name: string
           id: string
+          last_login_at: string | null
           recovery_pin_hash: string
           updated_at: string | null
           user_id: string
@@ -514,6 +554,7 @@ export type Database = {
           favorite_color?: string | null
           full_name: string
           id?: string
+          last_login_at?: string | null
           recovery_pin_hash: string
           updated_at?: string | null
           user_id: string
@@ -525,6 +566,7 @@ export type Database = {
           favorite_color?: string | null
           full_name?: string
           id?: string
+          last_login_at?: string | null
           recovery_pin_hash?: string
           updated_at?: string | null
           user_id?: string
