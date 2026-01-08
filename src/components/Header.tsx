@@ -119,11 +119,11 @@ export function Header() {
               
               {user && (
                 <DropdownMenuItem asChild>
-                  <Link to="/conversas" className="flex items-center gap-2 cursor-pointer relative">
+                  <Link to="/suporte" className="flex items-center gap-2 cursor-pointer relative">
                     <MessageSquare className="h-4 w-4" />
-                    Conversas
+                    Suporte
                     {unreadCount > 0 && (
-                      <span className="absolute -top-1 -right-1 h-5 w-5 bg-destructive text-destructive-foreground text-xs font-bold rounded-full flex items-center justify-center">
+                      <span className="ml-auto bg-primary text-primary-foreground text-xs font-bold px-2 py-0.5 rounded-full">
                         {unreadCount > 9 ? "9+" : unreadCount}
                       </span>
                     )}
@@ -254,14 +254,14 @@ export function Header() {
 
                 {user && (
                   <Link
-                    to="/conversas"
+                    to="/suporte"
                     onClick={() => setIsOpen(false)}
                     className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-secondary transition-colors relative"
                   >
                     <MessageSquare className="h-5 w-5 text-muted-foreground" />
-                    <span className="font-medium">Conversas</span>
+                    <span className="font-medium">Suporte</span>
                     {unreadCount > 0 && (
-                      <span className="ml-auto bg-destructive text-destructive-foreground text-xs font-bold px-2 py-0.5 rounded-full">
+                      <span className="ml-auto bg-primary text-primary-foreground text-xs font-bold px-2 py-0.5 rounded-full">
                         {unreadCount}
                       </span>
                     )}

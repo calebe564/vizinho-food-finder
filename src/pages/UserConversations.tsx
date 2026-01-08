@@ -98,7 +98,7 @@ export default function UserConversations() {
 
       if (error) throw error;
 
-      navigate(`/conversas/${data.id}`);
+      navigate(`/suporte/${data.id}`);
     } catch (error) {
       toast.error("Erro ao criar conversa");
     }
@@ -134,7 +134,7 @@ export default function UserConversations() {
             <ArrowLeft className="h-5 w-5" />
           </Button>
           <MessageSquare className="h-6 w-6 text-primary" />
-          <h1 className="text-2xl font-bold">Minhas Conversas</h1>
+          <h1 className="text-2xl font-bold">Suporte</h1>
         </div>
 
         <Button onClick={handleNewConversation} className="mb-6 gap-2">
@@ -156,7 +156,7 @@ export default function UserConversations() {
               <Card
                 key={conv.id}
                 className="p-4 hover:shadow-lg transition-shadow cursor-pointer relative"
-                onClick={() => navigate(`/conversas/${conv.id}`)}
+                onClick={() => navigate(`/suporte/${conv.id}`)}
               >
                 {conv.unread_count > 0 && (
                   <div className="absolute -top-2 -right-2 h-6 w-6 bg-destructive rounded-full flex items-center justify-center">

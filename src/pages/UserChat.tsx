@@ -64,7 +64,7 @@ export default function UserChat() {
 
     if (error) {
       toast.error("Conversa não encontrada");
-      navigate("/conversas");
+      navigate("/suporte");
       return;
     }
 
@@ -152,7 +152,7 @@ export default function UserChat() {
       <main className="container py-4 flex-1 flex flex-col">
         <Button
           variant="ghost"
-          onClick={() => navigate("/conversas")}
+          onClick={() => navigate("/suporte")}
           className="mb-4 w-fit"
         >
           <ArrowLeft className="h-4 w-4 mr-2" />

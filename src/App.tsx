@@ -76,8 +76,8 @@ function App() {
                             <Route path="/estabelecimentos" element={<AllEstablishments />} />
                             <Route path="/favoritos" element={<Favorites />} />
                             <Route path="/minha-empresa" element={<MyEstablishment />} />
-                            <Route path="/conversas" element={<UserConversations />} />
-                            <Route path="/conversas/:id" element={<UserChat />} />
+                            <Route path="/suporte" element={<UserConversations />} />
+                            <Route path="/suporte/:id" element={<UserChat />} />
                             <Route path="/cadastrar" element={<PublicEstablishmentForm />} />
                             <Route path="/informacoes" element={<Information />} />
                             <Route path="/sobre" element={<About />} />

@@ -199,6 +199,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         return { success: false, message: error.message };
       }
 
+      // Atualizar last_login_at no profile
+      if (data.user) {
+        await supabase
+          .from('profiles')
+          .update({ last_login_at: new Date().toISOString() })
+          .eq('user_id', data.user.id);
+      }
+
       // Buscar a role do usuário para redirecionamento
       let role: UserRole = 'user';
       if (data.user) {

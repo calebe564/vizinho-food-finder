@@ -29,7 +29,7 @@ export function TalkToAdminButton() {
         .maybeSingle();
 
       if (existingConversation) {
-        navigate(`/conversas/${existingConversation.id}`);
+        navigate(`/suporte/${existingConversation.id}`);
         return;
       }
 
@@ -49,7 +49,7 @@ export function TalkToAdminButton() {
 
       if (error) throw error;
 
-      navigate(`/conversas/${newConversation.id}`);
+      navigate(`/suporte/${newConversation.id}`);
     } catch (error) {
       console.error("Error creating conversation:", error);
       toast.error("Erro ao iniciar conversa. Tente novamente.");
