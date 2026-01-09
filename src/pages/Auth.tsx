@@ -10,7 +10,9 @@ import { toast } from 'sonner';
 import { Header } from '@/components/Header';
 import { Footer } from '@/components/Footer';
 import { Eye, EyeOff, Loader2, UserPlus, LogIn, AlertCircle } from 'lucide-react';
-import { signupSchema, loginSchema, recoverySchema } from '@/lib/authUtils';
+import { loginSchema, recoverySchema } from '@/lib/authUtils';
+import { enhancedSignupSchema, validateEmailDomain } from '@/lib/validationUtils';
+import { PasswordStrengthIndicator } from '@/components/PasswordStrengthIndicator';
 import { z } from 'zod';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -138,7 +140,7 @@ export default function Auth() {
     setSignupErrors({});
     
     try {
-      signupSchema.parse(signupForm);
+      enhancedSignupSchema.parse(signupForm);
     } catch (error) {
       if (error instanceof z.ZodError) {
         const errors: Record<string, string> = {};
@@ -391,7 +393,7 @@ export default function Auth() {
                       <Input
                         id="signup-password"
                         type={showPassword ? 'text' : 'password'}
-                        placeholder="Mínimo 6 caracteres"
+                        placeholder="Mínimo 8 caracteres"
                         value={signupForm.password}
                         onChange={(e) => setSignupForm(prev => ({ ...prev, password: e.target.value }))}
                         className={signupErrors.password ? 'border-destructive pr-10' : 'pr-10'}
@@ -404,6 +406,7 @@ export default function Auth() {
                         {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                       </button>
                     </div>
+                    <PasswordStrengthIndicator password={signupForm.password} />
                     {signupErrors.password && (
                       <p className="text-sm text-destructive">{signupErrors.password}</p>
                     )}

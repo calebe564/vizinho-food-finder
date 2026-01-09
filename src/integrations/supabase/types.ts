@@ -199,6 +199,50 @@ export type Database = {
         }
         Relationships: []
       }
+      establishment_claims: {
+        Row: {
+          admin_notes: string | null
+          cnpj: string
+          created_at: string
+          establishment_id: string | null
+          id: string
+          reviewed_at: string | null
+          reviewed_by: string | null
+          status: string
+          user_id: string
+        }
+        Insert: {
+          admin_notes?: string | null
+          cnpj: string
+          created_at?: string
+          establishment_id?: string | null
+          id?: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          user_id: string
+        }
+        Update: {
+          admin_notes?: string | null
+          cnpj?: string
+          created_at?: string
+          establishment_id?: string | null
+          id?: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "establishment_claims_establishment_id_fkey"
+            columns: ["establishment_id"]
+            isOneToOne: false
+            referencedRelation: "establishments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       establishment_requests: {
         Row: {
           address: string
@@ -206,6 +250,7 @@ export type Database = {
           approved_at: string | null
           approved_by: string | null
           category: Database["public"]["Enums"]["establishment_category"]
+          cnpj: string | null
           created_at: string | null
           description: string | null
           external_link: string | null
@@ -233,6 +278,7 @@ export type Database = {
           approved_at?: string | null
           approved_by?: string | null
           category: Database["public"]["Enums"]["establishment_category"]
+          cnpj?: string | null
           created_at?: string | null
           description?: string | null
           external_link?: string | null
@@ -260,6 +306,7 @@ export type Database = {
           approved_at?: string | null
           approved_by?: string | null
           category?: Database["public"]["Enums"]["establishment_category"]
+          cnpj?: string | null
           created_at?: string | null
           description?: string | null
           external_link?: string | null
@@ -325,6 +372,7 @@ export type Database = {
           banner_image: string | null
           category: Database["public"]["Enums"]["establishment_category"]
           city: string
+          cnpj: string | null
           created_at: string | null
           description: string | null
           external_link: string | null
@@ -351,6 +399,7 @@ export type Database = {
           banner_image?: string | null
           category: Database["public"]["Enums"]["establishment_category"]
           city?: string
+          cnpj?: string | null
           created_at?: string | null
           description?: string | null
           external_link?: string | null
@@ -377,6 +426,7 @@ export type Database = {
           banner_image?: string | null
           category?: Database["public"]["Enums"]["establishment_category"]
           city?: string
+          cnpj?: string | null
           created_at?: string | null
           description?: string | null
           external_link?: string | null
