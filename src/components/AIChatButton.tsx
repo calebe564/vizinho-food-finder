@@ -1,10 +1,13 @@
-import { MessageCircle, Send, X, LogOut } from "lucide-react";
+import { MessageCircle, Send, X, LogOut, MoreVertical, UserRound } from "lucide-react";
 import { Button } from "./ui/button";
 import { useState, useRef, useEffect } from "react";
 import { Textarea } from "./ui/textarea";
 import { ScrollArea } from "./ui/scroll-area";
 import { Card } from "./ui/card";
 import { toast } from "sonner";
+import { useNavigate } from "react-router-dom";
+import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -15,6 +18,12 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 type Message = { role: "user" | "assistant"; content: string };
 
@@ -22,12 +31,15 @@ const CHAT_SESSION_KEY = "ai_chat_session";
 const CHAT_MESSAGES_KEY = "ai_chat_messages";
 
 export function AIChatButton() {
+  const navigate = useNavigate();
+  const { user, profile } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
   const [hasActiveSession, setHasActiveSession] = useState(false);
   const [showEndSessionDialog, setShowEndSessionDialog] = useState(false);
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [loadingTalkToAdmin, setLoadingTalkToAdmin] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
 
   // Carregar sessão existente ao inicializar
@@ -104,6 +116,55 @@ export function AIChatButton() {
     } else {
       // Se não tem sessão, inicia uma nova
       startNewSession();
+    }
+  };
+
+  const handleTalkToAdmin = async () => {
+    if (!user) {
+      toast.info("Faça login para falar com a administração");
+      navigate("/auth");
+      return;
+    }
+
+    setLoadingTalkToAdmin(true);
+    try {
+      // Check for existing open conversation
+      const { data: existingConversation } = await supabase
+        .from("conversations")
+        .select("id")
+        .eq("user_id", user.id)
+        .eq("status", "open")
+        .maybeSingle();
+
+      if (existingConversation) {
+        navigate(`/suporte/${existingConversation.id}`);
+        setIsOpen(false);
+        return;
+      }
+
+      // Create new conversation
+      const { data: newConversation, error } = await supabase
+        .from("conversations")
+        .insert({
+          user_id: user.id,
+          user_name: profile?.full_name || "Usuário",
+          user_email: user.email || "",
+          city_neighborhood: "Não informado",
+          category: "duvidas",
+          status: "open",
+        })
+        .select("id")
+        .single();
+
+      if (error) throw error;
+
+      navigate(`/suporte/${newConversation.id}`);
+      setIsOpen(false);
+    } catch (error) {
+      console.error("Error creating conversation:", error);
+      toast.error("Erro ao iniciar conversa. Tente novamente.");
+    } finally {
+      setLoadingTalkToAdmin(false);
     }
   };
 
@@ -202,28 +263,49 @@ export function AIChatButton() {
 
       {/* Chat window */}
       {isOpen && hasActiveSession && (
-        <Card className="fixed bottom-24 right-6 z-50 w-96 max-w-[calc(100vw-3rem)] h-[500px] flex flex-col shadow-2xl">
-          {/* Header */}
-          <div className="flex items-center justify-between p-4 border-b bg-blue-500 text-white rounded-t-lg">
+        <Card className="fixed bottom-24 right-6 z-[60] w-96 max-w-[calc(100vw-3rem)] h-[500px] flex flex-col shadow-2xl">
+          {/* Header - z-index alto para ficar acima de tudo */}
+          <div className="flex items-center justify-between p-4 border-b bg-primary text-primary-foreground rounded-t-lg relative z-[70]">
             <div className="flex items-center gap-2">
               <MessageCircle className="h-5 w-5" />
-              <h3 className="font-semibold">Assistente Comércio Vizinho</h3>
+              <h3 className="font-semibold text-sm">Assistente</h3>
             </div>
             <div className="flex items-center gap-1">
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => setShowEndSessionDialog(true)}
-                className="text-white hover:bg-white/10"
-                title="Encerrar sessão"
-              >
-                <LogOut className="h-4 w-4" />
-              </Button>
+              {/* Menu de três pontos */}
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="text-primary-foreground hover:bg-white/10"
+                  >
+                    <MoreVertical className="h-4 w-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="z-[80]">
+                  <DropdownMenuItem 
+                    onClick={handleTalkToAdmin}
+                    disabled={loadingTalkToAdmin}
+                    className="gap-2"
+                  >
+                    <UserRound className="h-4 w-4" />
+                    Falar com o Administrador
+                  </DropdownMenuItem>
+                  <DropdownMenuItem 
+                    onClick={() => setShowEndSessionDialog(true)}
+                    className="gap-2 text-destructive"
+                  >
+                    <LogOut className="h-4 w-4" />
+                    Encerrar sessão
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+              
               <Button
                 variant="ghost"
                 size="icon"
                 onClick={() => setIsOpen(false)}
-                className="text-white hover:bg-white/10"
+                className="text-primary-foreground hover:bg-white/10"
                 title="Minimizar"
               >
                 <X className="h-4 w-4" />

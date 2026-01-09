@@ -14,8 +14,11 @@ import { Footer } from "@/components/Footer";
 import { Building2, Upload, CheckCircle, Plus, Trash2, Star, MapPin, Phone, Package, Image, Loader2 } from "lucide-react";
 import { Database } from "@/integrations/supabase/types";
 import { useAuth } from "@/contexts/AuthContext";
+import { useUserRole } from "@/hooks/useUserRole";
 import { AuthRequiredDialog } from "@/components/AuthRequiredDialog";
 import { CadastroAIHelper } from "@/components/CadastroAIHelper";
+import { CNPJInput } from "@/components/CNPJInput";
+import { validateCNPJ } from "@/lib/validationUtils";
 
 type EstablishmentCategory = Database["public"]["Enums"]["establishment_category"];
 
@@ -77,9 +80,11 @@ interface AddressData {
 export default function PublicEstablishmentForm() {
   const navigate = useNavigate();
   const { user, isLoading: authLoading } = useAuth();
+  const { isAdmMaster, isAdmin, isLoading: roleLoading } = useUserRole();
   const [showAuthDialog, setShowAuthDialog] = useState(false);
   const [loading, setLoading] = useState(false);
   const [loadingCep, setLoadingCep] = useState(false);
+  const [cnpj, setCnpj] = useState("");
 
   // Show auth dialog if user is not logged in
   if (!authLoading && !user) {
@@ -366,6 +371,21 @@ export default function PublicEstablishmentForm() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
+    // Check if CNPJ is required (only for regular users)
+    const cnpjRequired = !isAdmMaster && !isAdmin;
+    const cleanCnpj = cnpj.replace(/\D/g, '');
+    
+    if (cnpjRequired) {
+      if (!cleanCnpj) {
+        toast.error("CNPJ é obrigatório para cadastrar uma empresa");
+        return;
+      }
+      if (!validateCNPJ(cleanCnpj)) {
+        toast.error("CNPJ inválido. Verifique o número digitado.");
+        return;
+      }
+    }
+    
     // Validate basic info
     if (!formData.name || !formData.category || !formData.schedule) {
       toast.error("Preencha todos os campos obrigatórios da empresa");
@@ -505,7 +525,8 @@ export default function PublicEstablishmentForm() {
           images: uploadedImages,
           favorite_images: favoriteImages,
           profile_image: logoUrl || null,
-          user_id: user?.id || null
+          user_id: user?.id || null,
+          cnpj: cleanCnpj || null
         }]);
 
       if (error) throw error;
@@ -649,6 +670,14 @@ export default function PublicEstablishmentForm() {
                     </Select>
                   </div>
                 </div>
+
+                {/* CNPJ Field */}
+                <CNPJInput 
+                  value={cnpj}
+                  onChange={setCnpj}
+                  required={!isAdmMaster && !isAdmin}
+                  label={isAdmMaster || isAdmin ? "CNPJ (opcional para administradores)" : "CNPJ"}
+                />
 
                 <div className="space-y-2">
                   <Label htmlFor="schedule" className="text-base font-medium">Horário de Funcionamento *</Label>
