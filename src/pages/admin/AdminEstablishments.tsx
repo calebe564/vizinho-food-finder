@@ -48,6 +48,50 @@ export default function AdminEstablishments() {
     if (!deleteId) return;
 
     try {
+      // 1. Remover produtos e suas variações
+      const { data: products } = await supabase
+        .from("products")
+        .select("id")
+        .eq("establishment_id", deleteId);
+
+      if (products && products.length > 0) {
+        const productIds = products.map(p => p.id);
+        await supabase
+          .from("product_variations")
+          .delete()
+          .in("product_id", productIds);
+
+        await supabase
+          .from("products")
+          .delete()
+          .eq("establishment_id", deleteId);
+      }
+
+      // 2. Remover estatísticas
+      await supabase
+        .from("establishment_statistics")
+        .delete()
+        .eq("establishment_id", deleteId);
+
+      // 3. Remover vínculos de usuários com a empresa
+      await supabase
+        .from("user_establishments")
+        .delete()
+        .eq("establishment_id", deleteId);
+
+      // 4. Remover claims pendentes
+      await supabase
+        .from("establishment_claims")
+        .delete()
+        .eq("establishment_id", deleteId);
+
+      // 5. Remover propagandas
+      await supabase
+        .from("advertisements")
+        .delete()
+        .eq("establishment_id", deleteId);
+
+      // 6. Finalmente, remover o estabelecimento
       const { error } = await supabase
         .from("establishments")
         .delete()
@@ -55,7 +99,7 @@ export default function AdminEstablishments() {
 
       if (error) throw error;
 
-      toast.success("Estabelecimento excluído com sucesso");
+      toast.success("Estabelecimento e todos os dados relacionados foram excluídos");
       fetchEstablishments();
     } catch (error: any) {
       console.error("Error deleting establishment:", error);

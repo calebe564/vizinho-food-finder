@@ -28,8 +28,12 @@ import {
   Building2,
   ChevronLeft,
   Settings,
-  Clock
+  Clock,
+  Trash2,
+  CheckCircle,
+  XCircle
 } from 'lucide-react';
+import { ConfirmPasswordDialog } from '@/components/ConfirmPasswordDialog';
 
 interface AdminPermissions {
   can_edit_establishments: boolean;
@@ -49,6 +53,7 @@ interface UserWithRole {
   created_at: string;
   last_login_at: string | null;
   permissions?: AdminPermissions;
+  isActive: boolean;
 }
 
 const roleLabels: Record<UserRole, string> = {
@@ -98,6 +103,8 @@ export default function AdminUsers() {
   const [isPermissionsDialogOpen, setIsPermissionsDialogOpen] = useState(false);
   const [saving, setSaving] = useState(false);
   const [permissions, setPermissions] = useState<AdminPermissions>(defaultPermissions);
+  const [deleteUserId, setDeleteUserId] = useState<string | null>(null);
+  const [deletingUser, setDeletingUser] = useState(false);
 
   useEffect(() => {
     if (!roleLoading && !canManageRoles) {
@@ -135,6 +142,11 @@ export default function AdminUsers() {
           .eq('user_id', profile.user_id)
           .maybeSingle();
 
+        // Determinar status ativo baseado em login recente (últimos 30 dias)
+        const isActive = profile.last_login_at 
+          ? new Date(profile.last_login_at) > new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)
+          : false;
+
         usersWithRoles.push({
           id: profile.id,
           user_id: profile.user_id,
@@ -143,6 +155,7 @@ export default function AdminUsers() {
           role: (roleData?.role as UserRole) || 'user',
           created_at: profile.created_at || '',
           last_login_at: profile.last_login_at,
+          isActive,
           permissions: permData ? {
             can_edit_establishments: permData.can_edit_establishments,
             can_approve_requests: permData.can_approve_requests,
@@ -253,6 +266,55 @@ export default function AdminUsers() {
     }
   };
 
+  const handleDeleteUser = async () => {
+    if (!deleteUserId) return;
+    
+    const userToDelete = users.find(u => u.user_id === deleteUserId);
+    if (userToDelete?.email === 'johnvictorsf1512@gmail.com') {
+      toast.error('Não é possível excluir o ADM Master');
+      setDeleteUserId(null);
+      return;
+    }
+
+    setDeletingUser(true);
+    try {
+      // Remover permissões
+      await supabase
+        .from('admin_permissions')
+        .delete()
+        .eq('user_id', deleteUserId);
+
+      // Remover roles
+      await supabase
+        .from('user_roles')
+        .delete()
+        .eq('user_id', deleteUserId);
+
+      // Remover vínculos com estabelecimentos
+      await supabase
+        .from('user_establishments')
+        .delete()
+        .eq('user_id', deleteUserId);
+
+      // Remover perfil
+      const { error } = await supabase
+        .from('profiles')
+        .delete()
+        .eq('user_id', deleteUserId);
+
+      if (error) throw error;
+
+      toast.success('Usuário excluído com sucesso');
+      setUsers(prev => prev.filter(u => u.user_id !== deleteUserId));
+    } catch (err) {
+      console.error('Error deleting user:', err);
+      toast.error('Erro ao excluir usuário');
+    } finally {
+      setDeletingUser(false);
+      setDeleteUserId(null);
+    }
+  };
+
   const filteredUsers = users.filter(u => 
     u.full_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     u.email.toLowerCase().includes(searchTerm.toLowerCase())
@@ -312,7 +374,8 @@ export default function AdminUsers() {
                   <TableRow>
                     <TableHead>Nome</TableHead>
                     <TableHead>Email</TableHead>
-                    <TableHead>Role</TableHead>
+                    <TableHead>Tipo</TableHead>
+                    <TableHead>Status</TableHead>
                     <TableHead>Último Acesso</TableHead>
                     <TableHead className="text-right">Ações</TableHead>
                   </TableRow>
@@ -326,6 +389,15 @@ export default function AdminUsers() {
                         <Badge variant="outline" className={roleColors[u.role]}>
                           {roleIcons[u.role]}
                           <span className="ml-1">{roleLabels[u.role]}</span>
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant="outline" className={u.isActive ? 'bg-green-500/10 text-green-700 border-green-200' : 'bg-gray-500/10 text-gray-500 border-gray-200'}>
+                          {u.isActive ? (
+                            <><CheckCircle className="h-3 w-3 mr-1" /> Ativo</>
+                          ) : (
+                            <><XCircle className="h-3 w-3 mr-1" /> Inativo</>
+                          )}
                         </Badge>
                       </TableCell>
                       <TableCell>
@@ -366,6 +438,14 @@ export default function AdminUsers() {
                                   Permissões
                                 </Button>
                               )}
+                              <Button 
+                                variant="ghost" 
+                                size="icon"
+                                onClick={() => setDeleteUserId(u.user_id)}
+                                className="text-destructive hover:text-destructive"
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
                             </>
                           ) : (
                             <Badge variant="outline" className="bg-purple-500/10 text-purple-700">
@@ -537,6 +617,17 @@ export default function AdminUsers() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Dialog para excluir usuário */}
+      <ConfirmPasswordDialog
+        open={!!deleteUserId}
+        onOpenChange={(open) => !open && setDeleteUserId(null)}
+        onConfirm={handleDeleteUser}
+        title="Excluir Usuário"
+        description="Esta ação é irreversível. Todos os dados do usuário serão removidos permanentemente."
+        actionLabel={deletingUser ? "Excluindo..." : "Excluir"}
+        variant="destructive"
+      />
     </>
   );
 }
