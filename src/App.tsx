@@ -31,6 +31,7 @@ const Favorites = lazy(() => import("./pages/Favorites"));
 const ProductDetail = lazy(() => import("./pages/ProductDetail"));
 const Auth = lazy(() => import("./pages/Auth"));
 const MyEstablishment = lazy(() => import("./pages/MyEstablishment"));
+const ClaimEstablishment = lazy(() => import("./pages/ClaimEstablishment"));
 const UserConversations = lazy(() => import("./pages/UserConversations"));
 const UserChat = lazy(() => import("./pages/UserChat"));
 
@@ -76,6 +77,7 @@ function App() {
                             <Route path="/estabelecimentos" element={<AllEstablishments />} />
                             <Route path="/favoritos" element={<Favorites />} />
                             <Route path="/minha-empresa" element={<MyEstablishment />} />
+                            <Route path="/reivindicar-empresa" element={<ClaimEstablishment />} />
                             <Route path="/suporte" element={<UserConversations />} />
                             <Route path="/suporte/:id" element={<UserChat />} />
                             <Route path="/cadastrar" element={<PublicEstablishmentForm />} />
