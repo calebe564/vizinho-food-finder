@@ -150,14 +150,23 @@ export default function UserChat() {
     <div className="min-h-screen bg-background flex flex-col">
       <Header />
       <main className="container py-4 flex-1 flex flex-col">
-        <Button
-          variant="ghost"
-          onClick={() => navigate("/suporte")}
-          className="mb-4 w-fit"
-        >
-          <ArrowLeft className="h-4 w-4 mr-2" />
-          Voltar
-        </Button>
+        <div className="flex items-center gap-2 mb-4">
+          <Button
+            variant="ghost"
+            onClick={() => navigate("/suporte")}
+            className="w-fit"
+          >
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            Voltar ao Suporte
+          </Button>
+          <Button
+            variant="outline"
+            onClick={() => navigate("/")}
+            className="w-fit"
+          >
+            Voltar para Home
+          </Button>
+        </div>
 
         <Card className="flex-1 flex flex-col max-h-[calc(100vh-200px)]">
           {/* Header */}

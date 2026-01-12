@@ -105,7 +105,7 @@ export function Header() {
                 <DropdownMenuItem asChild>
                   <Link to="/minha-empresa" className="flex items-center gap-2 cursor-pointer">
                     <Briefcase className="h-4 w-4" />
-                    ADM espaço empresa
+                    Minha Empresa
                   </Link>
                 </DropdownMenuItem>
               ) : (
@@ -239,7 +239,7 @@ export function Header() {
                     className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-secondary transition-colors"
                   >
                     <Briefcase className="h-5 w-5 text-muted-foreground" />
-                    <span className="font-medium">ADM espaço empresa</span>
+                    <span className="font-medium">Minha Empresa</span>
                   </Link>
                 ) : (
                   <Link
