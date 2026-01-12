@@ -99,7 +99,7 @@ export function HeroCarousel() {
         to={`/estabelecimento/${currentItem.establishmentId}`}
         className="block group"
       >
-        <div className="relative h-[140px] sm:h-[160px] md:h-[200px] lg:h-[240px] rounded-2xl overflow-hidden shadow-card">
+        <div className="relative h-[120px] sm:h-[140px] md:h-[180px] lg:h-[220px] rounded-2xl overflow-hidden shadow-card">
           {/* Background Image */}
           <img
             src={currentItem.image}

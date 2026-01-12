@@ -58,10 +58,10 @@ interface UserWithRole {
 
 const roleLabels: Record<UserRole, string> = {
   adm_master: 'ADM Master',
-  admin: 'Administrador',
-  pre_adm: 'Pré-Administrador',
+  admin: 'ADM Secundário',
+  pre_adm: 'ADM Secundário',
   empresario: 'Empresário',
-  user: 'Usuário'
+  user: 'Usuário comum'
 };
 
 const roleColors: Record<UserRole, string> = {
@@ -490,16 +490,12 @@ export default function AdminUsers() {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="admin">Administrador</SelectItem>
-                  <SelectItem value="pre_adm">Pré-Administrador</SelectItem>
-                  <SelectItem value="empresario">Empresário</SelectItem>
-                  <SelectItem value="user">Usuário</SelectItem>
+                  <SelectItem value="admin">ADM Secundário</SelectItem>
+                  <SelectItem value="user">Usuário comum</SelectItem>
                 </SelectContent>
               </Select>
               <p className="text-xs text-muted-foreground">
-                {newRole === 'admin' && 'Administrador com permissões configuráveis.'}
-                {newRole === 'pre_adm' && 'Pré-Administrador com acesso limitado.'}
-                {newRole === 'empresario' && 'Administra apenas a própria empresa.'}
+                {newRole === 'admin' && 'Administrador secundário com permissões configuráveis.'}
                 {newRole === 'user' && 'Usuário comum sem permissões administrativas.'}
               </p>
             </div>

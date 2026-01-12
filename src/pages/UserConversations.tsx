@@ -9,7 +9,8 @@ import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { toast } from "sonner";
 import { format } from "date-fns";
-import { MessageSquare, Plus, ArrowLeft } from "lucide-react";
+import { MessageSquare, Plus, ArrowLeft, Trash2 } from "lucide-react";
+import { ConfirmPasswordDialog } from "@/components/ConfirmPasswordDialog";
 
 type Conversation = {
   id: string;
@@ -25,6 +26,7 @@ export default function UserConversations() {
   const { user, profile, isLoading: authLoading } = useAuth();
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [loading, setLoading] = useState(true);
+  const [deleteId, setDeleteId] = useState<string | null>(null);
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -114,6 +116,34 @@ export default function UserConversations() {
     return labels[category] || category;
   };
 
+  const handleDeleteConversation = async () => {
+    if (!deleteId) return;
+    
+    try {
+      // Apagar mensagens primeiro
+      await supabase
+        .from("messages")
+        .delete()
+        .eq("conversation_id", deleteId);
+
+      // Depois apagar conversa
+      const { error } = await supabase
+        .from("conversations")
+        .delete()
+        .eq("id", deleteId);
+
+      if (error) throw error;
+
+      setConversations(prev => prev.filter(c => c.id !== deleteId));
+      toast.success("Conversa excluída");
+    } catch (err) {
+      console.error("Error deleting:", err);
+      toast.error("Erro ao excluir conversa");
+    } finally {
+      setDeleteId(null);
+    }
+  };
+
   if (authLoading || loading) {
     return (
       <div className="min-h-screen bg-background">
@@ -177,9 +207,22 @@ export default function UserConversations() {
                       Criada em {format(new Date(conv.created_at), "dd/MM/yyyy HH:mm")}
                     </p>
                   </div>
-                  <div className="text-right text-sm text-muted-foreground">
-                    <p>Atualizada</p>
-                    <p>{format(new Date(conv.updated_at), "dd/MM HH:mm")}</p>
+                  <div className="flex items-center gap-2">
+                    <div className="text-right text-sm text-muted-foreground">
+                      <p>Atualizada</p>
+                      <p>{format(new Date(conv.updated_at), "dd/MM HH:mm")}</p>
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setDeleteId(conv.id);
+                      }}
+                      className="text-destructive hover:text-destructive"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
                   </div>
                 </div>
               </Card>
@@ -188,6 +231,16 @@ export default function UserConversations() {
         )}
       </main>
       <Footer />
+
+      <ConfirmPasswordDialog
+        open={!!deleteId}
+        onOpenChange={(open) => !open && setDeleteId(null)}
+        onConfirm={handleDeleteConversation}
+        title="Excluir Conversa"
+        description="Esta ação irá apagar a conversa permanentemente."
+        actionLabel="Excluir"
+        variant="destructive"
+      />
     </div>
   );
 }

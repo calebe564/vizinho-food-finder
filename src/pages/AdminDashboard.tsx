@@ -18,10 +18,10 @@ import AdminUsers from "./admin/AdminUsers";
 
 const roleLabels = {
   adm_master: 'ADM Master',
-  admin: 'Administrador',
-  pre_adm: 'Pré-Administrador',
+  admin: 'ADM Secundário',
+  pre_adm: 'ADM Secundário',
   empresario: 'Empresário',
-  user: 'Usuário'
+  user: 'Usuário comum'
 };
 
 export default function AdminDashboard() {
