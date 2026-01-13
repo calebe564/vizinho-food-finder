@@ -2,7 +2,7 @@ import { useEffect } from "react";
 import { useNavigate, Routes, Route, Link, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
-import { LogOut, LayoutDashboard, Store, FileText, MessageSquare, Megaphone, Users, Crown, Loader2 } from "lucide-react";
+import { LogOut, LayoutDashboard, Store, FileText, MessageSquare, Megaphone, Users, Crown, Loader2, ClipboardCheck } from "lucide-react";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { useAuth } from "@/contexts/AuthContext";
 import { useUserRole } from "@/hooks/useUserRole";
@@ -15,6 +15,7 @@ import AdminConversations from "./admin/AdminConversations";
 import AdminChat from "./admin/AdminChat";
 import AdminAdvertisements from "./admin/AdminAdvertisements";
 import AdminUsers from "./admin/AdminUsers";
+import AdminClaims from "./admin/AdminClaims";
 
 const roleLabels = {
   adm_master: 'ADM Master',
@@ -142,6 +143,19 @@ export default function AdminDashboard() {
               </Link>
             )}
             
+            {/* Reivindicações de CNPJ - apenas quem pode aprovar */}
+            {canApproveEstablishments && (
+              <Link to="/admin/dashboard/reivindicacoes">
+                <Button 
+                  variant={isActive("/admin/dashboard/reivindicacoes") ? "default" : "ghost"} 
+                  className="w-full justify-start"
+                >
+                  <ClipboardCheck className="mr-2 h-4 w-4" />
+                  Reivindicações
+                </Button>
+              </Link>
+            )}
+            
             {/* Gerenciar Usuários - apenas ADM_MASTER */}
             {isAdmMaster && (
               <Link to="/admin/dashboard/usuarios">
@@ -168,6 +182,7 @@ export default function AdminDashboard() {
             <Route path="conversas" element={<AdminConversations />} />
             <Route path="conversas/:id" element={<AdminChat />} />
             <Route path="propagandas" element={<AdminAdvertisements />} />
+            <Route path="reivindicacoes" element={<AdminClaims />} />
             <Route path="usuarios" element={<AdminUsers />} />
           </Routes>
         </main>
