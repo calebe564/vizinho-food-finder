@@ -55,6 +55,7 @@ const formSchema = z.object({
   whatsapp: z.string().optional(),
   schedule: z.string().optional(),
   address: z.string().min(5, 'Endereço muito curto'),
+  cnpj: z.string().optional(),
 });
 
 type FormData = z.infer<typeof formSchema>;

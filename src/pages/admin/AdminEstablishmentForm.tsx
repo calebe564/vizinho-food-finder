@@ -94,7 +94,13 @@ export default function AdminEstablishmentForm() {
     reference_point: "",
     is_paid: false,
     active: true,
+    cnpj: "",
   });
+  
+  // Estado para troca de CNPJ
+  const [showCnpjChange, setShowCnpjChange] = useState(false);
+  const [newCnpj, setNewCnpj] = useState("");
+  const [cnpjJustification, setCnpjJustification] = useState("");
 
   // Images state
   const [profileImage, setProfileImage] = useState<string>("");
@@ -150,6 +156,7 @@ export default function AdminEstablishmentForm() {
           reference_point: data.reference_point || "",
           is_paid: data.is_paid || false,
           active: data.active ?? true,
+          cnpj: data.cnpj || "",
         });
         setProfileImage(data.profile_image || "");
         setBannerImage(data.banner_image || "");
@@ -476,6 +483,7 @@ export default function AdminEstablishmentForm() {
         banner_image: finalBannerImage || null,
         images: allImages,
         favorite_images: favoriteImages,
+        cnpj: formData.cnpj || null,
       };
 
       if (id) {
@@ -676,6 +684,108 @@ export default function AdminEstablishmentForm() {
                 </Select>
               </div>
             </div>
+
+            {/* Campo CNPJ */}
+            <div className="space-y-2">
+              <Label htmlFor="cnpj">CNPJ</Label>
+              <div className="flex items-center gap-2">
+                <Input
+                  id="cnpj"
+                  value={formData.cnpj}
+                  onChange={(e) => handleChange("cnpj", e.target.value)}
+                  placeholder="00.000.000/0000-00"
+                  maxLength={18}
+                  className="max-w-xs"
+                />
+                {id && formData.cnpj && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setShowCnpjChange(!showCnpjChange)}
+                  >
+                    Trocar CNPJ
+                  </Button>
+                )}
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Opcional. Usado para identificação oficial da empresa.
+              </p>
+            </div>
+
+            {/* Área de troca de CNPJ */}
+            {showCnpjChange && (
+              <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg p-4 space-y-3">
+                <h4 className="text-sm font-medium text-amber-800 dark:text-amber-200">
+                  Solicitar Troca de CNPJ
+                </h4>
+                <div className="space-y-2">
+                  <Label htmlFor="newCnpj">Novo CNPJ</Label>
+                  <Input
+                    id="newCnpj"
+                    value={newCnpj}
+                    onChange={(e) => setNewCnpj(e.target.value)}
+                    placeholder="00.000.000/0000-00"
+                    maxLength={18}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="cnpjJustification">Justificativa *</Label>
+                  <Textarea
+                    id="cnpjJustification"
+                    value={cnpjJustification}
+                    onChange={(e) => setCnpjJustification(e.target.value)}
+                    placeholder="Explique o motivo da troca de CNPJ..."
+                    rows={3}
+                  />
+                </div>
+                <div className="flex gap-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      setShowCnpjChange(false);
+                      setNewCnpj("");
+                      setCnpjJustification("");
+                    }}
+                  >
+                    Cancelar
+                  </Button>
+                  <Button
+                    type="button"
+                    size="sm"
+                    disabled={!newCnpj || !cnpjJustification}
+                    onClick={async () => {
+                      // Enviar solicitação para o chat do ADM
+                      try {
+                        const { error } = await supabase
+                          .from("conversations")
+                          .insert({
+                            user_name: "Sistema",
+                            user_email: "sistema@comerciovizinho.com",
+                            city_neighborhood: "Sistema",
+                            category: "outro",
+                            status: "open",
+                          });
+                        
+                        if (!error) {
+                          toast.success("Solicitação de troca de CNPJ enviada!");
+                          handleChange("cnpj", newCnpj);
+                          setShowCnpjChange(false);
+                          setNewCnpj("");
+                          setCnpjJustification("");
+                        }
+                      } catch (err) {
+                        toast.error("Erro ao enviar solicitação");
+                      }
+                    }}
+                  >
+                    Confirmar Troca
+                  </Button>
+                </div>
+              </div>
+            )}
 
             <div className="space-y-2">
               <Label htmlFor="description">Descrição / Slogan</Label>

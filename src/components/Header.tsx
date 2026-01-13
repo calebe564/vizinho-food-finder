@@ -137,7 +137,7 @@ export function Header() {
                 <>
                   {isAdmin && (
                     <DropdownMenuItem asChild>
-                      <Link to="/admin/login" className="flex items-center gap-2 cursor-pointer text-primary font-medium">
+                      <Link to="/admin/dashboard" className="flex items-center gap-2 cursor-pointer text-primary font-medium">
                         Painel Administrativo
                       </Link>
                     </DropdownMenuItem>
@@ -277,7 +277,7 @@ export function Header() {
                   <>
                     {isAdmin && (
                       <Link
-                        to="/admin/login"
+                        to="/admin/dashboard"
                         onClick={() => setIsOpen(false)}
                         className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-secondary transition-colors text-primary"
                       >
