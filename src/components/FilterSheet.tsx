@@ -71,13 +71,13 @@ export function FilterSheet({ category, onCategoryChange, sortBy, onSortChange }
       <Sheet open={isOpen} onOpenChange={handleOpenChange}>
         <SheetTrigger asChild>
           <button
-            className={`flex items-center gap-2 px-4 h-10 rounded-full text-sm font-medium transition-all flex-shrink-0 border ${
+            className={`flex items-center gap-1.5 px-3 h-8 md:h-10 md:px-4 rounded-full text-xs md:text-sm font-medium transition-all flex-shrink-0 border ${
               category !== "todos"
                 ? "bg-primary/10 text-primary border-primary/30"
                 : "bg-secondary text-foreground border-border hover:border-primary/30"
             }`}
           >
-            <SlidersHorizontal className="h-4 w-4" />
+            <SlidersHorizontal className="h-3.5 w-3.5 md:h-4 md:w-4" />
             <span>Categoria</span>
             {category !== "todos" && (
               <>
@@ -158,22 +158,22 @@ export function FilterSheet({ category, onCategoryChange, sortBy, onSortChange }
       {/* Mais Próximos button */}
       <button
         onClick={() => onSortChange(sortBy === "proximity" ? "name-asc" : "proximity")}
-        className={`flex items-center gap-2 px-4 h-10 rounded-full text-sm font-medium transition-all flex-shrink-0 border ${
+        className={`flex items-center gap-1.5 px-3 h-8 md:h-10 md:px-4 rounded-full text-xs md:text-sm font-medium transition-all flex-shrink-0 border ${
           sortBy === "proximity"
             ? "bg-primary/10 text-primary border-primary/30"
             : "bg-secondary text-foreground border-border hover:border-primary/30"
         }`}
       >
-        <Navigation className="h-4 w-4" />
-        <span>Mais Próximos</span>
+        <Navigation className="h-3.5 w-3.5 md:h-4 md:w-4" />
+        <span>Próximos</span>
       </button>
 
       {/* Localização button */}
       <button
-        className="flex items-center gap-2 px-4 h-10 rounded-full text-sm font-medium transition-all flex-shrink-0 border bg-secondary text-foreground border-border hover:border-primary/30"
+        className="flex items-center gap-1.5 px-3 h-8 md:h-10 md:px-4 rounded-full text-xs md:text-sm font-medium transition-all flex-shrink-0 border bg-secondary text-foreground border-border hover:border-primary/30"
       >
-        <MapPin className="h-4 w-4" />
-        <span>Localização</span>
+        <MapPin className="h-3.5 w-3.5 md:h-4 md:w-4" />
+        <span>Local</span>
       </button>
     </div>
   );
