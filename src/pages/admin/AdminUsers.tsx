@@ -278,37 +278,67 @@ export default function AdminUsers() {
 
     setDeletingUser(true);
     try {
-      // Remover permissões
-      await supabase
+      // Store the user_id before deletion for local state update
+      const deletedUserId = deleteUserId;
+      
+      // Remove permissões
+      const { error: permError } = await supabase
         .from('admin_permissions')
         .delete()
-        .eq('user_id', deleteUserId);
+        .eq('user_id', deletedUserId);
+      
+      if (permError) console.warn('Error deleting permissions:', permError);
 
       // Remover roles
-      await supabase
+      const { error: roleError } = await supabase
         .from('user_roles')
         .delete()
-        .eq('user_id', deleteUserId);
+        .eq('user_id', deletedUserId);
+        
+      if (roleError) console.warn('Error deleting roles:', roleError);
 
       // Remover vínculos com estabelecimentos
-      await supabase
+      const { error: estError } = await supabase
         .from('user_establishments')
         .delete()
-        .eq('user_id', deleteUserId);
+        .eq('user_id', deletedUserId);
+        
+      if (estError) console.warn('Error deleting user_establishments:', estError);
+      
+      // Remover conversas do usuário
+      const { error: convError } = await supabase
+        .from('conversations')
+        .delete()
+        .eq('user_id', deletedUserId);
+        
+      if (convError) console.warn('Error deleting conversations:', convError);
+      
+      // Remover business notes
+      const { error: notesError } = await supabase
+        .from('business_notes')
+        .delete()
+        .eq('user_id', deletedUserId);
+        
+      if (notesError) console.warn('Error deleting business_notes:', notesError);
 
       // Remover perfil
-      const { error } = await supabase
+      const { error: profileError } = await supabase
         .from('profiles')
         .delete()
-        .eq('user_id', deleteUserId);
+        .eq('user_id', deletedUserId);
 
-      if (error) throw error;
+      if (profileError) {
+        console.error('Error deleting profile:', profileError);
+        throw profileError;
+      }
 
+      // Immediately update local state - don't wait for refetch
+      setUsers(prev => prev.filter(u => u.user_id !== deletedUserId));
+      
       toast.success('Usuário excluído com sucesso');
-      setUsers(prev => prev.filter(u => u.user_id !== deleteUserId));
     } catch (err) {
       console.error('Error deleting user:', err);
-      toast.error('Erro ao excluir usuário');
+      toast.error('Erro ao excluir usuário. Verifique se existem dependências.');
     } finally {
       setDeletingUser(false);
       setDeleteUserId(null);
