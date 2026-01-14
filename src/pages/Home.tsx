@@ -10,7 +10,7 @@ import { AdvertisementBanner } from "@/components/AdvertisementBanner";
 
 import { useUserLocation } from "@/contexts/LocationContext";
 import { useSearchParams } from "react-router-dom";
-import { Store, Loader2, Building2, Package } from "lucide-react";
+import { Store, Loader2, Building2, Package, ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 interface Establishment {
@@ -92,6 +92,8 @@ function calculateProximityScore(establishment: Establishment, userLocation: Loc
   return 4;
 }
 
+const ITEMS_PER_PAGE = 12;
+
 export default function Home() {
   const [searchParams] = useSearchParams();
   const [establishments, setEstablishments] = useState<Establishment[]>([]);
@@ -103,6 +105,7 @@ export default function Home() {
   const [sortBy, setSortBy] = useState("proximity");
   const [loading, setLoading] = useState(true);
   const [selectedLocation, setSelectedLocation] = useState<LocationSelection | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
   
   const { locationDetails, hasPermission } = useUserLocation();
 
@@ -178,6 +181,18 @@ export default function Home() {
       });
   }, [establishments, searchTerm, searchMode, category, sortBy, selectedLocation, products]);
 
+  // Reset page when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, searchMode, category, sortBy]);
+
+  // Pagination calculations
+  const totalPages = Math.ceil(filteredEstablishments.length / ITEMS_PER_PAGE);
+  const paginatedEstablishments = useMemo(() => {
+    const start = (currentPage - 1) * ITEMS_PER_PAGE;
+    return filteredEstablishments.slice(start, start + ITEMS_PER_PAGE);
+  }, [filteredEstablishments, currentPage]);
+
   return (
     <div className="min-h-screen bg-background">
       <Header />
@@ -189,36 +204,68 @@ export default function Home() {
           <HeroCarousel />
         </div>
 
-        {/* Search Bar with Toggle */}
-        <div className="animate-fade-in space-y-3" style={{ animationDelay: "0.1s" }}>
-          <SearchBar value={searchTerm} onChange={setSearchTerm} />
-          
-          {/* Search Mode Toggle */}
-          <div className="flex items-center justify-center gap-2">
+        {/* Search Bar with Toggle - Desktop: compact single row */}
+        <div className="animate-fade-in" style={{ animationDelay: "0.1s" }}>
+          {/* Mobile layout - stacked */}
+          <div className="md:hidden space-y-3">
+            <SearchBar value={searchTerm} onChange={setSearchTerm} />
+            
+            {/* Search Mode Toggle */}
+            <div className="flex items-center justify-center gap-2">
+              <Button
+                variant={searchMode === "products" ? "default" : "outline"}
+                size="sm"
+                onClick={() => setSearchMode("products")}
+                className="rounded-full gap-2"
+              >
+                <Package className="h-4 w-4" />
+                Buscar Produtos
+              </Button>
+              <Button
+                variant={searchMode === "companies" ? "default" : "outline"}
+                size="sm"
+                onClick={() => setSearchMode("companies")}
+                className="rounded-full gap-2"
+              >
+                <Building2 className="h-4 w-4" />
+                Buscar Empresas
+              </Button>
+            </div>
+            
+            {/* Filters */}
+            <FilterSheet category={category} onCategoryChange={setCategory} sortBy={sortBy} onSortChange={setSortBy} />
+          </div>
+
+          {/* Desktop layout - compact single row */}
+          <div className="hidden md:flex md:items-center md:gap-3 md:flex-wrap">
+            {/* Search bar - smaller */}
+            <div className="flex-1 min-w-[200px] max-w-md">
+              <SearchBar value={searchTerm} onChange={setSearchTerm} />
+            </div>
+            
+            {/* Search mode buttons */}
             <Button
               variant={searchMode === "products" ? "default" : "outline"}
               size="sm"
               onClick={() => setSearchMode("products")}
-              className="rounded-full gap-2"
+              className="rounded-full gap-1.5 h-9 px-3 text-sm"
             >
-              <Package className="h-4 w-4" />
-              Buscar Produtos
+              <Package className="h-3.5 w-3.5" />
+              Produtos
             </Button>
             <Button
               variant={searchMode === "companies" ? "default" : "outline"}
               size="sm"
               onClick={() => setSearchMode("companies")}
-              className="rounded-full gap-2"
+              className="rounded-full gap-1.5 h-9 px-3 text-sm"
             >
-              <Building2 className="h-4 w-4" />
-              Buscar Empresas
+              <Building2 className="h-3.5 w-3.5" />
+              Empresas
             </Button>
+            
+            {/* Filter buttons inline */}
+            <FilterSheet category={category} onCategoryChange={setCategory} sortBy={sortBy} onSortChange={setSortBy} />
           </div>
-        </div>
-
-        {/* Inline Filters */}
-        <div className="animate-fade-in" style={{ animationDelay: "0.15s" }}>
-          <FilterSheet category={category} onCategoryChange={setCategory} sortBy={sortBy} onSortChange={setSortBy} />
         </div>
 
         {/* Establishments List - Unified compact grid for all screens */}
@@ -241,27 +288,83 @@ export default function Home() {
               <p className="text-sm text-muted-foreground mt-1">Tente ajustar os filtros</p>
             </div>
           ) : (
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 md:gap-4">
-              {filteredEstablishments.map((est) => {
-                const estProducts = getEstablishmentProducts(est.id);
-                const minPrice = estProducts.length > 0 ? Math.min(...estProducts.map(p => p.price)) : null;
-                return (
-                  <EstablishmentCardCompact 
-                    key={est.id} 
-                    id={est.id} 
-                    name={est.name} 
-                    category={est.category} 
-                    profileImage={est.profile_image} 
-                    bannerImage={est.banner_image} 
-                    isPaid={est.is_paid}
-                    neighborhood={est.neighborhood}
-                    city={est.city}
-                    minPrice={minPrice}
-                    productNames={estProducts.slice(0, 2).map(p => p.name)}
-                  />
-                );
-              })}
-            </div>
+            <>
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 md:gap-4">
+                {paginatedEstablishments.map((est) => {
+                  const estProducts = getEstablishmentProducts(est.id);
+                  const minPrice = estProducts.length > 0 ? Math.min(...estProducts.map(p => p.price)) : null;
+                  return (
+                    <EstablishmentCardCompact 
+                      key={est.id} 
+                      id={est.id} 
+                      name={est.name} 
+                      category={est.category} 
+                      profileImage={est.profile_image} 
+                      bannerImage={est.banner_image} 
+                      isPaid={est.is_paid}
+                      neighborhood={est.neighborhood}
+                      city={est.city}
+                      minPrice={minPrice}
+                      productNames={estProducts.slice(0, 2).map(p => p.name)}
+                    />
+                  );
+                })}
+              </div>
+
+              {/* Pagination */}
+              {totalPages > 1 && (
+                <div className="flex items-center justify-center gap-2 mt-6">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                    disabled={currentPage === 1}
+                    className="gap-1"
+                  >
+                    <ChevronLeft className="h-4 w-4" />
+                    <span className="hidden sm:inline">Anterior</span>
+                  </Button>
+                  
+                  <div className="flex items-center gap-1">
+                    {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                      let pageNum: number;
+                      if (totalPages <= 5) {
+                        pageNum = i + 1;
+                      } else if (currentPage <= 3) {
+                        pageNum = i + 1;
+                      } else if (currentPage >= totalPages - 2) {
+                        pageNum = totalPages - 4 + i;
+                      } else {
+                        pageNum = currentPage - 2 + i;
+                      }
+                      
+                      return (
+                        <Button
+                          key={pageNum}
+                          variant={currentPage === pageNum ? "default" : "outline"}
+                          size="sm"
+                          onClick={() => setCurrentPage(pageNum)}
+                          className="w-9 h-9 p-0"
+                        >
+                          {pageNum}
+                        </Button>
+                      );
+                    })}
+                  </div>
+                  
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                    disabled={currentPage === totalPages}
+                    className="gap-1"
+                  >
+                    <span className="hidden sm:inline">Próxima</span>
+                    <ChevronRight className="h-4 w-4" />
+                  </Button>
+                </div>
+              )}
+            </>
           )}
         </div>
         

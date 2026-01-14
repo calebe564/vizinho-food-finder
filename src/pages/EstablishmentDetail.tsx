@@ -265,7 +265,9 @@ export default function EstablishmentDetail() {
             <img
               src={establishment.banner_image || establishment.profile_image}
               alt={establishment.name}
-              className="w-full h-64 md:h-96 object-cover rounded-xl"
+              className="w-full h-56 md:h-80 lg:h-[400px] object-cover object-center rounded-xl"
+              loading="eager"
+              style={{ imageRendering: 'auto' }}
             />
           ) : (
             <div className="w-full h-64 md:h-96 bg-gradient-primary rounded-xl flex items-center justify-center">
