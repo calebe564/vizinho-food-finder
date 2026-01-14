@@ -147,6 +147,7 @@ export default function PublicEstablishmentForm() {
     numero: "",
     complemento: ""
   });
+  const [addressConfirmed, setAddressConfirmed] = useState(false);
 
   const [contactData, setContactData] = useState({
     whatsapp: "",
@@ -184,8 +185,10 @@ export default function PublicEstablishmentForm() {
         uf: data.uf || "",
         ibge: data.ibge || ""
       }));
+      
+      setAddressConfirmed(false); // Reset confirmation when CEP changes
 
-      toast.success("Endereço encontrado!");
+      toast.success("Endereço encontrado! Confirme os dados abaixo.");
     } catch (error) {
       console.error("Erro ao buscar CEP:", error);
       toast.error("Erro ao buscar CEP. Tente novamente.");
@@ -396,6 +399,12 @@ export default function PublicEstablishmentForm() {
     if (!addressData.cep || !addressData.logradouro || !addressData.bairro || 
         !addressData.localidade || !addressData.uf || !addressData.numero) {
       toast.error("Preencha todos os campos obrigatórios do endereço");
+      return;
+    }
+
+    // Validate address confirmation
+    if (!addressConfirmed) {
+      toast.error("Por favor, confirme o endereço detectado pelo CEP antes de continuar");
       return;
     }
 
@@ -811,6 +820,55 @@ export default function PublicEstablishmentForm() {
                     />
                   </div>
                 </div>
+
+                {/* Address Confirmation Card */}
+                {addressData.logradouro && addressData.bairro && addressData.localidade && (
+                  <div className={`p-4 rounded-xl border-2 transition-all ${
+                    addressConfirmed 
+                      ? 'border-green-500 bg-green-500/10' 
+                      : 'border-amber-500 bg-amber-500/10'
+                  }`}>
+                    <div className="flex items-start gap-3">
+                      <div className={`p-2 rounded-lg ${
+                        addressConfirmed ? 'bg-green-500/20' : 'bg-amber-500/20'
+                      }`}>
+                        {addressConfirmed ? (
+                          <CheckCircle className="h-5 w-5 text-green-600" />
+                        ) : (
+                          <MapPin className="h-5 w-5 text-amber-600" />
+                        )}
+                      </div>
+                      <div className="flex-1">
+                        <h4 className={`font-semibold ${
+                          addressConfirmed ? 'text-green-700 dark:text-green-400' : 'text-amber-700 dark:text-amber-400'
+                        }`}>
+                          {addressConfirmed ? '✓ Endereço Confirmado' : 'Confirme o endereço'}
+                        </h4>
+                        <p className="text-sm text-foreground mt-1">
+                          {addressData.logradouro}
+                          {addressData.numero && `, ${addressData.numero}`}
+                          {addressData.complemento && ` - ${addressData.complemento}`}
+                        </p>
+                        <p className="text-sm text-muted-foreground">
+                          {addressData.bairro} · {addressData.localidade} – {addressData.uf}
+                        </p>
+                        
+                        {!addressConfirmed && (
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            className="mt-3 gap-2 border-amber-500 text-amber-700 hover:bg-amber-500/20"
+                            onClick={() => setAddressConfirmed(true)}
+                          >
+                            <CheckCircle className="h-4 w-4" />
+                            Confirmar Endereço
+                          </Button>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
 
               {/* ========== SEÇÃO 3: CONTATO ========== */}

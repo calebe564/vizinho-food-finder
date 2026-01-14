@@ -33,7 +33,9 @@ export function ImageCarousel({ images, className = "" }: ImageCarouselProps) {
             <img
               src={image}
               alt={`Imagem ${index + 1}`}
-              className="w-full h-64 md:h-96 object-cover"
+              className="w-full h-56 md:h-80 lg:h-[400px] object-cover object-center"
+              loading={index === 0 ? "eager" : "lazy"}
+              style={{ imageRendering: 'auto' }}
             />
           </div>
         ))}
