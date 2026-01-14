@@ -193,10 +193,27 @@ export default function Home() {
               <p className="text-sm text-muted-foreground mt-1">Tente ajustar os filtros</p>
             </div>
           ) : isMobile ? (
-            <div className="grid grid-cols-1 gap-4">
-              {filteredEstablishments.map((est) => (
-                <EstablishmentCardCompact key={est.id} id={est.id} name={est.name} category={est.category} proximityLabel={est.proximityLabel} profileImage={est.profile_image} bannerImage={est.banner_image} isPaid={est.is_paid} />
-              ))}
+            <div className="grid grid-cols-2 gap-3">
+              {filteredEstablishments.map((est) => {
+                const estProducts = getEstablishmentProducts(est.id);
+                const minPrice = estProducts.length > 0 ? Math.min(...estProducts.map(p => p.price)) : null;
+                return (
+                  <EstablishmentCardCompact 
+                    key={est.id} 
+                    id={est.id} 
+                    name={est.name} 
+                    category={est.category} 
+                    proximityLabel={est.proximityLabel} 
+                    profileImage={est.profile_image} 
+                    bannerImage={est.banner_image} 
+                    isPaid={est.is_paid}
+                    neighborhood={est.neighborhood}
+                    city={est.city}
+                    minPrice={minPrice}
+                    productNames={estProducts.slice(0, 2).map(p => p.name)}
+                  />
+                );
+              })}
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">

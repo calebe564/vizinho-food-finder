@@ -2,7 +2,6 @@ import { Link } from "react-router-dom";
 import { MapPin, Star, Store } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 interface EstablishmentCardCompactProps {
   id: string;
@@ -12,6 +11,10 @@ interface EstablishmentCardCompactProps {
   profileImage?: string | null;
   bannerImage?: string | null;
   isPaid?: boolean;
+  neighborhood?: string | null;
+  city?: string;
+  minPrice?: number | null;
+  productNames?: string[];
 }
 
 const categoryLabels: Record<string, string> = {
@@ -31,6 +34,55 @@ const categoryLabels: Record<string, string> = {
   espetinho: "Espetinho",
 };
 
+// Mapping categories to typical products
+const categoryProducts: Record<string, string[]> = {
+  restaurante: ["Almoço", "Jantar"],
+  lanchonete: ["Lanches", "Salgados"],
+  padaria: ["Pães", "Bolos"],
+  supermercado: ["Alimentos", "Bebidas"],
+  açougue: ["Carnes", "Frios"],
+  hortifruti: ["Frutas", "Verduras"],
+  pizzaria: ["Pizzas", "Massas"],
+  hamburgueria: ["Hambúrgueres", "Lanches"],
+  bar: ["Bebidas", "Petiscos"],
+  cafe: ["Cafés", "Doces"],
+  sorveteria: ["Sorvetes", "Açaí"],
+  acai: ["Açaí", "Sorvetes"],
+  espetinho: ["Espetinhos", "Churrascos"],
+  outro: ["Produtos", "Serviços"],
+};
+
+function formatCityState(city?: string): string {
+  if (!city) return "";
+  
+  // Extract state abbreviation from city if it contains it
+  const cityLower = city.toLowerCase();
+  
+  // Map of known cities to their states
+  const cityStateMap: Record<string, string> = {
+    "são paulo": "SP",
+    "belo horizonte": "MG",
+    "rio de janeiro": "RJ",
+    "brasília": "DF",
+    "curitiba": "PR",
+    "porto alegre": "RS",
+    "salvador": "BA",
+    "fortaleza": "CE",
+    "recife": "PE",
+    "manaus": "AM",
+  };
+  
+  for (const [cityName, state] of Object.entries(cityStateMap)) {
+    if (cityLower.includes(cityName)) {
+      // Get short city name
+      const shortCity = city.split(" ").slice(0, 2).join(" ");
+      return `${shortCity}/${state}`;
+    }
+  }
+  
+  return city;
+}
+
 export function EstablishmentCardCompact({
   id,
   name,
@@ -39,13 +91,27 @@ export function EstablishmentCardCompact({
   profileImage,
   bannerImage,
   isPaid,
+  neighborhood,
+  city,
+  minPrice,
+  productNames,
 }: EstablishmentCardCompactProps) {
   const displayImage = bannerImage || profileImage;
   
+  // Get products to display - use actual product names or category defaults
+  const displayProducts = productNames && productNames.length > 0 
+    ? productNames.slice(0, 2) 
+    : categoryProducts[category] || [categoryLabels[category] || category];
+  
+  // Format location as "Bairro – Cidade/UF"
+  const locationText = neighborhood 
+    ? `${neighborhood} – ${formatCityState(city)}`
+    : formatCityState(city);
+  
   return (
     <Link to={`/estabelecimento/${id}`} className="block active:scale-[0.98] transition-transform">
-      <Card className="overflow-hidden bg-card border border-border hover:border-accent/30 shadow-card hover:shadow-elevated transition-all duration-200 rounded-2xl h-full">
-        {/* Image area */}
+      <Card className="overflow-hidden bg-card border border-border hover:border-accent/30 shadow-card hover:shadow-elevated transition-all duration-200 rounded-xl h-full">
+        {/* Image area - more compact */}
         <div className="relative aspect-[4/3] bg-muted overflow-hidden">
           {displayImage ? (
             <img 
@@ -65,64 +131,48 @@ export function EstablishmentCardCompact({
           <div 
             className={`absolute inset-0 flex items-center justify-center bg-gradient-to-br from-primary/20 to-primary/5 ${displayImage ? 'hidden' : 'flex'}`}
           >
-            <div className="w-14 h-14 rounded-2xl bg-primary/20 flex items-center justify-center">
-              <Store className="h-7 w-7 text-primary" />
+            <div className="w-10 h-10 rounded-xl bg-primary/20 flex items-center justify-center">
+              <Store className="h-5 w-5 text-primary" />
             </div>
           </div>
           
-          {/* Logo overlay - bottom left of image */}
-          <div className="absolute -bottom-5 left-3">
-            <div className="h-12 w-12 rounded-full border-2 border-card shadow-md bg-card overflow-hidden flex items-center justify-center">
-              {profileImage ? (
-                <img 
-                  src={profileImage} 
-                  alt={name}
-                  className="w-full h-full object-contain p-1"
-                  onError={(e) => {
-                    e.currentTarget.style.display = 'none';
-                    const fallback = e.currentTarget.nextElementSibling;
-                    if (fallback) (fallback as HTMLElement).style.display = 'flex';
-                  }}
-                />
-              ) : null}
-              <div className={`w-full h-full bg-primary text-primary-foreground text-sm font-bold flex items-center justify-center ${profileImage ? 'hidden' : ''}`}>
-                {name.charAt(0).toUpperCase()}
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Content */}
-        <div className="p-3 pt-7">
-          <div className="flex items-start justify-between gap-2">
-            <div className="flex-1 min-w-0">
-              {/* Name */}
-              <h3 className="text-sm font-bold line-clamp-1 text-foreground">
-                {name}
-              </h3>
-              
-              {/* Category */}
-              <p className="text-xs text-muted-foreground line-clamp-1">
-                {categoryLabels[category] || category}
-              </p>
-              
-              {/* Proximity label */}
-              {proximityLabel && (
-                <div className="flex items-center gap-1 mt-1.5 text-xs text-muted-foreground">
-                  <MapPin className="h-3 w-3 flex-shrink-0" />
-                  <span className="line-clamp-1">{proximityLabel}</span>
-                </div>
-              )}
-            </div>
-            
-            {/* Sponsored badge - right side */}
-            {isPaid && (
-              <Badge className="flex-shrink-0 bg-accent text-accent-foreground text-[10px] px-2 py-0.5 rounded-full">
-                <Star className="h-2.5 w-2.5 mr-0.5 fill-current" />
+          {/* Sponsored badge - top right */}
+          {isPaid && (
+            <div className="absolute top-1.5 right-1.5">
+              <Badge className="bg-accent text-accent-foreground text-[9px] px-1.5 py-0.5 rounded-full">
+                <Star className="h-2 w-2 mr-0.5 fill-current" />
                 Destaque
               </Badge>
-            )}
-          </div>
+            </div>
+          )}
+        </div>
+
+        {/* Content - more compact */}
+        <div className="p-2.5">
+          {/* Name - up to 2 lines */}
+          <h3 className="text-xs font-bold line-clamp-2 text-foreground leading-tight mb-1">
+            {name}
+          </h3>
+          
+          {/* Category/Products */}
+          <p className="text-[10px] text-muted-foreground line-clamp-1 mb-1">
+            {displayProducts.join(" • ")}
+          </p>
+          
+          {/* Price range */}
+          {minPrice !== null && minPrice !== undefined && (
+            <p className="text-[10px] font-medium text-primary mb-1">
+              A partir de R$ {minPrice.toFixed(2).replace(".", ",")}
+            </p>
+          )}
+          
+          {/* Location */}
+          {locationText && (
+            <div className="flex items-center gap-1 text-[10px] text-muted-foreground">
+              <MapPin className="h-2.5 w-2.5 flex-shrink-0" />
+              <span className="line-clamp-1">{locationText}</span>
+            </div>
+          )}
         </div>
       </Card>
     </Link>
