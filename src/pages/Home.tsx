@@ -3,7 +3,6 @@ import { supabase } from "@/integrations/supabase/client";
 import { HeroCarousel } from "@/components/HeroCarousel";
 import { SearchBar } from "@/components/SearchBar";
 import { FilterSheet } from "@/components/FilterSheet";
-import { EstablishmentCard } from "@/components/EstablishmentCard";
 import { EstablishmentCardCompact } from "@/components/EstablishmentCardCompact";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
@@ -11,8 +10,8 @@ import { AdvertisementBanner } from "@/components/AdvertisementBanner";
 
 import { useUserLocation } from "@/contexts/LocationContext";
 import { useSearchParams } from "react-router-dom";
-import { Store, Loader2 } from "lucide-react";
-import { useIsMobile } from "@/hooks/use-mobile";
+import { Store, Loader2, Building2, Package } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 interface Establishment {
   id: string;
@@ -68,34 +67,44 @@ function calculateProximityScore(establishment: Establishment, userLocation: Loc
   const userNeighborhood = normalize(userLocation.neighborhood);
   const userRegion = normalize(userLocation.region);
   const userCity = normalize(userLocation.city);
-  if (estNeighborhood && userNeighborhood && estNeighborhood.includes(userNeighborhood)) return 1;
-  if (estRegion && userRegion && estRegion.includes(userRegion)) return 2;
-  if (estCity && userCity && estCity.includes(userCity)) return 3;
+  
+  // Check exact or partial match for neighborhood
+  if (estNeighborhood && userNeighborhood) {
+    if (estNeighborhood === userNeighborhood || estNeighborhood.includes(userNeighborhood) || userNeighborhood.includes(estNeighborhood)) {
+      return 1;
+    }
+  }
+  
+  // Check region match
+  if (estRegion && userRegion) {
+    if (estRegion === userRegion || estRegion.includes(userRegion) || userRegion.includes(estRegion)) {
+      return 2;
+    }
+  }
+  
+  // Check city match
+  if (estCity && userCity) {
+    if (estCity === userCity || estCity.includes(userCity) || userCity.includes(estCity)) {
+      return 3;
+    }
+  }
+  
   return 4;
 }
 
-function getProximityLabel(score: number): string {
-  switch (score) {
-    case 1: return "No seu bairro";
-    case 2: return "Na sua região";
-    case 3: return "Na sua cidade";
-    default: return "";
-  }
-}
-
 export default function Home() {
-  const isMobile = useIsMobile();
   const [searchParams] = useSearchParams();
   const [establishments, setEstablishments] = useState<Establishment[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
   const [advertisements, setAdvertisements] = useState<Advertisement[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
+  const [searchMode, setSearchMode] = useState<"products" | "companies">("products");
   const [category, setCategory] = useState(searchParams.get("category") || "todos");
   const [sortBy, setSortBy] = useState("proximity");
   const [loading, setLoading] = useState(true);
   const [selectedLocation, setSelectedLocation] = useState<LocationSelection | null>(null);
   
-  const { locationDetails, hasPermission, isLoading: locationLoading } = useUserLocation();
+  const { locationDetails, hasPermission } = useUserLocation();
 
   useEffect(() => {
     if (locationDetails && hasPermission && !selectedLocation) {
@@ -134,14 +143,31 @@ export default function Home() {
     return establishments
       .filter((est) => {
         const searchLower = searchTerm.toLowerCase();
-        const matchesSearch = !searchTerm || est.name.toLowerCase().includes(searchLower) || est.category.toLowerCase().includes(searchLower) || getEstablishmentProducts(est.id).some((p) => p.name.toLowerCase().includes(searchLower));
-        const matchesCategory = category === "todos" || est.category === category;
-        return matchesSearch && matchesCategory;
+        
+        if (!searchTerm) {
+          // No search term - filter by category only
+          return category === "todos" || est.category === category;
+        }
+        
+        // Search based on mode
+        if (searchMode === "products") {
+          // Search by product name
+          const matchesProduct = getEstablishmentProducts(est.id).some((p) => 
+            p.name.toLowerCase().includes(searchLower)
+          );
+          const matchesCategory = category === "todos" || est.category === category;
+          return matchesProduct && matchesCategory;
+        } else {
+          // Search by company name or category
+          const matchesName = est.name.toLowerCase().includes(searchLower);
+          const matchesCat = est.category.toLowerCase().includes(searchLower);
+          const matchesCategoryFilter = category === "todos" || est.category === category;
+          return (matchesName || matchesCat) && matchesCategoryFilter;
+        }
       })
       .map((est) => ({
         ...est,
         proximityScore: calculateProximityScore(est, selectedLocation),
-        proximityLabel: getProximityLabel(calculateProximityScore(est, selectedLocation))
       }))
       .sort((a, b) => {
         if (a.is_paid !== b.is_paid) return a.is_paid ? -1 : 1;
@@ -150,7 +176,7 @@ export default function Home() {
         if (sortBy === "name-desc") return b.name.localeCompare(a.name, 'pt-BR');
         return 0;
       });
-  }, [establishments, searchTerm, category, sortBy, selectedLocation, products]);
+  }, [establishments, searchTerm, searchMode, category, sortBy, selectedLocation, products]);
 
   return (
     <div className="min-h-screen bg-background">
@@ -163,9 +189,31 @@ export default function Home() {
           <HeroCarousel />
         </div>
 
-        {/* Search Bar */}
-        <div className="animate-fade-in" style={{ animationDelay: "0.1s" }}>
+        {/* Search Bar with Toggle */}
+        <div className="animate-fade-in space-y-3" style={{ animationDelay: "0.1s" }}>
           <SearchBar value={searchTerm} onChange={setSearchTerm} />
+          
+          {/* Search Mode Toggle */}
+          <div className="flex items-center justify-center gap-2">
+            <Button
+              variant={searchMode === "products" ? "default" : "outline"}
+              size="sm"
+              onClick={() => setSearchMode("products")}
+              className="rounded-full gap-2"
+            >
+              <Package className="h-4 w-4" />
+              Buscar Produtos
+            </Button>
+            <Button
+              variant={searchMode === "companies" ? "default" : "outline"}
+              size="sm"
+              onClick={() => setSearchMode("companies")}
+              className="rounded-full gap-2"
+            >
+              <Building2 className="h-4 w-4" />
+              Buscar Empresas
+            </Button>
+          </div>
         </div>
 
         {/* Inline Filters */}
@@ -173,7 +221,7 @@ export default function Home() {
           <FilterSheet category={category} onCategoryChange={setCategory} sortBy={sortBy} onSortChange={setSortBy} />
         </div>
 
-        {/* Establishments List */}
+        {/* Establishments List - Unified compact grid for all screens */}
         <div className="animate-fade-in" style={{ animationDelay: "0.2s" }}>
           <div className="flex items-center gap-2 mb-4">
             <Store className="h-5 w-5 text-primary" />
@@ -192,8 +240,8 @@ export default function Home() {
               <p className="text-lg font-medium text-muted-foreground">Nenhuma empresa encontrada</p>
               <p className="text-sm text-muted-foreground mt-1">Tente ajustar os filtros</p>
             </div>
-          ) : isMobile ? (
-            <div className="grid grid-cols-2 gap-3">
+          ) : (
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 md:gap-4">
               {filteredEstablishments.map((est) => {
                 const estProducts = getEstablishmentProducts(est.id);
                 const minPrice = estProducts.length > 0 ? Math.min(...estProducts.map(p => p.price)) : null;
@@ -203,7 +251,6 @@ export default function Home() {
                     id={est.id} 
                     name={est.name} 
                     category={est.category} 
-                    proximityLabel={est.proximityLabel} 
                     profileImage={est.profile_image} 
                     bannerImage={est.banner_image} 
                     isPaid={est.is_paid}
@@ -215,19 +262,11 @@ export default function Home() {
                 );
               })}
             </div>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
-              {filteredEstablishments.map((est) => (
-                <EstablishmentCard key={est.id} id={est.id} name={est.name} category={est.category} address={est.address} proximityLabel={est.proximityLabel} phone={est.phone} whatsapp={est.whatsapp} externalLink={est.external_link} schedule={est.schedule} profileImage={est.profile_image} bannerImage={est.banner_image} images={Array.isArray(est.images) ? est.images as string[] : null} isPaid={est.is_paid} products={getEstablishmentProducts(est.id)} />
-              ))}
-            </div>
           )}
         </div>
         
       </main>
       <Footer />
-      
-      {/* Mobile Bottom Menu removed as per requirement */}
     </div>
   );
 }

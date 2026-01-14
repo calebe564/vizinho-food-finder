@@ -52,35 +52,62 @@ const categoryProducts: Record<string, string[]> = {
   outro: ["Produtos", "Serviços"],
 };
 
-function formatCityState(city?: string): string {
+// Map of known cities to their states
+const cityStateMap: Record<string, string> = {
+  "são paulo": "SP",
+  "belo horizonte": "MG",
+  "rio de janeiro": "RJ",
+  "brasília": "DF",
+  "curitiba": "PR",
+  "porto alegre": "RS",
+  "salvador": "BA",
+  "fortaleza": "CE",
+  "recife": "PE",
+  "manaus": "AM",
+  "goiânia": "GO",
+  "campinas": "SP",
+  "guarulhos": "SP",
+  "contagem": "MG",
+  "betim": "MG",
+  "ribeirão das neves": "MG",
+  "uberlândia": "MG",
+  "juiz de fora": "MG",
+  "nova lima": "MG",
+  "santa luzia": "MG",
+  "ibirité": "MG",
+  "sete lagoas": "MG",
+};
+
+function getStateAbbreviation(city?: string): string {
   if (!city) return "";
-  
-  // Extract state abbreviation from city if it contains it
-  const cityLower = city.toLowerCase();
-  
-  // Map of known cities to their states
-  const cityStateMap: Record<string, string> = {
-    "são paulo": "SP",
-    "belo horizonte": "MG",
-    "rio de janeiro": "RJ",
-    "brasília": "DF",
-    "curitiba": "PR",
-    "porto alegre": "RS",
-    "salvador": "BA",
-    "fortaleza": "CE",
-    "recife": "PE",
-    "manaus": "AM",
-  };
+  const cityLower = city.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
   
   for (const [cityName, state] of Object.entries(cityStateMap)) {
-    if (cityLower.includes(cityName)) {
-      // Get short city name
-      const shortCity = city.split(" ").slice(0, 2).join(" ");
-      return `${shortCity}/${state}`;
+    const normalizedCityName = cityName.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+    if (cityLower.includes(normalizedCityName)) {
+      return state;
     }
   }
   
-  return city;
+  // Default to MG if no match (based on current context)
+  return "MG";
+}
+
+function formatLocation(neighborhood?: string | null, city?: string): string {
+  if (!neighborhood && !city) return "";
+  
+  const state = getStateAbbreviation(city);
+  const cityShort = city || "";
+  
+  if (neighborhood && cityShort) {
+    return `${neighborhood} · ${cityShort} – ${state}`;
+  }
+  
+  if (neighborhood) {
+    return neighborhood;
+  }
+  
+  return cityShort ? `${cityShort} – ${state}` : "";
 }
 
 export function EstablishmentCardCompact({
@@ -103,10 +130,8 @@ export function EstablishmentCardCompact({
     ? productNames.slice(0, 2) 
     : categoryProducts[category] || [categoryLabels[category] || category];
   
-  // Format location as "Bairro – Cidade/UF"
-  const locationText = neighborhood 
-    ? `${neighborhood} – ${formatCityState(city)}`
-    : formatCityState(city);
+  // Format location as "Bairro · Cidade – UF"
+  const locationText = formatLocation(neighborhood, city);
   
   return (
     <Link to={`/estabelecimento/${id}`} className="block active:scale-[0.98] transition-transform">
