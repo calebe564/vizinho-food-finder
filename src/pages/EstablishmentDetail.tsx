@@ -1,17 +1,18 @@
-import { useParams, Link } from "react-router-dom";
+import { useParams, Link, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { ArrowLeft, MapPin, Phone, Clock, Tag, Share2, MessageCircle, Globe, MoreVertical, Heart, Copy, Loader2 } from "lucide-react";
+import { ArrowLeft, MapPin, Phone, Clock, Tag, Share2, MessageCircle, Globe, MoreVertical, Heart, Copy, Loader2, Truck, Navigation, Building2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ThemeToggle } from "@/components/ThemeToggle";
-import { ImageCarousel } from "@/components/ImageCarousel";
+import { ImageGallery } from "@/components/ImageGallery";
 import { ProductCard } from "@/components/ProductCard";
 import { getScheduleStatus } from "@/lib/scheduleUtils";
 import { toast } from "sonner";
 import { useFavorites } from "@/hooks/useFavorites";
 import { shareContent, shareViaWhatsApp, copyToClipboard } from "@/lib/shareUtils";
+import { useAuth } from "@/contexts/AuthContext";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -26,15 +27,21 @@ interface Establishment {
   description: string | null;
   address: string;
   neighborhood: string | null;
+  city: string;
   phone: string;
   whatsapp: string | null;
   external_link: string | null;
+  google_maps_link: string | null;
   schedule: string;
   category: string;
   profile_image: string | null;
   banner_image: string | null;
   images: unknown;
   is_paid: boolean;
+  has_delivery: boolean | null;
+  delivery_type: string | null;
+  delivery_other: string | null;
+  cnpj: string | null;
 }
 
 interface Product {
@@ -68,8 +75,17 @@ const categoryLabels: Record<string, string> = {
   outro: "Outro",
 };
 
+const deliveryTypeLabels: Record<string, string> = {
+  proprio: "Delivery Próprio",
+  ifood: "iFood",
+  uber_eats: "Uber Eats",
+  outro: "Outro",
+};
+
 export default function EstablishmentDetail() {
   const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
+  const { user } = useAuth();
   const { isFavorite, toggleFavorite } = useFavorites();
   const isFav = id ? isFavorite(id) : false;
 
@@ -260,7 +276,7 @@ export default function EstablishmentDetail() {
       <main className="container mx-auto px-4 py-8">
         <div className="mb-8 relative">
           {images.length > 0 ? (
-            <ImageCarousel images={images} />
+            <ImageGallery images={images} />
           ) : establishment.banner_image || establishment.profile_image ? (
             <img
               src={establishment.banner_image || establishment.profile_image}
@@ -391,11 +407,23 @@ export default function EstablishmentDetail() {
 
                 <div className="flex items-start gap-3">
                   <MapPin className="h-5 w-5 text-muted-foreground mt-0.5" />
-                  <div>
+                  <div className="flex-1">
                     <p className="font-medium">Endereço</p>
                     <p className="text-sm text-muted-foreground">{establishment.address}</p>
                     {establishment.neighborhood && (
-                      <p className="text-sm text-muted-foreground">Bairro: {establishment.neighborhood}</p>
+                      <p className="text-sm text-muted-foreground">
+                        {establishment.neighborhood}{establishment.city ? ` · ${establishment.city}` : ""}
+                      </p>
+                    )}
+                    {establishment.google_maps_link && (
+                      <Button 
+                        variant="link" 
+                        className="h-auto p-0 mt-1 text-primary gap-1"
+                        onClick={() => window.open(establishment.google_maps_link!, '_blank')}
+                      >
+                        <Navigation className="h-3 w-3" />
+                        Ver no Maps
+                      </Button>
                     )}
                   </div>
                 </div>
@@ -414,7 +442,35 @@ export default function EstablishmentDetail() {
                   </div>
                 </div>
 
+                {/* Delivery Info */}
+                {establishment.has_delivery && (
+                  <div className="flex items-start gap-3">
+                    <Truck className="h-5 w-5 text-muted-foreground mt-0.5" />
+                    <div>
+                      <p className="font-medium">Delivery</p>
+                      <p className="text-sm text-muted-foreground">
+                        {establishment.delivery_type === "outro" && establishment.delivery_other
+                          ? establishment.delivery_other
+                          : establishment.delivery_type
+                            ? deliveryTypeLabels[establishment.delivery_type] || establishment.delivery_type
+                            : "Disponível"
+                        }
+                      </p>
+                    </div>
+                  </div>
+                )}
+
                 <div className="pt-2 space-y-2">
+                  {establishment.google_maps_link && (
+                    <Button 
+                      variant="outline"
+                      className="w-full gap-2" 
+                      onClick={() => window.open(establishment.google_maps_link!, '_blank')}
+                    >
+                      <Navigation className="h-4 w-4" />
+                      Ver no Maps
+                    </Button>
+                  )}
                   <Button 
                     variant="outline"
                     className="w-full gap-2" 
@@ -434,6 +490,36 @@ export default function EstablishmentDetail() {
                 </div>
               </CardContent>
             </Card>
+
+            {/* Claim Establishment Card */}
+            {!establishment.cnpj && (
+              <Card className="border-dashed">
+                <CardContent className="pt-6">
+                  <div className="text-center space-y-3">
+                    <Building2 className="h-8 w-8 mx-auto text-muted-foreground" />
+                    <div>
+                      <p className="font-medium">Esta é sua empresa?</p>
+                      <p className="text-sm text-muted-foreground">
+                        Reivindique a administração e gerencie seu perfil
+                      </p>
+                    </div>
+                    <Button 
+                      variant="outline"
+                      className="w-full"
+                      onClick={() => {
+                        if (user) {
+                          navigate('/reivindicar-empresa');
+                        } else {
+                          navigate('/auth', { state: { from: '/reivindicar-empresa' } });
+                        }
+                      }}
+                    >
+                      Reivindicar Empresa
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
           </div>
         </div>
       </main>

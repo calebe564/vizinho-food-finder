@@ -1,8 +1,11 @@
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Button } from "@/components/ui/button";
 import { validateCNPJ, formatCNPJ } from "@/lib/validationUtils";
-import { Check, X } from "lucide-react";
+import { Check, X, Search, Loader2 } from "lucide-react";
 import { useState, useEffect } from "react";
+import { useCNPJLookup } from "@/hooks/useCNPJLookup";
+import { toast } from "sonner";
 
 interface CNPJInputProps {
   value: string;
@@ -10,10 +13,31 @@ interface CNPJInputProps {
   required?: boolean;
   label?: string;
   disabled?: boolean;
+  onLookupSuccess?: (data: {
+    razaoSocial: string;
+    nomeFantasia: string;
+    municipio: string;
+    uf: string;
+    bairro: string;
+    logradouro: string;
+    numero: string;
+    cep: string;
+    telefone: string;
+  }) => void;
+  showLookupButton?: boolean;
 }
 
-export function CNPJInput({ value, onChange, required = false, label = "CNPJ", disabled = false }: CNPJInputProps) {
+export function CNPJInput({ 
+  value, 
+  onChange, 
+  required = false, 
+  label = "CNPJ", 
+  disabled = false,
+  onLookupSuccess,
+  showLookupButton = false
+}: CNPJInputProps) {
   const [isValid, setIsValid] = useState<boolean | null>(null);
+  const { lookup, isLoading, result, error } = useCNPJLookup();
   
   useEffect(() => {
     const cleanValue = value.replace(/\D/g, '');
@@ -25,6 +49,14 @@ export function CNPJInput({ value, onChange, required = false, label = "CNPJ", d
       setIsValid(false);
     }
   }, [value]);
+
+  // Notify parent when lookup succeeds
+  useEffect(() => {
+    if (result && onLookupSuccess) {
+      onLookupSuccess(result);
+      toast.success("Dados do CNPJ encontrados!");
+    }
+  }, [result, onLookupSuccess]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     let inputValue = e.target.value.replace(/\D/g, '');
@@ -48,37 +80,86 @@ export function CNPJInput({ value, onChange, required = false, label = "CNPJ", d
     onChange(inputValue);
   };
 
+  const handleLookup = async () => {
+    const cleanValue = value.replace(/\D/g, '');
+    if (cleanValue.length === 14 && isValid) {
+      await lookup(cleanValue);
+    } else {
+      toast.error("Digite um CNPJ válido para consultar");
+    }
+  };
+
   return (
     <div className="space-y-2">
       <Label htmlFor="cnpj" className="text-base font-medium">
         {label} {required && <span className="text-destructive">*</span>}
       </Label>
-      <div className="relative">
-        <Input
-          id="cnpj"
-          type="text"
-          value={value}
-          onChange={handleChange}
-          placeholder="00.000.000/0000-00"
-          className={`h-12 rounded-xl pr-10 ${
-            isValid === true ? 'border-green-500' : 
-            isValid === false ? 'border-destructive' : ''
-          }`}
-          required={required}
-          disabled={disabled}
-        />
-        {isValid !== null && (
-          <div className="absolute right-3 top-1/2 -translate-y-1/2">
-            {isValid ? (
-              <Check className="h-5 w-5 text-green-500" />
+      <div className="flex gap-2">
+        <div className="relative flex-1">
+          <Input
+            id="cnpj"
+            type="text"
+            value={value}
+            onChange={handleChange}
+            placeholder="00.000.000/0000-00"
+            className={`h-12 rounded-xl pr-10 ${
+              isValid === true ? 'border-green-500' : 
+              isValid === false ? 'border-destructive' : ''
+            }`}
+            required={required}
+            disabled={disabled || isLoading}
+          />
+          {isValid !== null && !isLoading && (
+            <div className="absolute right-3 top-1/2 -translate-y-1/2">
+              {isValid ? (
+                <Check className="h-5 w-5 text-green-500" />
+              ) : (
+                <X className="h-5 w-5 text-destructive" />
+              )}
+            </div>
+          )}
+          {isLoading && (
+            <div className="absolute right-3 top-1/2 -translate-y-1/2">
+              <Loader2 className="h-5 w-5 animate-spin text-primary" />
+            </div>
+          )}
+        </div>
+        {showLookupButton && onLookupSuccess && (
+          <Button
+            type="button"
+            variant="outline"
+            className="h-12 px-4"
+            onClick={handleLookup}
+            disabled={!isValid || isLoading || disabled}
+          >
+            {isLoading ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
             ) : (
-              <X className="h-5 w-5 text-destructive" />
+              <Search className="h-4 w-4" />
             )}
-          </div>
+          </Button>
         )}
       </div>
       {isValid === false && value.length > 0 && (
         <p className="text-sm text-destructive">CNPJ inválido</p>
+      )}
+      {error && (
+        <p className="text-sm text-destructive">{error}</p>
+      )}
+      {result && (
+        <div className="p-3 rounded-lg bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 text-sm">
+          <p className="font-medium text-green-800 dark:text-green-200">
+            {result.nomeFantasia || result.razaoSocial}
+          </p>
+          <p className="text-green-700 dark:text-green-300 text-xs">
+            {result.municipio} - {result.uf}
+          </p>
+          {!result.isValid && (
+            <p className="text-amber-600 dark:text-amber-400 text-xs mt-1">
+              ⚠️ Situação: {result.situacao}
+            </p>
+          )}
+        </div>
       )}
     </div>
   );
