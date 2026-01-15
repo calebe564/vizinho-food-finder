@@ -252,10 +252,13 @@ export type Database = {
           category: Database["public"]["Enums"]["establishment_category"]
           cnpj: string | null
           created_at: string | null
+          delivery_other: string | null
+          delivery_type: string | null
           description: string | null
           external_link: string | null
           favorite_images: Json | null
           google_maps_link: string | null
+          has_delivery: boolean | null
           id: string
           images: Json | null
           name: string
@@ -280,10 +283,13 @@ export type Database = {
           category: Database["public"]["Enums"]["establishment_category"]
           cnpj?: string | null
           created_at?: string | null
+          delivery_other?: string | null
+          delivery_type?: string | null
           description?: string | null
           external_link?: string | null
           favorite_images?: Json | null
           google_maps_link?: string | null
+          has_delivery?: boolean | null
           id?: string
           images?: Json | null
           name: string
@@ -308,10 +314,13 @@ export type Database = {
           category?: Database["public"]["Enums"]["establishment_category"]
           cnpj?: string | null
           created_at?: string | null
+          delivery_other?: string | null
+          delivery_type?: string | null
           description?: string | null
           external_link?: string | null
           favorite_images?: Json | null
           google_maps_link?: string | null
+          has_delivery?: boolean | null
           id?: string
           images?: Json | null
           name?: string
@@ -374,10 +383,13 @@ export type Database = {
           city: string
           cnpj: string | null
           created_at: string | null
+          delivery_other: string | null
+          delivery_type: string | null
           description: string | null
           external_link: string | null
           favorite_images: Json | null
           google_maps_link: string | null
+          has_delivery: boolean | null
           id: string
           images: Json | null
           is_paid: boolean | null
@@ -401,10 +413,13 @@ export type Database = {
           city?: string
           cnpj?: string | null
           created_at?: string | null
+          delivery_other?: string | null
+          delivery_type?: string | null
           description?: string | null
           external_link?: string | null
           favorite_images?: Json | null
           google_maps_link?: string | null
+          has_delivery?: boolean | null
           id?: string
           images?: Json | null
           is_paid?: boolean | null
@@ -428,10 +443,13 @@ export type Database = {
           city?: string
           cnpj?: string | null
           created_at?: string | null
+          delivery_other?: string | null
+          delivery_type?: string | null
           description?: string | null
           external_link?: string | null
           favorite_images?: Json | null
           google_maps_link?: string | null
+          has_delivery?: boolean | null
           id?: string
           images?: Json | null
           is_paid?: boolean | null

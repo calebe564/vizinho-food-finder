@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { HeroCarousel } from "@/components/HeroCarousel";
 import { SearchBar } from "@/components/SearchBar";
@@ -7,6 +7,7 @@ import { EstablishmentCardCompact } from "@/components/EstablishmentCardCompact"
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { AdvertisementBanner } from "@/components/AdvertisementBanner";
+import { LocationFilter } from "@/components/LocationFilterModal";
 
 import { useUserLocation } from "@/contexts/LocationContext";
 import { useSearchParams } from "react-router-dom";
@@ -105,12 +106,21 @@ export default function Home() {
   const [sortBy, setSortBy] = useState("proximity");
   const [loading, setLoading] = useState(true);
   const [selectedLocation, setSelectedLocation] = useState<LocationSelection | null>(null);
+  const [locationFilter, setLocationFilter] = useState<LocationFilter | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   
   const { locationDetails, hasPermission } = useUserLocation();
 
+  // Update selectedLocation when locationFilter changes or from user's geolocation
   useEffect(() => {
-    if (locationDetails && hasPermission && !selectedLocation) {
+    if (locationFilter) {
+      setSelectedLocation({
+        neighborhood: locationFilter.neighborhood,
+        region: "",
+        city: locationFilter.city,
+        state: locationFilter.state
+      });
+    } else if (locationDetails && hasPermission) {
       setSelectedLocation({
         neighborhood: locationDetails.neighborhood,
         region: locationDetails.region,
@@ -118,7 +128,7 @@ export default function Home() {
         state: locationDetails.state
       });
     }
-  }, [locationDetails, hasPermission]);
+  }, [locationFilter, locationDetails, hasPermission]);
 
   useEffect(() => { fetchData(); }, []);
 
@@ -233,7 +243,14 @@ export default function Home() {
             </div>
             
             {/* Filters */}
-            <FilterSheet category={category} onCategoryChange={setCategory} sortBy={sortBy} onSortChange={setSortBy} />
+            <FilterSheet 
+              category={category} 
+              onCategoryChange={setCategory} 
+              sortBy={sortBy} 
+              onSortChange={setSortBy}
+              locationFilter={locationFilter}
+              onLocationChange={setLocationFilter}
+            />
           </div>
 
           {/* Desktop layout - compact single row */}
@@ -264,7 +281,14 @@ export default function Home() {
             </Button>
             
             {/* Filter buttons inline */}
-            <FilterSheet category={category} onCategoryChange={setCategory} sortBy={sortBy} onSortChange={setSortBy} />
+            <FilterSheet 
+              category={category} 
+              onCategoryChange={setCategory} 
+              sortBy={sortBy} 
+              onSortChange={setSortBy}
+              locationFilter={locationFilter}
+              onLocationChange={setLocationFilter}
+            />
           </div>
         </div>
 

@@ -11,7 +11,7 @@ import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
-import { Building2, Upload, CheckCircle, Plus, Trash2, Star, MapPin, Phone, Package, Image, Loader2 } from "lucide-react";
+import { Building2, Upload, CheckCircle, Plus, Trash2, Star, MapPin, Phone, Package, Image, Loader2, Truck } from "lucide-react";
 import { Database } from "@/integrations/supabase/types";
 import { useAuth } from "@/contexts/AuthContext";
 import { useUserRole } from "@/hooks/useUserRole";
@@ -152,6 +152,12 @@ export default function PublicEstablishmentForm() {
   const [contactData, setContactData] = useState({
     whatsapp: "",
     website: ""
+  });
+
+  const [deliveryData, setDeliveryData] = useState({
+    hasDelivery: false,
+    deliveryType: "" as "proprio" | "ifood" | "uber_eats" | "outro" | "",
+    deliveryOther: ""
   });
   
   const [products, setProducts] = useState<Product[]>([
@@ -535,7 +541,10 @@ export default function PublicEstablishmentForm() {
           favorite_images: favoriteImages,
           profile_image: logoUrl || null,
           user_id: user?.id || null,
-          cnpj: cleanCnpj || null
+          cnpj: cleanCnpj || null,
+          has_delivery: deliveryData.hasDelivery,
+          delivery_type: deliveryData.hasDelivery ? deliveryData.deliveryType || null : null,
+          delivery_other: deliveryData.hasDelivery && deliveryData.deliveryType === "outro" ? deliveryData.deliveryOther || null : null
         }]);
 
       if (error) throw error;
@@ -907,6 +916,59 @@ export default function PublicEstablishmentForm() {
                     />
                   </div>
                 </div>
+              </div>
+
+              {/* ========== SEÇÃO: DELIVERY ========== */}
+              <div className="space-y-4">
+                <div className="flex items-center gap-2 pb-2 border-b">
+                  <Truck className="h-5 w-5 text-primary" />
+                  <h3 className="text-lg font-semibold">Delivery</h3>
+                </div>
+
+                <div className="flex items-center justify-between py-3 px-4 bg-secondary/30 rounded-xl">
+                  <div className="space-y-0.5">
+                    <Label className="text-base font-medium">Possui delivery?</Label>
+                    <p className="text-sm text-muted-foreground">Marque se oferece entrega</p>
+                  </div>
+                  <Switch
+                    checked={deliveryData.hasDelivery}
+                    onCheckedChange={(checked) => setDeliveryData(prev => ({ ...prev, hasDelivery: checked }))}
+                  />
+                </div>
+
+                {deliveryData.hasDelivery && (
+                  <div className="space-y-4 pl-4 border-l-2 border-primary/30">
+                    <div className="space-y-2">
+                      <Label className="text-base font-medium">Tipo de Delivery</Label>
+                      <Select 
+                        value={deliveryData.deliveryType} 
+                        onValueChange={(v) => setDeliveryData(prev => ({ ...prev, deliveryType: v as typeof prev.deliveryType }))}
+                      >
+                        <SelectTrigger className="h-12 rounded-xl">
+                          <SelectValue placeholder="Selecione o tipo" />
+                        </SelectTrigger>
+                        <SelectContent className="rounded-xl bg-popover">
+                          <SelectItem value="proprio">Delivery Próprio</SelectItem>
+                          <SelectItem value="ifood">iFood</SelectItem>
+                          <SelectItem value="uber_eats">Uber Eats</SelectItem>
+                          <SelectItem value="outro">Outro</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    {deliveryData.deliveryType === "outro" && (
+                      <div className="space-y-2">
+                        <Label className="text-base font-medium">Descreva</Label>
+                        <Input
+                          value={deliveryData.deliveryOther}
+                          onChange={(e) => setDeliveryData(prev => ({ ...prev, deliveryOther: e.target.value }))}
+                          placeholder="Ex: Rappi, 99Food, etc."
+                          className="h-12 rounded-xl"
+                        />
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
 
               {/* ========== SEÇÃO 4: PRODUTOS ========== */}
