@@ -250,6 +250,7 @@ export type Database = {
           approved_at: string | null
           approved_by: string | null
           category: Database["public"]["Enums"]["establishment_category"]
+          cep: string | null
           cnpj: string | null
           created_at: string | null
           delivery_other: string | null
@@ -271,6 +272,7 @@ export type Database = {
           rejected_by: string | null
           rejection_reason: string | null
           schedule: string | null
+          state: string | null
           status: string | null
           user_id: string | null
           whatsapp: string | null
@@ -281,6 +283,7 @@ export type Database = {
           approved_at?: string | null
           approved_by?: string | null
           category: Database["public"]["Enums"]["establishment_category"]
+          cep?: string | null
           cnpj?: string | null
           created_at?: string | null
           delivery_other?: string | null
@@ -302,6 +305,7 @@ export type Database = {
           rejected_by?: string | null
           rejection_reason?: string | null
           schedule?: string | null
+          state?: string | null
           status?: string | null
           user_id?: string | null
           whatsapp?: string | null
@@ -312,6 +316,7 @@ export type Database = {
           approved_at?: string | null
           approved_by?: string | null
           category?: Database["public"]["Enums"]["establishment_category"]
+          cep?: string | null
           cnpj?: string | null
           created_at?: string | null
           delivery_other?: string | null
@@ -333,6 +338,7 @@ export type Database = {
           rejected_by?: string | null
           rejection_reason?: string | null
           schedule?: string | null
+          state?: string | null
           status?: string | null
           user_id?: string | null
           whatsapp?: string | null
@@ -380,6 +386,7 @@ export type Database = {
           address: string
           banner_image: string | null
           category: Database["public"]["Enums"]["establishment_category"]
+          cep: string | null
           city: string
           cnpj: string | null
           created_at: string | null
@@ -403,6 +410,7 @@ export type Database = {
           reference_point: string | null
           region: string | null
           schedule: string
+          state: string | null
           whatsapp: string | null
         }
         Insert: {
@@ -410,6 +418,7 @@ export type Database = {
           address: string
           banner_image?: string | null
           category: Database["public"]["Enums"]["establishment_category"]
+          cep?: string | null
           city?: string
           cnpj?: string | null
           created_at?: string | null
@@ -424,8 +433,8 @@ export type Database = {
           images?: Json | null
           is_paid?: boolean | null
           last_update?: string | null
-          latitude: number
-          longitude: number
+          latitude?: number
+          longitude?: number
           name: string
           neighborhood?: string | null
           phone: string
@@ -433,6 +442,7 @@ export type Database = {
           reference_point?: string | null
           region?: string | null
           schedule: string
+          state?: string | null
           whatsapp?: string | null
         }
         Update: {
@@ -440,6 +450,7 @@ export type Database = {
           address?: string
           banner_image?: string | null
           category?: Database["public"]["Enums"]["establishment_category"]
+          cep?: string | null
           city?: string
           cnpj?: string | null
           created_at?: string | null
@@ -463,6 +474,7 @@ export type Database = {
           reference_point?: string | null
           region?: string | null
           schedule?: string
+          state?: string | null
           whatsapp?: string | null
         }
         Relationships: []

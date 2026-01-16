@@ -52,15 +52,20 @@ export function HeroCarousel() {
   const itemsPerSlide = isMobile ? 1 : 2;
   const totalSlides = Math.ceil(carouselItems.length / itemsPerSlide);
 
+  // Infinite carousel - always loops back to start
   useEffect(() => {
-    if (totalSlides <= 1 || isHovered) return;
+    if (carouselItems.length === 0 || isHovered) return;
 
     const interval = setInterval(() => {
-      setCurrentIndex((prev) => (prev >= totalSlides - 1 ? 0 : prev + 1));
+      // Always loop - never stop at end
+      setCurrentIndex((prev) => {
+        if (totalSlides <= 1) return 0;
+        return (prev + 1) % totalSlides;
+      });
     }, 5000);
 
     return () => clearInterval(interval);
-  }, [totalSlides, isHovered]);
+  }, [carouselItems.length, totalSlides, isHovered]);
 
   const fetchPaidEstablishments = async () => {
     const { data, error } = await supabase
