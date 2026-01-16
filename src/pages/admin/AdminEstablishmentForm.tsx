@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams, Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -9,10 +9,12 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
-import { ArrowLeft, Upload, Trash2, Plus, Star, Package, Image, Building2, MapPin, Loader2, UserPlus } from "lucide-react";
+import { ArrowLeft, Upload, Trash2, Plus, Star, Package, Image, Building2, MapPin, Loader2, UserPlus, Home, Truck } from "lucide-react";
 import { Database } from "@/integrations/supabase/types";
 import { ConfirmPasswordDialog } from "@/components/ConfirmPasswordDialog";
 import { InviteAdminDialog } from "@/components/business/InviteAdminDialog";
+import { CNPJInput } from "@/components/CNPJInput";
+import { useCNPJLookup } from "@/hooks/useCNPJLookup";
 
 type EstablishmentCategory = Database["public"]["Enums"]["establishment_category"];
 
@@ -50,6 +52,18 @@ const categoryLabels: Record<string, string> = {
   outro: "Outro"
 };
 
+const brazilianStates = [
+  { uf: "AC", name: "Acre" }, { uf: "AL", name: "Alagoas" }, { uf: "AP", name: "Amapá" },
+  { uf: "AM", name: "Amazonas" }, { uf: "BA", name: "Bahia" }, { uf: "CE", name: "Ceará" },
+  { uf: "DF", name: "Distrito Federal" }, { uf: "ES", name: "Espírito Santo" }, { uf: "GO", name: "Goiás" },
+  { uf: "MA", name: "Maranhão" }, { uf: "MT", name: "Mato Grosso" }, { uf: "MS", name: "Mato Grosso do Sul" },
+  { uf: "MG", name: "Minas Gerais" }, { uf: "PA", name: "Pará" }, { uf: "PB", name: "Paraíba" },
+  { uf: "PR", name: "Paraná" }, { uf: "PE", name: "Pernambuco" }, { uf: "PI", name: "Piauí" },
+  { uf: "RJ", name: "Rio de Janeiro" }, { uf: "RN", name: "Rio Grande do Norte" }, { uf: "RS", name: "Rio Grande do Sul" },
+  { uf: "RO", name: "Rondônia" }, { uf: "RR", name: "Roraima" }, { uf: "SC", name: "Santa Catarina" },
+  { uf: "SP", name: "São Paulo" }, { uf: "SE", name: "Sergipe" }, { uf: "TO", name: "Tocantins" }
+];
+
 interface ProductVariation {
   id: string;
   name: string;
@@ -74,6 +88,7 @@ export default function AdminEstablishmentForm() {
   const [loadingCep, setLoadingCep] = useState(false);
   const [showPaidConfirm, setShowPaidConfirm] = useState(false);
   const [pendingPaidValue, setPendingPaidValue] = useState(false);
+  const { lookup: lookupCNPJ, isLoading: cnpjLoading } = useCNPJLookup();
   
   const [formData, setFormData] = useState({
     name: "",
@@ -81,10 +96,9 @@ export default function AdminEstablishmentForm() {
     neighborhood: "",
     region: "",
     city: "",
+    state: "SP",
     address: "",
     cep: "",
-    latitude: "",
-    longitude: "",
     phone: "",
     whatsapp: "",
     schedule: "",
@@ -95,12 +109,16 @@ export default function AdminEstablishmentForm() {
     is_paid: false,
     active: true,
     cnpj: "",
+    has_delivery: false,
+    delivery_type: "",
+    delivery_other: "",
   });
   
   // Estado para troca de CNPJ
   const [showCnpjChange, setShowCnpjChange] = useState(false);
   const [newCnpj, setNewCnpj] = useState("");
   const [cnpjJustification, setCnpjJustification] = useState("");
+  const [cnpjAutoFilled, setCnpjAutoFilled] = useState(false);
 
   // Images state
   const [profileImage, setProfileImage] = useState<string>("");
@@ -143,10 +161,9 @@ export default function AdminEstablishmentForm() {
           neighborhood: data.neighborhood || "",
           region: data.region || "",
           city: data.city || "São Paulo",
+          state: (data as any).state || "SP",
           address: data.address,
-          cep: "",
-          latitude: data.latitude.toString(),
-          longitude: data.longitude.toString(),
+          cep: (data as any).cep || "",
           phone: data.phone,
           whatsapp: data.whatsapp || "",
           schedule: data.schedule,
@@ -157,11 +174,19 @@ export default function AdminEstablishmentForm() {
           is_paid: data.is_paid || false,
           active: data.active ?? true,
           cnpj: data.cnpj || "",
+          has_delivery: data.has_delivery || false,
+          delivery_type: data.delivery_type || "",
+          delivery_other: data.delivery_other || "",
         });
         setProfileImage(data.profile_image || "");
         setBannerImage(data.banner_image || "");
         setImages((data.images as string[]) || []);
         setFavoriteImages((data.favorite_images as string[]) || []);
+        
+        // Mark as auto-filled if CNPJ exists
+        if (data.cnpj) {
+          setCnpjAutoFilled(true);
+        }
       }
     } catch (error: any) {
       console.error("Error fetching establishment:", error);
@@ -207,6 +232,32 @@ export default function AdminEstablishmentForm() {
     }
   };
 
+  // CNPJ lookup and auto-fill
+  const handleCNPJLookup = async (cnpjData: {
+    razaoSocial: string;
+    nomeFantasia: string;
+    municipio: string;
+    uf: string;
+    bairro: string;
+    logradouro: string;
+    numero: string;
+    cep: string;
+    telefone: string;
+  }) => {
+    setFormData(prev => ({
+      ...prev,
+      name: cnpjData.nomeFantasia || cnpjData.razaoSocial || prev.name,
+      city: cnpjData.municipio || prev.city,
+      state: cnpjData.uf || prev.state,
+      neighborhood: cnpjData.bairro || prev.neighborhood,
+      address: cnpjData.logradouro ? `${cnpjData.logradouro}${cnpjData.numero ? `, ${cnpjData.numero}` : ""}` : prev.address,
+      cep: cnpjData.cep || prev.cep,
+      phone: cnpjData.telefone || prev.phone,
+    }));
+    setCnpjAutoFilled(true);
+    toast.success("Dados do CNPJ preenchidos automaticamente!");
+  };
+
   // CEP Lookup
   const handleCepBlur = async () => {
     const cep = formData.cep.replace(/\D/g, "");
@@ -224,12 +275,23 @@ export default function AdminEstablishmentForm() {
         return;
       }
 
+      // Check if the fetched address matches user input
+      const newCity = data.localidade || formData.city;
+      const newNeighborhood = data.bairro || formData.neighborhood;
+      const newState = data.uf || formData.state;
+
+      // Alert if there's a mismatch
+      if (formData.city && formData.city !== newCity) {
+        toast.warning(`CEP corresponde a ${newCity}, não a ${formData.city}. Dados atualizados.`);
+      }
+
       setFormData(prev => ({
         ...prev,
         address: data.logradouro || prev.address,
-        neighborhood: data.bairro || prev.neighborhood,
-        city: data.localidade || prev.city,
-        region: getRegionFromNeighborhood(data.bairro) || prev.region
+        neighborhood: newNeighborhood,
+        city: newCity,
+        state: newState,
+        region: getRegionFromNeighborhood(newNeighborhood) || prev.region
       }));
 
       toast.success("Endereço encontrado!");
@@ -243,7 +305,6 @@ export default function AdminEstablishmentForm() {
 
   // Helper function to determine region from neighborhood
   const getRegionFromNeighborhood = (bairro: string): string => {
-    // Basic region mapping for São Paulo - can be expanded
     const northZone = ["Santana", "Tucuruvi", "Jaçanã", "Tremembé", "Vila Maria", "Casa Verde"];
     const southZone = ["Moema", "Ipiranga", "Santo Amaro", "Jabaquara", "Campo Limpo", "Capela do Socorro"];
     const eastZone = ["Tatuapé", "Penha", "São Miguel", "Itaquera", "Guaianazes", "Ermelino Matarazzo"];
@@ -397,7 +458,6 @@ export default function AdminEstablishmentForm() {
 
   const handleIsPaidChange = (checked: boolean) => {
     if (checked) {
-      // Requires confirmation to mark as paid/featured
       setPendingPaidValue(true);
       setShowPaidConfirm(true);
     } else {
@@ -412,13 +472,14 @@ export default function AdminEstablishmentForm() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!formData.name || !formData.category || !formData.address || !formData.latitude || !formData.longitude || !formData.phone || !formData.schedule) {
+    // Validation - NO latitude/longitude required
+    if (!formData.name || !formData.category || !formData.address || !formData.phone || !formData.schedule) {
       toast.error("Preencha todos os campos obrigatórios");
       return;
     }
 
-    if (!formData.google_maps_link) {
-      toast.error("O link do Google Maps é obrigatório");
+    if (!formData.neighborhood || !formData.city) {
+      toast.error("Bairro e cidade são obrigatórios");
       return;
     }
 
@@ -461,6 +522,7 @@ export default function AdminEstablishmentForm() {
         }
       }
 
+      // Note: ADM is NEVER the owner - establishments created by ADM have no owner
       const dataToSave = {
         name: formData.name,
         category: formData.category as EstablishmentCategory,
@@ -468,8 +530,8 @@ export default function AdminEstablishmentForm() {
         region: formData.region || null,
         city: formData.city,
         address: formData.address,
-        latitude: parseFloat(formData.latitude),
-        longitude: parseFloat(formData.longitude),
+        latitude: 0, // Default value - not used for location
+        longitude: 0, // Default value - not used for location
         phone: formData.phone,
         whatsapp: formData.whatsapp || null,
         schedule: formData.schedule,
@@ -484,6 +546,9 @@ export default function AdminEstablishmentForm() {
         images: allImages,
         favorite_images: favoriteImages,
         cnpj: formData.cnpj || null,
+        has_delivery: formData.has_delivery,
+        delivery_type: formData.has_delivery ? formData.delivery_type : null,
+        delivery_other: formData.has_delivery && formData.delivery_type === "outro" ? formData.delivery_other : null,
       };
 
       if (id) {
@@ -585,7 +650,7 @@ export default function AdminEstablishmentForm() {
         <Button variant="ghost" size="icon" onClick={() => navigate("/admin/dashboard/estabelecimentos")}>
           <ArrowLeft className="h-4 w-4" />
         </Button>
-        <div>
+        <div className="flex-1">
           <h2 className="text-2xl font-bold">
             {id ? "Editar Empresa" : "Adicionar Empresa"}
           </h2>
@@ -593,6 +658,13 @@ export default function AdminEstablishmentForm() {
             {id ? "Atualize os dados do estabelecimento" : "Cadastre um novo estabelecimento"}
           </p>
         </div>
+        {/* Back to public area button */}
+        <Link to="/">
+          <Button variant="outline" className="gap-2">
+            <Home className="h-4 w-4" />
+            Área Pública
+          </Button>
+        </Link>
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-6">
@@ -657,6 +729,23 @@ export default function AdminEstablishmentForm() {
               </p>
             </div>
 
+            {/* CNPJ with API lookup */}
+            <div className="space-y-2">
+              <CNPJInput
+                value={formData.cnpj}
+                onChange={(value) => handleChange("cnpj", value)}
+                onLookupSuccess={handleCNPJLookup}
+                showLookupButton={true}
+                disabled={cnpjAutoFilled && !!formData.cnpj}
+                label="CNPJ (consulta automática)"
+              />
+              {cnpjAutoFilled && formData.cnpj && (
+                <p className="text-xs text-amber-600">
+                  ⚠️ Razão social preenchida automaticamente. Para alterar, remova o CNPJ.
+                </p>
+              )}
+            </div>
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="name">Nome da Empresa *</Label>
@@ -665,7 +754,14 @@ export default function AdminEstablishmentForm() {
                   value={formData.name}
                   onChange={(e) => handleChange("name", e.target.value)}
                   required
+                  disabled={cnpjAutoFilled}
+                  className={cnpjAutoFilled ? "bg-muted" : ""}
                 />
+                {cnpjAutoFilled && (
+                  <p className="text-xs text-muted-foreground">
+                    Preenchido automaticamente pelo CNPJ
+                  </p>
+                )}
               </div>
 
               <div className="space-y-2">
@@ -685,108 +781,6 @@ export default function AdminEstablishmentForm() {
               </div>
             </div>
 
-            {/* Campo CNPJ */}
-            <div className="space-y-2">
-              <Label htmlFor="cnpj">CNPJ</Label>
-              <div className="flex items-center gap-2">
-                <Input
-                  id="cnpj"
-                  value={formData.cnpj}
-                  onChange={(e) => handleChange("cnpj", e.target.value)}
-                  placeholder="00.000.000/0000-00"
-                  maxLength={18}
-                  className="max-w-xs"
-                />
-                {id && formData.cnpj && (
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setShowCnpjChange(!showCnpjChange)}
-                  >
-                    Trocar CNPJ
-                  </Button>
-                )}
-              </div>
-              <p className="text-xs text-muted-foreground">
-                Opcional. Usado para identificação oficial da empresa.
-              </p>
-            </div>
-
-            {/* Área de troca de CNPJ */}
-            {showCnpjChange && (
-              <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg p-4 space-y-3">
-                <h4 className="text-sm font-medium text-amber-800 dark:text-amber-200">
-                  Solicitar Troca de CNPJ
-                </h4>
-                <div className="space-y-2">
-                  <Label htmlFor="newCnpj">Novo CNPJ</Label>
-                  <Input
-                    id="newCnpj"
-                    value={newCnpj}
-                    onChange={(e) => setNewCnpj(e.target.value)}
-                    placeholder="00.000.000/0000-00"
-                    maxLength={18}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="cnpjJustification">Justificativa *</Label>
-                  <Textarea
-                    id="cnpjJustification"
-                    value={cnpjJustification}
-                    onChange={(e) => setCnpjJustification(e.target.value)}
-                    placeholder="Explique o motivo da troca de CNPJ..."
-                    rows={3}
-                  />
-                </div>
-                <div className="flex gap-2">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={() => {
-                      setShowCnpjChange(false);
-                      setNewCnpj("");
-                      setCnpjJustification("");
-                    }}
-                  >
-                    Cancelar
-                  </Button>
-                  <Button
-                    type="button"
-                    size="sm"
-                    disabled={!newCnpj || !cnpjJustification}
-                    onClick={async () => {
-                      // Enviar solicitação para o chat do ADM
-                      try {
-                        const { error } = await supabase
-                          .from("conversations")
-                          .insert({
-                            user_name: "Sistema",
-                            user_email: "sistema@comerciovizinho.com",
-                            city_neighborhood: "Sistema",
-                            category: "outro",
-                            status: "open",
-                          });
-                        
-                        if (!error) {
-                          toast.success("Solicitação de troca de CNPJ enviada!");
-                          handleChange("cnpj", newCnpj);
-                          setShowCnpjChange(false);
-                          setNewCnpj("");
-                          setCnpjJustification("");
-                        }
-                      } catch (err) {
-                        toast.error("Erro ao enviar solicitação");
-                      }
-                    }}
-                  >
-                    Confirmar Troca
-                  </Button>
-                </div>
-              </div>
-            )}
-
             <div className="space-y-2">
               <Label htmlFor="description">Descrição / Slogan</Label>
               <Textarea
@@ -800,7 +794,7 @@ export default function AdminEstablishmentForm() {
           </CardContent>
         </Card>
 
-        {/* Address Card */}
+        {/* Address Card - NO LATITUDE/LONGITUDE */}
         <Card>
           <CardContent className="pt-6 space-y-6">
             <div className="flex items-center gap-2 pb-2 border-b">
@@ -810,7 +804,7 @@ export default function AdminEstablishmentForm() {
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="cep">CEP</Label>
+                <Label htmlFor="cep">CEP *</Label>
                 <div className="relative">
                   <Input
                     id="cep"
@@ -819,6 +813,7 @@ export default function AdminEstablishmentForm() {
                     onBlur={handleCepBlur}
                     placeholder="00000-000"
                     maxLength={9}
+                    required
                   />
                   {loadingCep && (
                     <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 animate-spin text-muted-foreground" />
@@ -826,6 +821,34 @@ export default function AdminEstablishmentForm() {
                 </div>
               </div>
 
+              <div className="space-y-2">
+                <Label htmlFor="state">Estado *</Label>
+                <Select value={formData.state} onValueChange={(value) => handleChange("state", value)}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecione o estado" />
+                  </SelectTrigger>
+                  <SelectContent className="max-h-[200px] overflow-y-auto">
+                    {brazilianStates.map((state) => (
+                      <SelectItem key={state.uf} value={state.uf}>
+                        {state.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="city">Cidade *</Label>
+                <Input
+                  id="city"
+                  value={formData.city}
+                  onChange={(e) => handleChange("city", e.target.value)}
+                  required
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="neighborhood">Bairro *</Label>
                 <Input
@@ -837,7 +860,7 @@ export default function AdminEstablishmentForm() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="region">Região *</Label>
+                <Label htmlFor="region">Região</Label>
                 <Select value={formData.region} onValueChange={(value) => handleChange("region", value)}>
                   <SelectTrigger>
                     <SelectValue placeholder="Selecione a região" />
@@ -855,12 +878,13 @@ export default function AdminEstablishmentForm() {
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="city">Cidade *</Label>
+                <Label htmlFor="address">Endereço Completo *</Label>
                 <Input
-                  id="city"
-                  value={formData.city}
-                  onChange={(e) => handleChange("city", e.target.value)}
+                  id="address"
+                  value={formData.address}
+                  onChange={(e) => handleChange("address", e.target.value)}
                   required
+                  placeholder="Rua, número, complemento"
                 />
               </div>
 
@@ -876,60 +900,22 @@ export default function AdminEstablishmentForm() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="address">Endereço Completo *</Label>
-              <Input
-                id="address"
-                value={formData.address}
-                onChange={(e) => handleChange("address", e.target.value)}
-                required
-                placeholder="Rua, número, complemento"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="google_maps_link">Link do Google Maps *</Label>
+              <Label htmlFor="google_maps_link">Link do Google Maps</Label>
               <Input
                 id="google_maps_link"
                 type="url"
                 value={formData.google_maps_link}
                 onChange={(e) => handleChange("google_maps_link", e.target.value)}
-                required
                 placeholder="https://maps.google.com/..."
               />
               <p className="text-xs text-muted-foreground">
-                Cole o link do Google Maps do endereço exato da empresa
+                Opcional. Cole o link do Google Maps para facilitar a navegação
               </p>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="latitude">Latitude *</Label>
-                <Input
-                  id="latitude"
-                  type="number"
-                  step="any"
-                  value={formData.latitude}
-                  onChange={(e) => handleChange("latitude", e.target.value)}
-                  required
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="longitude">Longitude *</Label>
-                <Input
-                  id="longitude"
-                  type="number"
-                  step="any"
-                  value={formData.longitude}
-                  onChange={(e) => handleChange("longitude", e.target.value)}
-                  required
-                />
-              </div>
             </div>
           </CardContent>
         </Card>
 
-        {/* Contact Card */}
+        {/* Contact & Delivery Card */}
         <Card>
           <CardContent className="pt-6 space-y-6">
             <div className="flex items-center gap-2 pb-2 border-b">
@@ -984,7 +970,55 @@ export default function AdminEstablishmentForm() {
               />
             </div>
 
-            <div className="flex items-center space-x-2">
+            {/* Delivery Section */}
+            <div className="space-y-4 pt-4 border-t">
+              <div className="flex items-center gap-2">
+                <Truck className="h-5 w-5 text-primary" />
+                <h4 className="font-medium">Delivery</h4>
+              </div>
+
+              <div className="flex items-center space-x-2">
+                <Switch
+                  id="has_delivery"
+                  checked={formData.has_delivery}
+                  onCheckedChange={(checked) => handleChange("has_delivery", checked)}
+                />
+                <Label htmlFor="has_delivery">Possui delivery?</Label>
+              </div>
+
+              {formData.has_delivery && (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pl-4 border-l-2 border-primary/20">
+                  <div className="space-y-2">
+                    <Label htmlFor="delivery_type">Tipo de Delivery</Label>
+                    <Select value={formData.delivery_type} onValueChange={(value) => handleChange("delivery_type", value)}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Selecione o tipo" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="proprio">Delivery Próprio</SelectItem>
+                        <SelectItem value="ifood">iFood</SelectItem>
+                        <SelectItem value="uber_eats">Uber Eats</SelectItem>
+                        <SelectItem value="outro">Outro</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  {formData.delivery_type === "outro" && (
+                    <div className="space-y-2">
+                      <Label htmlFor="delivery_other">Especifique</Label>
+                      <Input
+                        id="delivery_other"
+                        value={formData.delivery_other}
+                        onChange={(e) => handleChange("delivery_other", e.target.value)}
+                        placeholder="Ex: Rappi, 99Food..."
+                      />
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+
+            <div className="flex items-center space-x-2 pt-4 border-t">
               <Switch
                 id="is_paid"
                 checked={formData.is_paid}
@@ -999,84 +1033,134 @@ export default function AdminEstablishmentForm() {
                 checked={formData.active}
                 onCheckedChange={(checked) => handleChange("active", checked)}
               />
-              <Label htmlFor="active">Ativa (visível no catálogo)</Label>
+              <Label htmlFor="active">Empresa Ativa</Label>
             </div>
           </CardContent>
         </Card>
 
         {/* Images Card */}
-        {id && (
-          <Card>
-            <CardContent className="pt-6 space-y-6">
-              <div className="flex items-center gap-2 pb-2 border-b">
-                <Image className="h-5 w-5 text-primary" />
-                <h3 className="text-lg font-semibold">Imagens da Empresa</h3>
-              </div>
+        <Card>
+          <CardContent className="pt-6 space-y-6">
+            <div className="flex items-center gap-2 pb-2 border-b">
+              <Image className="h-5 w-5 text-primary" />
+              <h3 className="text-lg font-semibold">Imagens</h3>
+            </div>
 
-              {/* Banner */}
-              <div className="space-y-2">
-                <Label className="text-base font-medium">Banner</Label>
-                <div className="flex items-center gap-4">
-                  {(bannerPreview || bannerImage) && (
-                    <img
-                      src={bannerPreview || bannerImage}
-                      alt="Banner"
-                      className="w-40 h-20 rounded-xl object-cover border"
+            {/* Banner */}
+            <div className="space-y-2">
+              <Label className="text-base font-medium">Banner Principal</Label>
+              <div className="flex flex-col gap-4">
+                {(bannerPreview || bannerImage) ? (
+                  <img 
+                    src={bannerPreview || bannerImage} 
+                    alt="Banner" 
+                    className="w-full h-40 rounded-xl object-cover border-2 border-muted" 
+                  />
+                ) : (
+                  <div className="w-full h-40 rounded-xl bg-muted flex items-center justify-center border-2 border-dashed border-muted-foreground/30">
+                    <p className="text-muted-foreground">Nenhum banner adicionado</p>
+                  </div>
+                )}
+                <div className="flex gap-2">
+                  <label className="cursor-pointer">
+                    <Input
+                      type="file"
+                      accept="image/*"
+                      onChange={handleBannerChange}
+                      className="hidden"
                     />
+                    <Button type="button" variant="outline" size="sm" asChild>
+                      <span>
+                        <Upload className="h-4 w-4 mr-2" />
+                        {bannerImage ? "Trocar Banner" : "Adicionar Banner"}
+                      </span>
+                    </Button>
+                  </label>
+                  {(bannerPreview || bannerImage) && (
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => {
+                        setBannerImage("");
+                        setNewBannerImage(null);
+                        setBannerPreview(null);
+                      }}
+                      className="text-destructive hover:text-destructive"
+                    >
+                      <Trash2 className="h-4 w-4 mr-2" />
+                      Remover
+                    </Button>
                   )}
-                  <label className="flex flex-col items-center justify-center px-4 py-2 border-2 border-dashed rounded-xl cursor-pointer hover:border-primary">
-                    <Upload className="h-5 w-5 text-muted-foreground" />
-                    <span className="text-xs mt-1">Alterar banner</span>
-                    <input type="file" accept="image/*" onChange={handleBannerChange} className="sr-only" />
-                  </label>
                 </div>
               </div>
+            </div>
 
-              {/* Gallery */}
-              <div className="space-y-2">
-                <Label className="text-base font-medium">Galeria de Fotos</Label>
-                <div className="flex flex-wrap gap-3">
-                  {images.map((url, index) => (
-                    <div key={index} className="relative w-24 h-24 rounded-xl overflow-hidden border-2 border-muted">
-                      <img src={url} alt={`Imagem ${index + 1}`} className="w-full h-full object-cover" />
-                      <button
+            {/* Gallery */}
+            <div className="space-y-2">
+              <Label className="text-base font-medium">Galeria de Imagens</Label>
+              <p className="text-xs text-muted-foreground mb-2">
+                Adicione imagens da empresa. Clique na estrela para marcar como favorita (máx. 4).
+              </p>
+              
+              <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-2">
+                {images.map((url, index) => (
+                  <div key={`existing-${index}`} className="relative group">
+                    <img src={url} alt="" className="w-full aspect-square object-cover rounded-lg" />
+                    <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity rounded-lg flex items-center justify-center gap-1">
+                      <Button
                         type="button"
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8 text-white hover:text-yellow-400"
                         onClick={() => toggleFavorite(url)}
-                        className={`absolute top-1 left-1 p-1 rounded-full ${favoriteImages.includes(url) ? 'bg-yellow-500 text-white' : 'bg-background/80'}`}
                       >
-                        <Star className="h-3 w-3" />
-                      </button>
-                      <button
+                        <Star className={`h-4 w-4 ${favoriteImages.includes(url) ? "fill-yellow-400 text-yellow-400" : ""}`} />
+                      </Button>
+                      <Button
                         type="button"
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8 text-white hover:text-red-400"
                         onClick={() => removeExistingImage(url)}
-                        className="absolute top-1 right-1 p-1 rounded-full bg-destructive text-destructive-foreground"
                       >
-                        <Trash2 className="h-3 w-3" />
-                      </button>
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
                     </div>
-                  ))}
-                  {newImagePreviews.map((preview, index) => (
-                    <div key={`new-${index}`} className="relative w-24 h-24 rounded-xl overflow-hidden border-2 border-primary">
-                      <img src={preview} alt={`Nova ${index + 1}`} className="w-full h-full object-cover" />
-                      <button
+                  </div>
+                ))}
+                {newImagePreviews.map((preview, index) => (
+                  <div key={`new-${index}`} className="relative group">
+                    <img src={preview} alt="" className="w-full aspect-square object-cover rounded-lg" />
+                    <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity rounded-lg flex items-center justify-center">
+                      <Button
                         type="button"
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8 text-white hover:text-red-400"
                         onClick={() => removeNewImage(index)}
-                        className="absolute top-1 right-1 p-1 rounded-full bg-destructive text-destructive-foreground"
                       >
-                        <Trash2 className="h-3 w-3" />
-                      </button>
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
                     </div>
-                  ))}
-                  <label className="flex items-center justify-center w-24 h-24 border-2 border-dashed border-muted-foreground/30 rounded-xl cursor-pointer hover:border-primary">
-                    <Plus className="h-8 w-8 text-muted-foreground" />
-                    <input type="file" accept="image/*" multiple onChange={handleNewImagesChange} className="sr-only" />
-                  </label>
-                </div>
-                <p className="text-xs text-muted-foreground">⭐ Clique na estrela para marcar favoritas (máx. 4)</p>
+                  </div>
+                ))}
+                <label className="cursor-pointer">
+                  <Input
+                    type="file"
+                    accept="image/*"
+                    multiple
+                    onChange={handleNewImagesChange}
+                    className="hidden"
+                  />
+                  <div className="w-full aspect-square rounded-lg border-2 border-dashed border-muted-foreground/30 flex items-center justify-center hover:border-primary/50 transition-colors">
+                    <Plus className="h-6 w-6 text-muted-foreground" />
+                  </div>
+                </label>
               </div>
-            </CardContent>
-          </Card>
-        )}
+            </div>
+          </CardContent>
+        </Card>
 
         {/* Products Card */}
         {id && (
@@ -1093,34 +1177,38 @@ export default function AdminEstablishmentForm() {
                 </Button>
               </div>
 
-              <div className="space-y-4">
-                {products.map((product, index) => (
-                  <Card key={product.id} className="p-4 bg-secondary/30 border-0">
-                    <div className="space-y-4">
-                      <div className="flex items-center justify-between">
-                        <span className="text-sm font-medium text-muted-foreground">Produto {index + 1}</span>
+              {products.length === 0 ? (
+                <p className="text-muted-foreground text-center py-8">
+                  Nenhum produto cadastrado. Clique em "Adicionar Produto" para começar.
+                </p>
+              ) : (
+                <div className="space-y-4">
+                  {products.map((product, pIndex) => (
+                    <div key={product.id} className="border rounded-xl p-4 space-y-4">
+                      <div className="flex items-start justify-between">
+                        <span className="text-sm font-medium text-muted-foreground">Produto {pIndex + 1}</span>
                         <Button
                           type="button"
                           variant="ghost"
-                          size="icon"
-                          className="h-6 w-6 text-destructive"
+                          size="sm"
+                          className="text-destructive hover:text-destructive"
                           onClick={() => removeProduct(product.id)}
                         >
                           <Trash2 className="h-4 w-4" />
                         </Button>
                       </div>
 
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                         <div className="space-y-2">
-                          <Label>Nome *</Label>
+                          <Label>Nome do Produto *</Label>
                           <Input
                             value={product.name}
                             onChange={(e) => updateProduct(product.id, "name", e.target.value)}
-                            placeholder="Nome do produto"
+                            placeholder="Ex: Pão Francês"
                           />
                         </div>
                         <div className="space-y-2">
-                          <Label>Preço *</Label>
+                          <Label>Preço Base (R$) *</Label>
                           <Input
                             type="number"
                             step="0.01"
@@ -1129,29 +1217,31 @@ export default function AdminEstablishmentForm() {
                             placeholder="0.00"
                           />
                         </div>
-                      </div>
-
-                      {/* Product Image */}
-                      <div className="space-y-2">
-                        <Label>Imagem do Produto *</Label>
-                        <div className="flex items-center gap-3">
-                          {(product.newImagePreview || product.image) && (
-                            <img
-                              src={product.newImagePreview || product.image}
-                              alt="Produto"
-                              className="w-16 h-16 rounded-xl object-cover border"
-                            />
-                          )}
-                          <label className="flex flex-col items-center justify-center px-3 py-2 border-2 border-dashed rounded-xl cursor-pointer hover:border-primary">
-                            <Upload className="h-4 w-4 text-muted-foreground" />
-                            <span className="text-xs mt-1">{product.image ? "Alterar" : "Adicionar"}</span>
-                            <input
-                              type="file"
-                              accept="image/*"
-                              onChange={(e) => handleProductImageChange(product.id, e)}
-                              className="sr-only"
-                            />
-                          </label>
+                        <div className="space-y-2">
+                          <Label>Imagem</Label>
+                          <div className="flex items-center gap-2">
+                            {(product.newImagePreview || product.image) && (
+                              <img
+                                src={product.newImagePreview || product.image}
+                                alt=""
+                                className="w-10 h-10 rounded object-cover"
+                              />
+                            )}
+                            <label className="cursor-pointer flex-1">
+                              <Input
+                                type="file"
+                                accept="image/*"
+                                onChange={(e) => handleProductImageChange(product.id, e)}
+                                className="hidden"
+                              />
+                              <Button type="button" variant="outline" size="sm" asChild className="w-full">
+                                <span>
+                                  <Upload className="h-4 w-4 mr-2" />
+                                  Imagem
+                                </span>
+                              </Button>
+                            </label>
+                          </div>
                         </div>
                       </div>
 
@@ -1161,65 +1251,79 @@ export default function AdminEstablishmentForm() {
                           value={product.description}
                           onChange={(e) => updateProduct(product.id, "description", e.target.value)}
                           rows={2}
-                          placeholder="Descrição do produto"
+                          placeholder="Descrição do produto..."
                         />
                       </div>
 
                       {/* Variations */}
-                      <div className="space-y-3 pl-4 border-l-2 border-primary/30">
+                      <div className="space-y-2">
                         <div className="flex items-center justify-between">
-                          <span className="text-sm font-medium text-muted-foreground">Variações</span>
-                          <Button type="button" variant="ghost" size="sm" onClick={() => addVariation(product.id)}>
+                          <Label className="text-sm">Variações de Preço</Label>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => addVariation(product.id)}
+                          >
                             <Plus className="h-3 w-3 mr-1" />
-                            Adicionar
+                            Variação
                           </Button>
                         </div>
-                        {product.variations.map((variation, vIndex) => (
-                          <div key={variation.id} className="flex gap-2 items-center">
+                        {product.variations.map((variation) => (
+                          <div key={variation.id} className="flex items-center gap-2">
                             <Input
-                              placeholder={`Nome da variação ${vIndex + 1}`}
                               value={variation.name}
                               onChange={(e) => updateVariation(product.id, variation.id, "name", e.target.value)}
+                              placeholder="Ex: 500g"
                               className="flex-1"
                             />
                             <Input
                               type="number"
                               step="0.01"
-                              placeholder="Preço"
                               value={variation.price}
                               onChange={(e) => updateVariation(product.id, variation.id, "price", parseFloat(e.target.value) || 0)}
+                              placeholder="R$"
                               className="w-24"
                             />
                             <Button
                               type="button"
                               variant="ghost"
                               size="icon"
-                              className="h-8 w-8 text-muted-foreground hover:text-destructive"
+                              className="text-destructive"
                               onClick={() => removeVariation(product.id, variation.id)}
                             >
-                              <Trash2 className="h-3 w-3" />
+                              <Trash2 className="h-4 w-4" />
                             </Button>
                           </div>
                         ))}
                       </div>
                     </div>
-                  </Card>
-                ))}
-              </div>
+                  ))}
+                </div>
+              )}
             </CardContent>
           </Card>
         )}
 
-        <div className="flex flex-wrap gap-4 items-center">
-          <Button type="submit" disabled={loading}>
-            {loading ? "Salvando..." : id ? "Salvar Alterações" : "Cadastrar Empresa"}
+        {/* Submit Buttons */}
+        <div className="flex gap-4">
+          <Button type="submit" disabled={loading} className="flex-1">
+            {loading ? (
+              <>
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                Salvando...
+              </>
+            ) : (
+              id ? "Atualizar Empresa" : "Criar Empresa"
+            )}
           </Button>
-          <Button type="button" variant="outline" onClick={() => navigate("/admin/dashboard/estabelecimentos")}>
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => navigate("/admin/dashboard/estabelecimentos")}
+          >
             Cancelar
           </Button>
-          {id && formData.name && (
-            <InviteAdminDialog establishmentId={id} establishmentName={formData.name} />
-          )}
         </div>
       </form>
 
@@ -1227,9 +1331,8 @@ export default function AdminEstablishmentForm() {
         open={showPaidConfirm}
         onOpenChange={setShowPaidConfirm}
         onConfirm={confirmPaidChange}
-        title="Marcar como Destaque"
-        description="Esta ação marcará a empresa como patrocinada/destaque. Digite a senha de administrador para confirmar."
-        actionLabel="Confirmar Destaque"
+        title="Confirmar Destaque"
+        description="Para marcar esta empresa como destaque/patrocinada, confirme sua senha de administrador."
       />
     </div>
   );

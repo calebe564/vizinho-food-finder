@@ -9,7 +9,6 @@ import { useState, useMemo } from "react";
 import { useSearchParams } from "react-router-dom";
 import { Database } from "@/integrations/supabase/types";
 import { useUserLocation } from "@/contexts/LocationContext";
-import { calculateDistance } from "@/hooks/useGeolocation";
 import { MapPin, Store, Loader2 } from "lucide-react";
 
 type EstablishmentCategory = Database["public"]["Enums"]["establishment_category"];
@@ -21,8 +20,6 @@ interface Establishment {
   address: string;
   neighborhood: string | null;
   city: string;
-  latitude: number;
-  longitude: number;
   phone: string;
   whatsapp: string | null;
   external_link: string | null;
@@ -99,19 +96,13 @@ export default function AllEstablishments() {
         }
         return matchesManualLocation(est);
       })
-      .map((est) => ({
-        ...est,
-        distance: coordinates
-          ? calculateDistance(
-              coordinates.latitude,
-              coordinates.longitude,
-              Number(est.latitude),
-              Number(est.longitude)
-            )
-          : 0,
-      }))
       .sort((a, b) => {
-        if (sortBy === "distance") return a.distance - b.distance;
+        // Sort by neighborhood/city match (proximity by text)
+        if (sortBy === "distance") {
+          const aMatch = matchesManualLocation(a) ? 0 : 1;
+          const bMatch = matchesManualLocation(b) ? 0 : 1;
+          return aMatch - bMatch;
+        }
         if (sortBy === "name") return a.name.localeCompare(b.name);
         if (sortBy === "price-asc") {
           const aPrice = Math.min(...getEstablishmentProducts(a.id).map((p) => p.price), Infinity);
@@ -125,7 +116,7 @@ export default function AllEstablishments() {
         }
         return 0;
       });
-  }, [establishments, coordinates, manualLocation, sortBy, searchQuery, products]);
+  }, [establishments, manualLocation, sortBy, searchQuery, products]);
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
@@ -191,7 +182,6 @@ export default function AllEstablishments() {
                     name={establishment.name}
                     category={establishment.category}
                     address={establishment.address}
-                    distance={establishment.distance}
                     phone={establishment.phone}
                     whatsapp={establishment.whatsapp}
                     externalLink={establishment.external_link}

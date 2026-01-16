@@ -2,7 +2,7 @@ import { useEffect } from "react";
 import { useNavigate, Routes, Route, Link, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
-import { LogOut, LayoutDashboard, Store, FileText, MessageSquare, Megaphone, Users, Crown, Loader2, ClipboardCheck } from "lucide-react";
+import { LogOut, LayoutDashboard, Store, FileText, MessageSquare, Megaphone, Users, Crown, Loader2, ClipboardCheck, Home } from "lucide-react";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { useAuth } from "@/contexts/AuthContext";
 import { useUserRole } from "@/hooks/useUserRole";
@@ -53,6 +53,12 @@ export default function AdminDashboard() {
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
+              {/* Back to public area button */}
+              <Link to="/">
+                <Button variant="ghost" size="icon" title="Voltar à área pública">
+                  <Home className="h-5 w-5" />
+                </Button>
+              </Link>
               <h1 className="text-2xl font-bold bg-gradient-primary bg-clip-text text-transparent">
                 Painel Administrativo
               </h1>
@@ -71,6 +77,12 @@ export default function AdminDashboard() {
                   {profile.full_name}
                 </span>
               )}
+              <Link to="/">
+                <Button variant="outline" size="sm" className="gap-2">
+                  <Home className="h-4 w-4" />
+                  <span className="hidden sm:inline">Área Pública</span>
+                </Button>
+              </Link>
               <ThemeToggle />
               <Button variant="outline" onClick={handleLogout}>
                 <LogOut className="h-4 w-4 mr-2" />

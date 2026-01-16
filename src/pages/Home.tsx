@@ -22,8 +22,6 @@ interface Establishment {
   neighborhood: string | null;
   region: string | null;
   city: string;
-  latitude: number;
-  longitude: number;
   phone: string;
   whatsapp: string | null;
   external_link: string | null;
@@ -32,6 +30,18 @@ interface Establishment {
   banner_image: string | null;
   images: unknown;
   is_paid: boolean;
+}
+
+interface ProductSearchResult {
+  id: string;
+  name: string;
+  price: number;
+  description: string | null;
+  image: string | null;
+  establishment_id: string;
+  establishment_name?: string;
+  establishment_phone?: string;
+  establishment_whatsapp?: string | null;
 }
 
 interface Product {
