@@ -4,6 +4,7 @@ import { HeroCarousel } from "@/components/HeroCarousel";
 import { SearchBar } from "@/components/SearchBar";
 import { FilterSheet } from "@/components/FilterSheet";
 import { EstablishmentCardCompact } from "@/components/EstablishmentCardCompact";
+import { ProductCardSearch } from "@/components/ProductCardSearch";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { AdvertisementBanner } from "@/components/AdvertisementBanner";
@@ -32,16 +33,18 @@ interface Establishment {
   is_paid: boolean;
 }
 
-interface ProductSearchResult {
+interface ProductWithEstablishment {
   id: string;
   name: string;
   price: number;
   description: string | null;
   image: string | null;
   establishment_id: string;
-  establishment_name?: string;
-  establishment_phone?: string;
-  establishment_whatsapp?: string | null;
+  establishment_name: string;
+  establishment_category: string;
+  establishment_image: string | null;
+  establishment_neighborhood: string | null;
+  establishment_city: string | null;
 }
 
 interface Product {
@@ -109,6 +112,7 @@ export default function Home() {
   const [searchParams] = useSearchParams();
   const [establishments, setEstablishments] = useState<Establishment[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
+  const [allProductsWithEstablishment, setAllProductsWithEstablishment] = useState<ProductWithEstablishment[]>([]);
   const [advertisements, setAdvertisements] = useState<Advertisement[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [searchMode, setSearchMode] = useState<"products" | "companies">("products");
@@ -144,14 +148,39 @@ export default function Home() {
 
   const fetchData = async () => {
     try {
-      const [establishmentsRes, productsRes, adsRes] = await Promise.all([
+      const [establishmentsRes, productsRes, adsRes, productsDetailedRes] = await Promise.all([
         supabase.from("establishments").select("*").eq("active", true),
         supabase.from("products").select("establishment_id, name, price"),
-        supabase.from("advertisements").select("*").eq("active", true)
+        supabase.from("advertisements").select("*").eq("active", true),
+        supabase.from("products").select(`
+          id, name, price, description, image, establishment_id,
+          establishments!inner(id, name, category, profile_image, neighborhood, city, active)
+        `).limit(500)
       ]);
+      
       if (establishmentsRes.data) setEstablishments(establishmentsRes.data);
       if (productsRes.data) setProducts(productsRes.data);
       if (adsRes.data) setAdvertisements(adsRes.data);
+      
+      // Map products with establishment data
+      if (productsDetailedRes.data) {
+        const mappedProducts: ProductWithEstablishment[] = productsDetailedRes.data
+          .filter((p: any) => p.establishments?.active)
+          .map((p: any) => ({
+            id: p.id,
+            name: p.name,
+            price: p.price,
+            description: p.description,
+            image: p.image,
+            establishment_id: p.establishment_id,
+            establishment_name: p.establishments?.name || "",
+            establishment_category: p.establishments?.category || "",
+            establishment_image: p.establishments?.profile_image || null,
+            establishment_neighborhood: p.establishments?.neighborhood || null,
+            establishment_city: p.establishments?.city || null,
+          }));
+        setAllProductsWithEstablishment(mappedProducts);
+      }
     } catch (error) {
       console.error("Error fetching data:", error);
     } finally {
@@ -162,6 +191,48 @@ export default function Home() {
   const getAdsByPosition = (position: string) => advertisements.filter(ad => ad.position === position);
   const getEstablishmentProducts = (establishmentId: string) => products.filter((p) => p.establishment_id === establishmentId);
 
+  // Filter products for product search mode
+  const filteredProducts = useMemo(() => {
+    if (!searchTerm || searchMode !== "products") return [];
+    
+    const searchLower = searchTerm.toLowerCase();
+    
+    return allProductsWithEstablishment
+      .filter((product) => {
+        const matchesProduct = product.name.toLowerCase().includes(searchLower);
+        const matchesCategory = category === "todos" || product.establishment_category === category;
+        return matchesProduct && matchesCategory;
+      })
+      .sort((a, b) => {
+        // Sort by proximity
+        if (!selectedLocation) return a.name.localeCompare(b.name, 'pt-BR');
+        
+        const normalize = (str: string) => str?.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim() || "";
+        const userNeighborhood = normalize(selectedLocation.neighborhood);
+        const userCity = normalize(selectedLocation.city);
+        
+        const aNeighborhood = normalize(a.establishment_neighborhood || "");
+        const bNeighborhood = normalize(b.establishment_neighborhood || "");
+        const aCity = normalize(a.establishment_city || "");
+        const bCity = normalize(b.establishment_city || "");
+        
+        const aMatchNeighborhood = aNeighborhood.includes(userNeighborhood) || userNeighborhood.includes(aNeighborhood);
+        const bMatchNeighborhood = bNeighborhood.includes(userNeighborhood) || userNeighborhood.includes(bNeighborhood);
+        
+        if (aMatchNeighborhood && !bMatchNeighborhood) return -1;
+        if (!aMatchNeighborhood && bMatchNeighborhood) return 1;
+        
+        const aMatchCity = aCity.includes(userCity) || userCity.includes(aCity);
+        const bMatchCity = bCity.includes(userCity) || userCity.includes(bCity);
+        
+        if (aMatchCity && !bMatchCity) return -1;
+        if (!aMatchCity && bMatchCity) return 1;
+        
+        return a.name.localeCompare(b.name, 'pt-BR');
+      });
+  }, [allProductsWithEstablishment, searchTerm, searchMode, category, selectedLocation]);
+
+  // Filter establishments
   const filteredEstablishments = useMemo(() => {
     return establishments
       .filter((est) => {
@@ -172,21 +243,16 @@ export default function Home() {
           return category === "todos" || est.category === category;
         }
         
-        // Search based on mode
+        // Only show establishments in company search mode
         if (searchMode === "products") {
-          // Search by product name
-          const matchesProduct = getEstablishmentProducts(est.id).some((p) => 
-            p.name.toLowerCase().includes(searchLower)
-          );
-          const matchesCategory = category === "todos" || est.category === category;
-          return matchesProduct && matchesCategory;
-        } else {
-          // Search by company name or category
-          const matchesName = est.name.toLowerCase().includes(searchLower);
-          const matchesCat = est.category.toLowerCase().includes(searchLower);
-          const matchesCategoryFilter = category === "todos" || est.category === category;
-          return (matchesName || matchesCat) && matchesCategoryFilter;
+          return false; // Products mode shows product cards, not establishments
         }
+        
+        // Search by company name or category
+        const matchesName = est.name.toLowerCase().includes(searchLower);
+        const matchesCat = est.category.toLowerCase().includes(searchLower);
+        const matchesCategoryFilter = category === "todos" || est.category === category;
+        return (matchesName || matchesCat) && matchesCategoryFilter;
       })
       .map((est) => ({
         ...est,
@@ -199,7 +265,11 @@ export default function Home() {
         if (sortBy === "name-desc") return b.name.localeCompare(a.name, 'pt-BR');
         return 0;
       });
-  }, [establishments, searchTerm, searchMode, category, sortBy, selectedLocation, products]);
+  }, [establishments, searchTerm, searchMode, category, sortBy, selectedLocation]);
+
+  // Check if we're in product search mode with results
+  const showProductResults = searchMode === "products" && searchTerm && filteredProducts.length > 0;
+  const showEstablishments = !showProductResults || !searchTerm;
 
   // Reset page when filters change
   useEffect(() => {
@@ -207,11 +277,12 @@ export default function Home() {
   }, [searchTerm, searchMode, category, sortBy]);
 
   // Pagination calculations
-  const totalPages = Math.ceil(filteredEstablishments.length / ITEMS_PER_PAGE);
-  const paginatedEstablishments = useMemo(() => {
+  const itemsToPage = showProductResults ? filteredProducts : filteredEstablishments;
+  const totalPages = Math.ceil(itemsToPage.length / ITEMS_PER_PAGE);
+  const paginatedItems = useMemo(() => {
     const start = (currentPage - 1) * ITEMS_PER_PAGE;
-    return filteredEstablishments.slice(start, start + ITEMS_PER_PAGE);
-  }, [filteredEstablishments, currentPage]);
+    return itemsToPage.slice(start, start + ITEMS_PER_PAGE);
+  }, [itemsToPage, currentPage]);
 
   return (
     <div className="min-h-screen bg-background">
@@ -302,103 +373,202 @@ export default function Home() {
           </div>
         </div>
 
-        {/* Establishments List - Unified compact grid for all screens */}
+        {/* Results Section */}
         <div className="animate-fade-in" style={{ animationDelay: "0.2s" }}>
+          {/* Header */}
           <div className="flex items-center gap-2 mb-4">
-            <Store className="h-5 w-5 text-primary" />
-            <h2 className="text-lg md:text-xl font-bold text-foreground">
-              {loading ? "Carregando..." : `${filteredEstablishments.length} ${filteredEstablishments.length === 1 ? 'empresa' : 'empresas'}`}
-            </h2>
+            {showProductResults ? (
+              <>
+                <Package className="h-5 w-5 text-primary" />
+                <h2 className="text-lg md:text-xl font-bold text-foreground">
+                  {loading ? "Carregando..." : `${filteredProducts.length} ${filteredProducts.length === 1 ? 'produto' : 'produtos'}`}
+                </h2>
+              </>
+            ) : (
+              <>
+                <Store className="h-5 w-5 text-primary" />
+                <h2 className="text-lg md:text-xl font-bold text-foreground">
+                  {loading ? "Carregando..." : `${filteredEstablishments.length} ${filteredEstablishments.length === 1 ? 'empresa' : 'empresas'}`}
+                </h2>
+              </>
+            )}
           </div>
 
           {loading ? (
             <div className="flex items-center justify-center py-16">
               <Loader2 className="h-8 w-8 animate-spin text-accent" />
             </div>
-          ) : filteredEstablishments.length === 0 ? (
-            <div className="text-center py-16 bg-secondary rounded-2xl">
-              <Store className="h-14 w-14 mx-auto text-muted-foreground mb-3" />
-              <p className="text-lg font-medium text-muted-foreground">Nenhuma empresa encontrada</p>
-              <p className="text-sm text-muted-foreground mt-1">Tente ajustar os filtros</p>
-            </div>
-          ) : (
-            <>
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 md:gap-4">
-                {paginatedEstablishments.map((est) => {
-                  const estProducts = getEstablishmentProducts(est.id);
-                  const minPrice = estProducts.length > 0 ? Math.min(...estProducts.map(p => p.price)) : null;
-                  return (
-                    <EstablishmentCardCompact 
-                      key={est.id} 
-                      id={est.id} 
-                      name={est.name} 
-                      category={est.category} 
-                      profileImage={est.profile_image} 
-                      bannerImage={est.banner_image} 
-                      isPaid={est.is_paid}
-                      neighborhood={est.neighborhood}
-                      city={est.city}
-                      minPrice={minPrice}
-                      productNames={estProducts.slice(0, 2).map(p => p.name)}
-                    />
-                  );
-                })}
+          ) : showProductResults ? (
+            /* Product Results */
+            filteredProducts.length === 0 ? (
+              <div className="text-center py-16 bg-secondary rounded-2xl">
+                <Package className="h-14 w-14 mx-auto text-muted-foreground mb-3" />
+                <p className="text-lg font-medium text-muted-foreground">Nenhum produto encontrado</p>
+                <p className="text-sm text-muted-foreground mt-1">Tente buscar por outro termo</p>
               </div>
-
-              {/* Pagination */}
-              {totalPages > 1 && (
-                <div className="flex items-center justify-center gap-2 mt-6">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
-                    disabled={currentPage === 1}
-                    className="gap-1"
-                  >
-                    <ChevronLeft className="h-4 w-4" />
-                    <span className="hidden sm:inline">Anterior</span>
-                  </Button>
-                  
-                  <div className="flex items-center gap-1">
-                    {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-                      let pageNum: number;
-                      if (totalPages <= 5) {
-                        pageNum = i + 1;
-                      } else if (currentPage <= 3) {
-                        pageNum = i + 1;
-                      } else if (currentPage >= totalPages - 2) {
-                        pageNum = totalPages - 4 + i;
-                      } else {
-                        pageNum = currentPage - 2 + i;
-                      }
-                      
-                      return (
-                        <Button
-                          key={pageNum}
-                          variant={currentPage === pageNum ? "default" : "outline"}
-                          size="sm"
-                          onClick={() => setCurrentPage(pageNum)}
-                          className="w-9 h-9 p-0"
-                        >
-                          {pageNum}
-                        </Button>
-                      );
-                    })}
-                  </div>
-                  
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
-                    disabled={currentPage === totalPages}
-                    className="gap-1"
-                  >
-                    <span className="hidden sm:inline">Próxima</span>
-                    <ChevronRight className="h-4 w-4" />
-                  </Button>
+            ) : (
+              <>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {(paginatedItems as ProductWithEstablishment[]).map((product) => (
+                    <ProductCardSearch
+                      key={product.id}
+                      id={product.id}
+                      name={product.name}
+                      price={product.price}
+                      description={product.description}
+                      image={product.image}
+                      establishmentId={product.establishment_id}
+                      establishmentName={product.establishment_name}
+                      establishmentCategory={product.establishment_category}
+                      establishmentImage={product.establishment_image}
+                      establishmentNeighborhood={product.establishment_neighborhood}
+                      establishmentCity={product.establishment_city}
+                    />
+                  ))}
                 </div>
-              )}
-            </>
+
+                {/* Pagination */}
+                {totalPages > 1 && (
+                  <div className="flex items-center justify-center gap-2 mt-6">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                      disabled={currentPage === 1}
+                      className="gap-1"
+                    >
+                      <ChevronLeft className="h-4 w-4" />
+                      <span className="hidden sm:inline">Anterior</span>
+                    </Button>
+                    
+                    <div className="flex items-center gap-1">
+                      {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                        let pageNum: number;
+                        if (totalPages <= 5) {
+                          pageNum = i + 1;
+                        } else if (currentPage <= 3) {
+                          pageNum = i + 1;
+                        } else if (currentPage >= totalPages - 2) {
+                          pageNum = totalPages - 4 + i;
+                        } else {
+                          pageNum = currentPage - 2 + i;
+                        }
+                        
+                        return (
+                          <Button
+                            key={pageNum}
+                            variant={currentPage === pageNum ? "default" : "outline"}
+                            size="sm"
+                            onClick={() => setCurrentPage(pageNum)}
+                            className="w-9 h-9 p-0"
+                          >
+                            {pageNum}
+                          </Button>
+                        );
+                      })}
+                    </div>
+                    
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                      disabled={currentPage === totalPages}
+                      className="gap-1"
+                    >
+                      <span className="hidden sm:inline">Próxima</span>
+                      <ChevronRight className="h-4 w-4" />
+                    </Button>
+                  </div>
+                )}
+              </>
+            )
+          ) : (
+            /* Establishment Results */
+            filteredEstablishments.length === 0 ? (
+              <div className="text-center py-16 bg-secondary rounded-2xl">
+                <Store className="h-14 w-14 mx-auto text-muted-foreground mb-3" />
+                <p className="text-lg font-medium text-muted-foreground">Nenhuma empresa encontrada</p>
+                <p className="text-sm text-muted-foreground mt-1">Tente ajustar os filtros</p>
+              </div>
+            ) : (
+              <>
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 md:gap-4">
+                  {(paginatedItems as typeof filteredEstablishments).map((est) => {
+                    const estProducts = getEstablishmentProducts(est.id);
+                    const minPrice = estProducts.length > 0 ? Math.min(...estProducts.map(p => p.price)) : null;
+                    return (
+                      <EstablishmentCardCompact 
+                        key={est.id} 
+                        id={est.id} 
+                        name={est.name} 
+                        category={est.category} 
+                        profileImage={est.profile_image} 
+                        bannerImage={est.banner_image} 
+                        isPaid={est.is_paid}
+                        neighborhood={est.neighborhood}
+                        city={est.city}
+                        minPrice={minPrice}
+                        productNames={estProducts.slice(0, 2).map(p => p.name)}
+                      />
+                    );
+                  })}
+                </div>
+
+                {/* Pagination */}
+                {totalPages > 1 && (
+                  <div className="flex items-center justify-center gap-2 mt-6">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                      disabled={currentPage === 1}
+                      className="gap-1"
+                    >
+                      <ChevronLeft className="h-4 w-4" />
+                      <span className="hidden sm:inline">Anterior</span>
+                    </Button>
+                    
+                    <div className="flex items-center gap-1">
+                      {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                        let pageNum: number;
+                        if (totalPages <= 5) {
+                          pageNum = i + 1;
+                        } else if (currentPage <= 3) {
+                          pageNum = i + 1;
+                        } else if (currentPage >= totalPages - 2) {
+                          pageNum = totalPages - 4 + i;
+                        } else {
+                          pageNum = currentPage - 2 + i;
+                        }
+                        
+                        return (
+                          <Button
+                            key={pageNum}
+                            variant={currentPage === pageNum ? "default" : "outline"}
+                            size="sm"
+                            onClick={() => setCurrentPage(pageNum)}
+                            className="w-9 h-9 p-0"
+                          >
+                            {pageNum}
+                          </Button>
+                        );
+                      })}
+                    </div>
+                    
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                      disabled={currentPage === totalPages}
+                      className="gap-1"
+                    >
+                      <span className="hidden sm:inline">Próxima</span>
+                      <ChevronRight className="h-4 w-4" />
+                    </Button>
+                  </div>
+                )}
+              </>
+            )
           )}
         </div>
         
