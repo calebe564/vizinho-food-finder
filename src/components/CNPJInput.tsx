@@ -2,8 +2,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { validateCNPJ, formatCNPJ } from "@/lib/validationUtils";
-import { Check, X, Search, Loader2 } from "lucide-react";
-import { useState, useEffect } from "react";
+import { Check, X, Search, Loader2, AlertTriangle } from "lucide-react";
+import { useState, useEffect, useRef } from "react";
 import { useCNPJLookup } from "@/hooks/useCNPJLookup";
 import { toast } from "sonner";
 
@@ -25,6 +25,7 @@ interface CNPJInputProps {
     telefone: string;
   }) => void;
   showLookupButton?: boolean;
+  autoLookup?: boolean;
 }
 
 export function CNPJInput({ 
@@ -34,10 +35,12 @@ export function CNPJInput({
   label = "CNPJ", 
   disabled = false,
   onLookupSuccess,
-  showLookupButton = false
+  showLookupButton = false,
+  autoLookup = true
 }: CNPJInputProps) {
   const [isValid, setIsValid] = useState<boolean | null>(null);
-  const { lookup, isLoading, result, error } = useCNPJLookup();
+  const { lookup, isLoading, result, error, apiUnavailable } = useCNPJLookup();
+  const lastLookedUpCnpj = useRef<string>("");
   
   useEffect(() => {
     const cleanValue = value.replace(/\D/g, '');
@@ -50,11 +53,27 @@ export function CNPJInput({
     }
   }, [value]);
 
+  // Auto-lookup when CNPJ is complete and valid
+  useEffect(() => {
+    const cleanValue = value.replace(/\D/g, '');
+    if (
+      autoLookup &&
+      cleanValue.length === 14 && 
+      validateCNPJ(cleanValue) && 
+      cleanValue !== lastLookedUpCnpj.current &&
+      onLookupSuccess &&
+      !isLoading
+    ) {
+      lastLookedUpCnpj.current = cleanValue;
+      lookup(cleanValue);
+    }
+  }, [value, autoLookup, onLookupSuccess, lookup, isLoading]);
+
   // Notify parent when lookup succeeds
   useEffect(() => {
     if (result && onLookupSuccess) {
       onLookupSuccess(result);
-      toast.success("Dados do CNPJ encontrados!");
+      toast.success("Dados do CNPJ preenchidos automaticamente!");
     }
   }, [result, onLookupSuccess]);
 
@@ -83,6 +102,7 @@ export function CNPJInput({
   const handleLookup = async () => {
     const cleanValue = value.replace(/\D/g, '');
     if (cleanValue.length === 14 && isValid) {
+      lastLookedUpCnpj.current = cleanValue;
       await lookup(cleanValue);
     } else {
       toast.error("Digite um CNPJ válido para consultar");
@@ -143,8 +163,23 @@ export function CNPJInput({
       {isValid === false && value.length > 0 && (
         <p className="text-sm text-destructive">CNPJ inválido</p>
       )}
-      {error && (
+      {error && !apiUnavailable && (
         <p className="text-sm text-destructive">{error}</p>
+      )}
+      {apiUnavailable && (
+        <div className="p-3 rounded-lg bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 text-sm">
+          <div className="flex items-start gap-2">
+            <AlertTriangle className="h-4 w-4 text-amber-600 dark:text-amber-400 mt-0.5 flex-shrink-0" />
+            <div>
+              <p className="font-medium text-amber-800 dark:text-amber-200">
+                Consulta automática indisponível
+              </p>
+              <p className="text-amber-700 dark:text-amber-300 text-xs mt-0.5">
+                Preencha os dados da empresa manualmente. O CNPJ será marcado como "não verificado".
+              </p>
+            </div>
+          </div>
+        </div>
       )}
       {result && (
         <div className="p-3 rounded-lg bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 text-sm">

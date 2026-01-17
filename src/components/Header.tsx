@@ -1,5 +1,5 @@
 import { Link, useNavigate } from "react-router-dom";
-import { Home, Building2, Store, Menu, Heart, LogIn, LogOut, User, Briefcase, UserPlus, X, MapPin, MoreVertical, MessageSquare } from "lucide-react";
+import { Home, Building2, Store, Menu, Heart, LogIn, LogOut, User, Briefcase, UserPlus, X, MapPin, MoreVertical, MessageSquare, ClipboardCheck } from "lucide-react";
 import { ThemeToggle } from "./ThemeToggle";
 import { Button } from "./ui/button";
 import { Sheet, SheetContent, SheetTrigger, SheetClose } from "./ui/sheet";
@@ -113,6 +113,16 @@ export function Header() {
                   <Link to="/cadastrar" className="flex items-center gap-2 cursor-pointer">
                     <UserPlus className="h-4 w-4" />
                     Cadastrar Empresa
+                  </Link>
+                </DropdownMenuItem>
+              )}
+              
+              {/* Reivindicar empresa - usuários logados */}
+              {user && (
+                <DropdownMenuItem asChild>
+                  <Link to="/reivindicar-empresa" className="flex items-center gap-2 cursor-pointer">
+                    <ClipboardCheck className="h-4 w-4" />
+                    Reivindicar Empresa
                   </Link>
                 </DropdownMenuItem>
               )}
@@ -265,6 +275,18 @@ export function Header() {
                         {unreadCount}
                       </span>
                     )}
+                  </Link>
+                )}
+                
+                {/* Reivindicar empresa - mobile */}
+                {user && (
+                  <Link
+                    to="/reivindicar-empresa"
+                    onClick={() => setIsOpen(false)}
+                    className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-secondary transition-colors"
+                  >
+                    <ClipboardCheck className="h-5 w-5 text-muted-foreground" />
+                    <span className="font-medium">Reivindicar Empresa</span>
                   </Link>
                 )}
                 

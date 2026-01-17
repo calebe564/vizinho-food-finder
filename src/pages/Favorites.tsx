@@ -6,7 +6,6 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useFavorites } from "@/hooks/useFavorites";
 import { useUserLocation } from "@/contexts/LocationContext";
-import { calculateDistance } from "@/hooks/useGeolocation";
 import { Heart, Store, Package, Loader2 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -19,8 +18,6 @@ interface Establishment {
   address: string;
   neighborhood: string | null;
   city: string;
-  latitude: number;
-  longitude: number;
   phone: string;
   whatsapp: string | null;
   external_link: string | null;
@@ -51,7 +48,7 @@ interface ProductVariation {
 
 export default function Favorites() {
   const { favorites, productFavorites } = useFavorites();
-  const { coordinates } = useUserLocation();
+  const { locationDetails } = useUserLocation();
 
   const { data: establishments = [], isLoading: establishmentsLoading } = useQuery({
     queryKey: ["favorites-establishments", favorites],
@@ -121,17 +118,32 @@ export default function Favorites() {
     return variations.filter((v) => v.product_id === productId);
   };
 
-  const establishmentsWithDistance = establishments.map((est) => ({
-    ...est,
-    distance: coordinates
-      ? calculateDistance(
-          coordinates.latitude,
-          coordinates.longitude,
-          Number(est.latitude),
-          Number(est.longitude)
-        )
-      : 0,
-  }));
+  // Sort establishments by neighborhood proximity (no lat/long)
+  const sortedEstablishments = [...establishments].sort((a, b) => {
+    const userNeighborhood = locationDetails?.neighborhood?.toLowerCase() || "";
+    const userCity = locationDetails?.city?.toLowerCase() || "";
+    
+    const aNeighborhood = (a.neighborhood || "").toLowerCase();
+    const bNeighborhood = (b.neighborhood || "").toLowerCase();
+    const aCity = (a.city || "").toLowerCase();
+    const bCity = (b.city || "").toLowerCase();
+    
+    // Same neighborhood first
+    const aMatchNeighborhood = aNeighborhood.includes(userNeighborhood) || userNeighborhood.includes(aNeighborhood);
+    const bMatchNeighborhood = bNeighborhood.includes(userNeighborhood) || userNeighborhood.includes(bNeighborhood);
+    
+    if (aMatchNeighborhood && !bMatchNeighborhood) return -1;
+    if (!aMatchNeighborhood && bMatchNeighborhood) return 1;
+    
+    // Same city second
+    const aMatchCity = aCity.includes(userCity) || userCity.includes(aCity);
+    const bMatchCity = bCity.includes(userCity) || userCity.includes(bCity);
+    
+    if (aMatchCity && !bMatchCity) return -1;
+    if (!aMatchCity && bMatchCity) return 1;
+    
+    return a.name.localeCompare(b.name, 'pt-BR');
+  });
 
   const isLoading = establishmentsLoading || productsLoading;
   const hasEstablishments = favorites.length > 0;
@@ -186,7 +198,7 @@ export default function Favorites() {
               </TabsList>
 
               <TabsContent value="establishments">
-                {establishmentsWithDistance.length === 0 ? (
+                {sortedEstablishments.length === 0 ? (
                   <div className="text-center py-12 bg-secondary/30 rounded-2xl">
                     <Store className="h-12 w-12 mx-auto text-muted-foreground mb-3" />
                     <p className="text-lg font-medium text-muted-foreground">
@@ -198,7 +210,7 @@ export default function Favorites() {
                   </div>
                 ) : (
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {establishmentsWithDistance.map((establishment, index) => (
+                    {sortedEstablishments.map((establishment, index) => (
                       <div 
                         key={establishment.id}
                         className="animate-fade-in hover-lift"
@@ -209,7 +221,7 @@ export default function Favorites() {
                           name={establishment.name}
                           category={establishment.category}
                           address={establishment.address}
-                          distance={establishment.distance}
+                          distance={0}
                           phone={establishment.phone}
                           whatsapp={establishment.whatsapp}
                           externalLink={establishment.external_link}
