@@ -530,6 +530,7 @@ export default function PublicEstablishmentForm() {
           name: formData.name,
           category: formData.category as EstablishmentCategory,
           neighborhood: addressData.bairro,
+          region: null,
           address: fullAddress,
           phone: contactData.whatsapp,
           whatsapp: contactData.whatsapp,
@@ -542,6 +543,8 @@ export default function PublicEstablishmentForm() {
           profile_image: logoUrl || null,
           user_id: user?.id || null,
           cnpj: cleanCnpj || null,
+          cep: addressData.cep.replace(/\D/g, "") || null,
+          state: addressData.uf || null,
           has_delivery: deliveryData.hasDelivery,
           delivery_type: deliveryData.hasDelivery ? deliveryData.deliveryType || null : null,
           delivery_other: deliveryData.hasDelivery && deliveryData.deliveryType === "outro" ? deliveryData.deliveryOther || null : null
@@ -695,6 +698,28 @@ export default function PublicEstablishmentForm() {
                   onChange={setCnpj}
                   required={!isAdmMaster && !isAdmin}
                   label={isAdmMaster || isAdmin ? "CNPJ (opcional para administradores)" : "CNPJ"}
+                  autoLookup={true}
+                  onLookupSuccess={(data) => {
+                    // Preencher nome da empresa se vazio
+                    if (!formData.name && (data.nomeFantasia || data.razaoSocial)) {
+                      handleChange("name", data.nomeFantasia || data.razaoSocial);
+                    }
+                    // Preencher endereço se houver CEP
+                    if (data.cep && !addressData.cep) {
+                      setAddressData(prev => ({
+                        ...prev,
+                        cep: data.cep,
+                        logradouro: data.logradouro || prev.logradouro,
+                        bairro: data.bairro || prev.bairro,
+                        localidade: data.municipio || prev.localidade,
+                        uf: data.uf || prev.uf,
+                      }));
+                    }
+                    // Preencher WhatsApp se vazio
+                    if (data.telefone && !contactData.whatsapp) {
+                      setContactData(prev => ({ ...prev, whatsapp: data.telefone }));
+                    }
+                  }}
                 />
 
                 <div className="space-y-2">
