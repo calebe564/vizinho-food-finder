@@ -42,30 +42,33 @@ export function HeroCarousel() {
   const [carouselItems, setCarouselItems] = useState<CarouselItem[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isHovered, setIsHovered] = useState(false);
-  const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
+  const [isMobile, setIsMobile] = useState(typeof window !== 'undefined' && window.innerWidth < 768);
 
   useEffect(() => {
     fetchPaidEstablishments();
+    
+    // Handle resize for responsive
+    const handleResize = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
   }, []);
 
   // Desktop shows 2 items per slide, mobile shows 1
   const itemsPerSlide = isMobile ? 1 : 2;
-  const totalSlides = Math.ceil(carouselItems.length / itemsPerSlide);
 
-  // Infinite carousel - always loops back to start
+  // TRUE INFINITE CAROUSEL - Always loops seamlessly
   useEffect(() => {
     if (carouselItems.length === 0 || isHovered) return;
 
     const interval = setInterval(() => {
-      // Always loop - never stop at end
-      setCurrentIndex((prev) => {
-        if (totalSlides <= 1) return 0;
-        return (prev + 1) % totalSlides;
-      });
+      // Always advance by 1 position, wrapping infinitely
+      setCurrentIndex((prev) => (prev + 1) % carouselItems.length);
     }, 5000);
 
     return () => clearInterval(interval);
-  }, [carouselItems.length, totalSlides, isHovered]);
+  }, [carouselItems.length, isHovered]);
 
   const fetchPaidEstablishments = async () => {
     const { data, error } = await supabase
@@ -96,13 +99,20 @@ export function HeroCarousel() {
     return null;
   }
 
-  // Get items for current slide
+  // TRUE INFINITE: Get items starting from currentIndex, wrapping around
   const getCurrentSlideItems = () => {
-    const start = currentIndex * itemsPerSlide;
-    return carouselItems.slice(start, start + itemsPerSlide);
+    const items: CarouselItem[] = [];
+    for (let i = 0; i < itemsPerSlide; i++) {
+      const index = (currentIndex + i) % carouselItems.length;
+      items.push(carouselItems[index]);
+    }
+    return items;
   };
 
   const currentSlideItems = getCurrentSlideItems();
+  
+  // Calculate total "dots" based on unique items, not slides
+  const totalDots = carouselItems.length;
 
   return (
     <div 
@@ -173,20 +183,24 @@ export function HeroCarousel() {
         ))}
       </div>
 
-      {/* Dots indicator - centered below */}
-      {totalSlides > 1 && (
-        <div className="flex justify-center gap-2 mt-3">
-          {Array.from({ length: totalSlides }).map((_, index) => (
-            <button
-              key={index}
-              onClick={() => setCurrentIndex(index)}
-              className={`h-2 rounded-full transition-all ${
-                currentIndex === index
-                  ? "bg-primary w-6" 
-                  : "bg-border w-2 hover:bg-muted-foreground"
-              }`}
-            />
-          ))}
+      {/* Dots indicator - shows position in infinite loop */}
+      {totalDots > 1 && (
+        <div className="flex justify-center gap-1.5 mt-3">
+          {Array.from({ length: Math.min(totalDots, 6) }).map((_, index) => {
+            // Show max 6 dots, highlight current position
+            const isActive = index === (currentIndex % Math.min(totalDots, 6));
+            return (
+              <button
+                key={index}
+                onClick={() => setCurrentIndex(index)}
+                className={`h-2 rounded-full transition-all ${
+                  isActive
+                    ? "bg-primary w-5" 
+                    : "bg-border w-2 hover:bg-muted-foreground"
+                }`}
+              />
+            );
+          })}
         </div>
       )}
     </div>
