@@ -529,6 +529,8 @@ export default function AdminEstablishmentForm() {
         neighborhood: formData.neighborhood || null,
         region: formData.region || null,
         city: formData.city,
+        state: formData.state || "SP",
+        cep: formData.cep || null,
         address: formData.address,
         latitude: 0, // Default value - not used for location
         longitude: 0, // Default value - not used for location
