@@ -265,6 +265,22 @@ export default function EstablishmentDetail() {
                     <Copy className="h-4 w-4 mr-2" />
                     Copiar link
                   </DropdownMenuItem>
+                  {/* Reivindicar moved to dropdown menu only */}
+                  {!establishment?.cnpj && (
+                    <DropdownMenuItem 
+                      onClick={() => {
+                        if (user) {
+                          navigate('/reivindicar-empresa');
+                        } else {
+                          navigate('/auth', { state: { from: '/reivindicar-empresa' } });
+                        }
+                      }}
+                      className="cursor-pointer"
+                    >
+                      <Building2 className="h-4 w-4 mr-2" />
+                      Reivindicar Empresa
+                    </DropdownMenuItem>
+                  )}
                 </DropdownMenuContent>
               </DropdownMenu>
               <ThemeToggle />
@@ -442,23 +458,27 @@ export default function EstablishmentDetail() {
                   </div>
                 </div>
 
-                {/* Delivery Info */}
-                {establishment.has_delivery && (
-                  <div className="flex items-start gap-3">
-                    <Truck className="h-5 w-5 text-muted-foreground mt-0.5" />
-                    <div>
-                      <p className="font-medium">Delivery</p>
-                      <p className="text-sm text-muted-foreground">
-                        {establishment.delivery_type === "outro" && establishment.delivery_other
+                {/* Delivery Info - ALWAYS VISIBLE */}
+                <div className="flex items-start gap-3">
+                  <Truck className="h-5 w-5 text-muted-foreground mt-0.5" />
+                  <div>
+                    <p className="font-medium">Delivery</p>
+                    {establishment.has_delivery ? (
+                      <p className="text-sm text-green-600 dark:text-green-400 font-medium">
+                        ✓ {establishment.delivery_type === "outro" && establishment.delivery_other
                           ? establishment.delivery_other
                           : establishment.delivery_type
                             ? deliveryTypeLabels[establishment.delivery_type] || establishment.delivery_type
                             : "Disponível"
                         }
                       </p>
-                    </div>
+                    ) : (
+                      <p className="text-sm text-muted-foreground">
+                        Não disponível
+                      </p>
+                    )}
                   </div>
-                )}
+                </div>
 
                 <div className="pt-2 space-y-2">
                   {establishment.google_maps_link && (
@@ -491,35 +511,7 @@ export default function EstablishmentDetail() {
               </CardContent>
             </Card>
 
-            {/* Claim Establishment Card */}
-            {!establishment.cnpj && (
-              <Card className="border-dashed">
-                <CardContent className="pt-6">
-                  <div className="text-center space-y-3">
-                    <Building2 className="h-8 w-8 mx-auto text-muted-foreground" />
-                    <div>
-                      <p className="font-medium">Esta é sua empresa?</p>
-                      <p className="text-sm text-muted-foreground">
-                        Reivindique a administração e gerencie seu perfil
-                      </p>
-                    </div>
-                    <Button 
-                      variant="outline"
-                      className="w-full"
-                      onClick={() => {
-                        if (user) {
-                          navigate('/reivindicar-empresa');
-                        } else {
-                          navigate('/auth', { state: { from: '/reivindicar-empresa' } });
-                        }
-                      }}
-                    >
-                      Reivindicar Empresa
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            )}
+            {/* NOTE: "Reivindicar Empresa" removed from public page - only available in user menu */}
           </div>
         </div>
       </main>
