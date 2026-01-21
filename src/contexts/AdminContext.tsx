@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface AdminContextType {
   isAdmin: boolean;
@@ -18,20 +19,38 @@ const SESSION_DURATION = 24 * 60 * 60 * 1000; // 24 hours
 export function AdminProvider({ children }: { children: ReactNode }) {
   const [isAdmin, setIsAdmin] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const { user } = useAuth();
 
   useEffect(() => {
     checkSession();
-  }, []);
+  }, [user]);
 
-  const checkSession = () => {
+  const checkSession = async () => {
     try {
+      // First check if user is authenticated
+      if (!user) {
+        clearSession();
+        setIsLoading(false);
+        return;
+      }
+
       const token = sessionStorage.getItem(ADMIN_SESSION_KEY);
       const expiry = sessionStorage.getItem(ADMIN_SESSION_EXPIRY_KEY);
       
       if (token && expiry) {
         const expiryTime = parseInt(expiry, 10);
         if (Date.now() < expiryTime) {
-          setIsAdmin(true);
+          // Verify the session token is still valid with server-side role check
+          const { data: roleData, error } = await supabase.rpc('get_user_role', {
+            _user_id: user.id
+          });
+          
+          if (!error && (roleData === 'adm_master' || roleData === 'admin')) {
+            setIsAdmin(true);
+          } else {
+            // User is not admin in database - clear session
+            clearSession();
+          }
         } else {
           // Session expired
           clearSession();
@@ -39,6 +58,7 @@ export function AdminProvider({ children }: { children: ReactNode }) {
       }
     } catch (error) {
       console.error("Error checking session:", error);
+      clearSession();
     } finally {
       setIsLoading(false);
     }
@@ -56,8 +76,19 @@ export function AdminProvider({ children }: { children: ReactNode }) {
 
   const login = React.useCallback(async (password: string): Promise<{ success: boolean; message: string }> => {
     try {
+      // Ensure user is authenticated before attempting admin login
+      if (!user) {
+        return { success: false, message: "Usuário não autenticado" };
+      }
+
+      // Get current session for authorization header
+      const { data: { session } } = await supabase.auth.getSession();
+      
       const { data, error } = await supabase.functions.invoke("validate-admin", {
-        body: { password }
+        body: { password },
+        headers: session?.access_token ? {
+          Authorization: `Bearer ${session.access_token}`
+        } : undefined
       });
 
       if (error) {
@@ -81,7 +112,7 @@ export function AdminProvider({ children }: { children: ReactNode }) {
       console.error("Login error:", error);
       return { success: false, message: "Erro de conexão" };
     }
-  }, []);
+  }, [user]);
 
   const logout = React.useCallback(() => {
     clearSession();
@@ -89,8 +120,18 @@ export function AdminProvider({ children }: { children: ReactNode }) {
 
   const validateSensitiveAction = React.useCallback(async (password: string): Promise<boolean> => {
     try {
+      // Ensure user is authenticated
+      if (!user) {
+        return false;
+      }
+
+      const { data: { session } } = await supabase.auth.getSession();
+      
       const { data, error } = await supabase.functions.invoke("validate-admin", {
-        body: { password }
+        body: { password },
+        headers: session?.access_token ? {
+          Authorization: `Bearer ${session.access_token}`
+        } : undefined
       });
 
       if (error) {
@@ -102,7 +143,7 @@ export function AdminProvider({ children }: { children: ReactNode }) {
       console.error("Validation error:", error);
       return false;
     }
-  }, []);
+  }, [user]);
 
   const value = React.useMemo(() => ({
     isAdmin,
