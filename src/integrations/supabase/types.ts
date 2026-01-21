@@ -753,6 +753,7 @@ export type Database = {
       }
       is_adm_master: { Args: { _user_id: string }; Returns: boolean }
       is_admin: { Args: { _user_id: string }; Returns: boolean }
+      is_authenticated_admin: { Args: never; Returns: boolean }
       verify_recovery_pin: {
         Args: { _email: string; _pin_hash: string }
         Returns: string
