@@ -11,6 +11,7 @@ import { Header } from "@/components/Header";
 import { toast } from "sonner";
 import { Send, ArrowLeft } from "lucide-react";
 import { format } from "date-fns";
+import { sanitizeMessage, escapeHtml } from "@/lib/sanitize";
 
 type Message = {
   id: string;
@@ -121,10 +122,18 @@ export default function UserChat() {
   const handleSend = async () => {
     if (!newMessage.trim() || !id) return;
 
+    // Sanitize message before sending
+    const sanitizedContent = sanitizeMessage(newMessage, 5000);
+    
+    if (!sanitizedContent.trim()) {
+      toast.error("Mensagem inválida");
+      return;
+    }
+
     const { error } = await supabase.from("messages").insert({
       conversation_id: id,
       sender_type: "user",
-      content: newMessage,
+      content: sanitizedContent,
     });
 
     if (error) {
@@ -202,7 +211,7 @@ export default function UserChat() {
                             : "bg-muted"
                         }`}
                       >
-                        {msg.content}
+                        {escapeHtml(msg.content)}
                       </div>
                       <p className="text-xs text-muted-foreground mt-1">
                         {format(new Date(msg.created_at), "dd/MM HH:mm")}

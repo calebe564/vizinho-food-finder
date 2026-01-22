@@ -40,19 +40,32 @@ export function AdminProvider({ children }: { children: ReactNode }) {
       if (token && expiry) {
         const expiryTime = parseInt(expiry, 10);
         if (Date.now() < expiryTime) {
-          // Verify the session token is still valid with server-side role check
-          const { data: roleData, error } = await supabase.rpc('get_user_role', {
-            _user_id: user.id
-          });
-          
-          if (!error && (roleData === 'adm_master' || roleData === 'admin')) {
-            setIsAdmin(true);
-          } else {
-            // User is not admin in database - clear session
-            clearSession();
+          // Validate session on server
+          try {
+            const { data, error } = await supabase.functions.invoke("validate-admin", {
+              body: { password: token, action: 'validate_session' }
+            });
+            
+            if (!error && data?.valid) {
+              setIsAdmin(true);
+            } else {
+              // Session invalid on server - clear local session
+              clearSession();
+            }
+          } catch {
+            // Fallback to database role check
+            const { data: roleData, error: roleError } = await supabase.rpc('get_user_role', {
+              _user_id: user.id
+            });
+            
+            if (!roleError && (roleData === 'adm_master' || roleData === 'admin')) {
+              setIsAdmin(true);
+            } else {
+              clearSession();
+            }
           }
         } else {
-          // Session expired
+          // Session expired locally
           clearSession();
         }
       }
@@ -114,7 +127,18 @@ export function AdminProvider({ children }: { children: ReactNode }) {
     }
   }, [user]);
 
-  const logout = React.useCallback(() => {
+  const logout = React.useCallback(async () => {
+    try {
+      const token = sessionStorage.getItem(ADMIN_SESSION_KEY);
+      if (token) {
+        // Revoke session on server
+        await supabase.functions.invoke("validate-admin", {
+          body: { password: token, action: 'logout' }
+        });
+      }
+    } catch (error) {
+      console.error("Error logging out:", error);
+    }
     clearSession();
   }, []);
 
