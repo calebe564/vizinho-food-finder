@@ -1,5 +1,5 @@
 import { useEffect, useState, useRef } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Card } from "@/components/ui/card";
@@ -9,7 +9,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Send, ArrowLeft } from "lucide-react";
 import { format } from "date-fns";
-import { useNavigate } from "react-router-dom";
+import { sanitizeMessage, escapeHtml } from "@/lib/sanitize";
 
 type Message = {
   id: string;
@@ -106,10 +106,18 @@ export default function AdminChat() {
   const handleSend = async () => {
     if (!newMessage.trim() || !id) return;
 
+    // Sanitize message before sending
+    const sanitizedContent = sanitizeMessage(newMessage, 5000);
+    
+    if (!sanitizedContent.trim()) {
+      toast.error("Mensagem inválida");
+      return;
+    }
+
     const { error } = await supabase.from("messages").insert({
       conversation_id: id,
       sender_type: "admin",
-      content: newMessage,
+      content: sanitizedContent,
     });
 
     if (error) {
@@ -186,7 +194,7 @@ export default function AdminChat() {
                         : "bg-muted"
                     }`}
                   >
-                    {msg.content}
+                    {escapeHtml(msg.content)}
                   </div>
                   <p className="text-xs text-muted-foreground mt-1">
                     {format(new Date(msg.created_at), "dd/MM/yyyy HH:mm")}

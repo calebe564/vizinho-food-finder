@@ -1,4 +1,3 @@
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
@@ -6,48 +5,12 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-// Rate limiting - simple in-memory store (resets on function restart)
-const rateLimitMap = new Map<string, { count: number; resetTime: number }>();
-const RATE_LIMIT_MAX = 5; // Max attempts
-const RATE_LIMIT_WINDOW = 15 * 60 * 1000; // 15 minutes
-
-function isRateLimited(identifier: string): boolean {
-  const now = Date.now();
-  const record = rateLimitMap.get(identifier);
-  
-  if (!record || now > record.resetTime) {
-    rateLimitMap.set(identifier, { count: 1, resetTime: now + RATE_LIMIT_WINDOW });
-    return false;
-  }
-  
-  if (record.count >= RATE_LIMIT_MAX) {
-    return true;
-  }
-  
-  record.count++;
-  return false;
-}
-
-// Generate cryptographically secure token
-async function generateSecureToken(userId: string): Promise<string> {
-  const randomBytes = new Uint8Array(32);
-  crypto.getRandomValues(randomBytes);
-  
-  const timestamp = Date.now();
-  const expiry = timestamp + (24 * 60 * 60 * 1000); // 24 hours
-  
-  const payload = JSON.stringify({
-    userId,
-    exp: expiry,
-    iat: timestamp,
-    jti: Array.from(randomBytes).map(b => b.toString(16).padStart(2, '0')).join('')
-  });
-  
-  // Create HMAC signature
+// Generate cryptographically secure token hash
+async function hashToken(token: string, secret: string): Promise<string> {
   const encoder = new TextEncoder();
   const key = await crypto.subtle.importKey(
     'raw',
-    encoder.encode(Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || 'fallback-key'),
+    encoder.encode(secret),
     { name: 'HMAC', hash: 'SHA-256' },
     false,
     ['sign']
@@ -56,52 +19,70 @@ async function generateSecureToken(userId: string): Promise<string> {
   const signature = await crypto.subtle.sign(
     'HMAC',
     key,
-    encoder.encode(payload)
+    encoder.encode(token)
   );
   
-  const signatureHex = Array.from(new Uint8Array(signature))
+  return Array.from(new Uint8Array(signature))
     .map(b => b.toString(16).padStart(2, '0'))
     .join('');
-  
-  return btoa(payload) + '.' + signatureHex;
 }
 
-serve(async (req) => {
+Deno.serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    // Get client IP for rate limiting
-    const clientIP = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 
-                     req.headers.get('x-real-ip') || 
-                     'unknown';
-    
-    // Check rate limit
-    if (isRateLimited(clientIP)) {
-      console.warn(`Rate limited: ${clientIP}`);
-      return new Response(
-        JSON.stringify({ 
-          success: false, 
-          error: 'Muitas tentativas. Aguarde 15 minutos.' 
-        }),
-        { 
-          status: 429, 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-        }
-      );
-    }
-
-    const { password } = await req.json();
-    
-    // Get authorization header to validate user is authenticated
-    const authHeader = req.headers.get('Authorization');
-    
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const adminPassword = Deno.env.get('ADMIN_PASSWORD');
     
+    const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey, {
+      auth: {
+        autoRefreshToken: false,
+        persistSession: false,
+      },
+    });
+
+    // Get client IP for rate limiting
+    const clientIP = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 
+                     req.headers.get('x-real-ip') || 
+                     'unknown';
+    const userAgent = req.headers.get('user-agent') || 'unknown';
+    
+    // Check rate limit using database function
+    const { data: rateLimitData, error: rateLimitError } = await supabaseAdmin
+      .rpc('check_admin_rate_limit', { 
+        _ip_address: clientIP,
+        _max_attempts: 5,
+        _window_minutes: 15
+      });
+    
+    if (rateLimitError) {
+      console.error('Rate limit check error:', rateLimitError);
+    } else if (rateLimitData && rateLimitData.length > 0) {
+      const limitResult = rateLimitData[0];
+      if (!limitResult.allowed) {
+        const blockedUntil = limitResult.blocked_until ? 
+          new Date(limitResult.blocked_until).toLocaleString('pt-BR') : 
+          '15 minutos';
+        
+        console.warn(`Rate limited: ${clientIP}`);
+        return new Response(
+          JSON.stringify({ 
+            success: false, 
+            error: `Muitas tentativas. Tente novamente após ${blockedUntil}.`,
+            blockedUntil: limitResult.blocked_until
+          }),
+          { 
+            status: 429, 
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+          }
+        );
+      }
+    }
+
     if (!adminPassword) {
       console.error('ADMIN_PASSWORD not configured');
       return new Response(
@@ -113,11 +94,59 @@ serve(async (req) => {
       );
     }
 
+    const { password, action } = await req.json();
+    
+    // Handle different actions
+    if (action === 'validate_session') {
+      // Validate existing session
+      const tokenHash = password; // In this case, password is the token hash
+      const { data: sessionData } = await supabaseAdmin
+        .rpc('validate_admin_session', { _token_hash: tokenHash });
+      
+      if (sessionData && sessionData.length > 0 && sessionData[0].valid) {
+        return new Response(
+          JSON.stringify({ 
+            success: true,
+            valid: true,
+            role: sessionData[0].role
+          }),
+          { 
+            status: 200, 
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+          }
+        );
+      }
+      
+      return new Response(
+        JSON.stringify({ success: false, valid: false }),
+        { 
+          status: 200, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        }
+      );
+    }
+    
+    if (action === 'logout') {
+      // Revoke session
+      const tokenHash = password;
+      await supabaseAdmin.rpc('revoke_admin_session', { _token_hash: tokenHash });
+      
+      return new Response(
+        JSON.stringify({ success: true }),
+        { 
+          status: 200, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        }
+      );
+    }
+
+    // Default action: validate password and create session
+    const authHeader = req.headers.get('Authorization');
+    
     // Validate the password
     const isValid = password === adminPassword;
     
     if (!isValid) {
-      // Log failed attempt
       console.warn(`Failed admin validation attempt from IP: ${clientIP}`);
       
       return new Response(
@@ -133,20 +162,19 @@ serve(async (req) => {
       );
     }
     
-    // If user is authenticated, verify they are actually an admin in the database
-    let userId = 'anonymous';
+    // Verify user is authenticated and has admin role
+    let userId: string | null = null;
     
     if (authHeader?.startsWith('Bearer ')) {
-      const supabase = createClient(supabaseUrl, supabaseServiceKey);
       const token = authHeader.replace('Bearer ', '');
       
-      const { data: claimsData, error: claimsError } = await supabase.auth.getClaims(token);
+      const { data: claimsData, error: claimsError } = await supabaseAdmin.auth.getClaims(token);
       
       if (!claimsError && claimsData?.claims?.sub) {
         userId = claimsData.claims.sub;
         
         // Verify user is actually an admin in the database
-        const { data: roleData } = await supabase.rpc('get_user_role', {
+        const { data: roleData } = await supabaseAdmin.rpc('get_user_role', {
           _user_id: userId
         });
         
@@ -169,15 +197,45 @@ serve(async (req) => {
       }
     }
     
-    // Generate secure session token
-    const sessionToken = await generateSecureToken(userId);
+    if (!userId) {
+      return new Response(
+        JSON.stringify({ 
+          success: false,
+          sessionToken: null,
+          message: 'Usuário não autenticado'
+        }),
+        { 
+          status: 401, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        }
+      );
+    }
     
-    console.log(`Admin validated successfully for user: ${userId}`);
+    // Generate secure random token
+    const randomBytes = new Uint8Array(32);
+    crypto.getRandomValues(randomBytes);
+    const sessionToken = Array.from(randomBytes)
+      .map(b => b.toString(16).padStart(2, '0'))
+      .join('');
+    
+    // Hash the token for storage
+    const tokenHash = await hashToken(sessionToken, supabaseServiceKey);
+    
+    // Create session in database
+    const { data: sessionId } = await supabaseAdmin.rpc('create_admin_session', {
+      _user_id: userId,
+      _token_hash: tokenHash,
+      _ip_address: clientIP,
+      _user_agent: userAgent,
+      _expires_hours: 24
+    });
+    
+    console.log(`Admin session created for user: ${userId}, session: ${sessionId}`);
 
     return new Response(
       JSON.stringify({ 
         success: true,
-        sessionToken,
+        sessionToken: tokenHash, // Return hash for client to store
         message: 'Acesso autorizado'
       }),
       { 
