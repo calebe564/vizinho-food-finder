@@ -53,6 +53,66 @@ export type Database = {
         }
         Relationships: []
       }
+      admin_rate_limit: {
+        Row: {
+          attempt_count: number | null
+          blocked_until: string | null
+          created_at: string | null
+          first_attempt_at: string | null
+          id: string
+          ip_address: string
+        }
+        Insert: {
+          attempt_count?: number | null
+          blocked_until?: string | null
+          created_at?: string | null
+          first_attempt_at?: string | null
+          id?: string
+          ip_address: string
+        }
+        Update: {
+          attempt_count?: number | null
+          blocked_until?: string | null
+          created_at?: string | null
+          first_attempt_at?: string | null
+          id?: string
+          ip_address?: string
+        }
+        Relationships: []
+      }
+      admin_sessions: {
+        Row: {
+          created_at: string | null
+          expires_at: string
+          id: string
+          ip_address: string | null
+          revoked_at: string | null
+          token_hash: string
+          user_agent: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          expires_at: string
+          id?: string
+          ip_address?: string | null
+          revoked_at?: string | null
+          token_hash: string
+          user_agent?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          expires_at?: string
+          id?: string
+          ip_address?: string | null
+          revoked_at?: string | null
+          token_hash?: string
+          user_agent?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       admin_users: {
         Row: {
           created_at: string | null
@@ -743,6 +803,30 @@ export type Database = {
         Returns: boolean
       }
       can_manage_roles: { Args: { _user_id: string }; Returns: boolean }
+      check_admin_rate_limit: {
+        Args: {
+          _ip_address: string
+          _max_attempts?: number
+          _window_minutes?: number
+        }
+        Returns: {
+          allowed: boolean
+          attempts_remaining: number
+          blocked_until: string
+        }[]
+      }
+      check_email_exists: { Args: { _email: string }; Returns: boolean }
+      cleanup_admin_rate_limits: { Args: never; Returns: number }
+      create_admin_session: {
+        Args: {
+          _expires_hours?: number
+          _ip_address: string
+          _token_hash: string
+          _user_agent: string
+          _user_id: string
+        }
+        Returns: string
+      }
       get_user_role: { Args: { _user_id: string }; Returns: string }
       has_role: {
         Args: {
@@ -754,6 +838,15 @@ export type Database = {
       is_adm_master: { Args: { _user_id: string }; Returns: boolean }
       is_admin: { Args: { _user_id: string }; Returns: boolean }
       is_authenticated_admin: { Args: never; Returns: boolean }
+      revoke_admin_session: { Args: { _token_hash: string }; Returns: boolean }
+      validate_admin_session: {
+        Args: { _token_hash: string }
+        Returns: {
+          role: string
+          user_id: string
+          valid: boolean
+        }[]
+      }
       verify_recovery_pin: {
         Args: { _email: string; _pin_hash: string }
         Returns: string
