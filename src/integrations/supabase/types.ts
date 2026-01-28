@@ -266,6 +266,10 @@ export type Database = {
           created_at: string
           establishment_id: string | null
           id: string
+          requester_email: string | null
+          requester_name: string | null
+          requester_role: string | null
+          requester_whatsapp: string | null
           reviewed_at: string | null
           reviewed_by: string | null
           status: string
@@ -277,6 +281,10 @@ export type Database = {
           created_at?: string
           establishment_id?: string | null
           id?: string
+          requester_email?: string | null
+          requester_name?: string | null
+          requester_role?: string | null
+          requester_whatsapp?: string | null
           reviewed_at?: string | null
           reviewed_by?: string | null
           status?: string
@@ -288,6 +296,10 @@ export type Database = {
           created_at?: string
           establishment_id?: string | null
           id?: string
+          requester_email?: string | null
+          requester_name?: string | null
+          requester_role?: string | null
+          requester_whatsapp?: string | null
           reviewed_at?: string | null
           reviewed_by?: string | null
           status?: string
@@ -837,6 +849,7 @@ export type Database = {
       }
       is_adm_master: { Args: { _user_id: string }; Returns: boolean }
       is_admin: { Args: { _user_id: string }; Returns: boolean }
+      is_admin_user: { Args: { _user_id: string }; Returns: boolean }
       is_authenticated_admin: { Args: never; Returns: boolean }
       revoke_admin_session: { Args: { _token_hash: string }; Returns: boolean }
       validate_admin_session: {

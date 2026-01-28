@@ -16,7 +16,9 @@ import {
   FileText,
   User,
   Hash,
-  Calendar
+  Calendar,
+  Briefcase,
+  Phone
 } from "lucide-react";
 import {
   Dialog,
@@ -39,6 +41,12 @@ interface Claim {
   admin_notes: string | null;
   reviewed_at: string | null;
   reviewed_by: string | null;
+  // Private requester data
+  requester_name: string | null;
+  requester_whatsapp: string | null;
+  requester_email: string | null;
+  requester_role: string | null;
+  // Enriched data
   user_email?: string;
   user_name?: string;
   establishment_name?: string;
@@ -281,11 +289,24 @@ export default function AdminClaims() {
                       <div className="space-y-2">
                         <div className="flex items-center gap-2">
                           <User className="h-4 w-4 text-muted-foreground" />
-                          <span className="font-medium">{claim.user_name}</span>
+                          <span className="font-medium">
+                            {claim.requester_name || claim.user_name}
+                          </span>
                           <span className="text-muted-foreground text-sm">
-                            ({claim.user_email})
+                            ({claim.requester_email || claim.user_email})
                           </span>
                         </div>
+                        {claim.requester_whatsapp && (
+                          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                            📱 WhatsApp: {claim.requester_whatsapp}
+                          </div>
+                        )}
+                        {claim.requester_role && (
+                          <div className="flex items-center gap-2 text-sm">
+                            <Briefcase className="h-4 w-4 text-muted-foreground" />
+                            Cargo: <span className="capitalize">{claim.requester_role}</span>
+                          </div>
+                        )}
                         <div className="flex items-center gap-2">
                           <Hash className="h-4 w-4 text-muted-foreground" />
                           <span className="font-mono text-sm">
