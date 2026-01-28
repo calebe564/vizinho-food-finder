@@ -325,7 +325,7 @@ export default function MyEstablishment() {
     return null;
   }
 
-  // Usuário comum que não tem empresa
+  // Usuário comum que não tem empresa - mostrar opções
   if (role === 'user' && !hasPendingRequest && !hasApprovedRequest) {
     return (
       <>
@@ -342,16 +342,52 @@ export default function MyEstablishment() {
                     <Building2 className="h-10 w-10 text-primary" />
                   </div>
                 </div>
-                <CardTitle className="text-2xl font-bold">Cadastre sua Empresa</CardTitle>
+                <CardTitle className="text-2xl font-bold">Sua Empresa</CardTitle>
                 <CardDescription className="text-base">
-                  Você ainda não tem uma empresa cadastrada. Envie uma solicitação para começar!
+                  Você ainda não tem uma empresa vinculada. Escolha uma opção abaixo:
                 </CardDescription>
               </CardHeader>
-              <CardContent className="flex flex-col gap-3">
-                <Button onClick={() => navigate('/cadastrar')} className="w-full">
-                  Cadastrar Empresa
-                </Button>
-                <Button variant="outline" onClick={() => navigate('/')} className="w-full">
+              <CardContent className="flex flex-col gap-4">
+                <div className="p-4 rounded-xl border bg-muted/50 space-y-2">
+                  <h3 className="font-semibold flex items-center gap-2">
+                    <Store className="h-5 w-5 text-primary" />
+                    Cadastrar Nova Empresa
+                  </h3>
+                  <p className="text-sm text-muted-foreground">
+                    Sua empresa ainda não está no Comércio Vizinho? Cadastre-a agora!
+                  </p>
+                  <Button onClick={() => navigate('/cadastrar')} className="w-full mt-2">
+                    Cadastrar Empresa
+                  </Button>
+                </div>
+                
+                <div className="relative">
+                  <div className="absolute inset-0 flex items-center">
+                    <span className="w-full border-t" />
+                  </div>
+                  <div className="relative flex justify-center text-xs uppercase">
+                    <span className="bg-background px-2 text-muted-foreground">ou</span>
+                  </div>
+                </div>
+
+                <div className="p-4 rounded-xl border bg-muted/50 space-y-2">
+                  <h3 className="font-semibold flex items-center gap-2">
+                    <Building2 className="h-5 w-5 text-primary" />
+                    Reivindicar Empresa Existente
+                  </h3>
+                  <p className="text-sm text-muted-foreground">
+                    Sua empresa já está cadastrada? Reivindique a administração usando seu CNPJ.
+                  </p>
+                  <Button 
+                    variant="outline" 
+                    onClick={() => navigate('/reivindicar-empresa')} 
+                    className="w-full mt-2"
+                  >
+                    Reivindicar Empresa
+                  </Button>
+                </div>
+
+                <Button variant="ghost" onClick={() => navigate('/')} className="w-full">
                   Voltar para Início
                 </Button>
               </CardContent>
