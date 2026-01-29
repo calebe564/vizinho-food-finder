@@ -262,8 +262,11 @@ export type Database = {
       establishment_claims: {
         Row: {
           admin_notes: string | null
+          birth_date: string | null
           cnpj: string
+          cpf_hash: string | null
           created_at: string
+          document_type: string | null
           establishment_id: string | null
           id: string
           requester_email: string | null
@@ -277,8 +280,11 @@ export type Database = {
         }
         Insert: {
           admin_notes?: string | null
+          birth_date?: string | null
           cnpj: string
+          cpf_hash?: string | null
           created_at?: string
+          document_type?: string | null
           establishment_id?: string | null
           id?: string
           requester_email?: string | null
@@ -292,8 +298,11 @@ export type Database = {
         }
         Update: {
           admin_notes?: string | null
+          birth_date?: string | null
           cnpj?: string
+          cpf_hash?: string | null
           created_at?: string
+          document_type?: string | null
           establishment_id?: string | null
           id?: string
           requester_email?: string | null
@@ -321,13 +330,17 @@ export type Database = {
           admin_notes: string | null
           approved_at: string | null
           approved_by: string | null
+          birth_date: string | null
           category: Database["public"]["Enums"]["establishment_category"]
           cep: string | null
           cnpj: string | null
+          cpf_hash: string | null
           created_at: string | null
+          data_origin: string | null
           delivery_other: string | null
           delivery_type: string | null
           description: string | null
+          document_type: string | null
           external_link: string | null
           favorite_images: Json | null
           google_maps_link: string | null
@@ -354,13 +367,17 @@ export type Database = {
           admin_notes?: string | null
           approved_at?: string | null
           approved_by?: string | null
+          birth_date?: string | null
           category: Database["public"]["Enums"]["establishment_category"]
           cep?: string | null
           cnpj?: string | null
+          cpf_hash?: string | null
           created_at?: string | null
+          data_origin?: string | null
           delivery_other?: string | null
           delivery_type?: string | null
           description?: string | null
+          document_type?: string | null
           external_link?: string | null
           favorite_images?: Json | null
           google_maps_link?: string | null
@@ -387,13 +404,17 @@ export type Database = {
           admin_notes?: string | null
           approved_at?: string | null
           approved_by?: string | null
+          birth_date?: string | null
           category?: Database["public"]["Enums"]["establishment_category"]
           cep?: string | null
           cnpj?: string | null
+          cpf_hash?: string | null
           created_at?: string | null
+          data_origin?: string | null
           delivery_other?: string | null
           delivery_type?: string | null
           description?: string | null
+          document_type?: string | null
           external_link?: string | null
           favorite_images?: Json | null
           google_maps_link?: string | null
@@ -807,7 +828,135 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      establishment_claims_public: {
+        Row: {
+          created_at: string | null
+          document_status: string | null
+          document_type: string | null
+          establishment_id: string | null
+          id: string | null
+          reviewed_at: string | null
+          status: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          document_status?: never
+          document_type?: string | null
+          establishment_id?: string | null
+          id?: string | null
+          reviewed_at?: string | null
+          status?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          document_status?: never
+          document_type?: string | null
+          establishment_id?: string | null
+          id?: string | null
+          reviewed_at?: string | null
+          status?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "establishment_claims_establishment_id_fkey"
+            columns: ["establishment_id"]
+            isOneToOne: false
+            referencedRelation: "establishments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      establishment_requests_public: {
+        Row: {
+          address: string | null
+          category: Database["public"]["Enums"]["establishment_category"] | null
+          cep: string | null
+          created_at: string | null
+          data_origin: string | null
+          delivery_other: string | null
+          delivery_type: string | null
+          description: string | null
+          document_status: string | null
+          document_type: string | null
+          external_link: string | null
+          favorite_images: Json | null
+          google_maps_link: string | null
+          has_delivery: boolean | null
+          id: string | null
+          images: Json | null
+          name: string | null
+          neighborhood: string | null
+          phone: string | null
+          products_json: Json | null
+          profile_image: string | null
+          region: string | null
+          schedule: string | null
+          state: string | null
+          status: string | null
+          whatsapp: string | null
+        }
+        Insert: {
+          address?: string | null
+          category?:
+            | Database["public"]["Enums"]["establishment_category"]
+            | null
+          cep?: string | null
+          created_at?: string | null
+          data_origin?: string | null
+          delivery_other?: string | null
+          delivery_type?: string | null
+          description?: string | null
+          document_status?: never
+          document_type?: string | null
+          external_link?: string | null
+          favorite_images?: Json | null
+          google_maps_link?: string | null
+          has_delivery?: boolean | null
+          id?: string | null
+          images?: Json | null
+          name?: string | null
+          neighborhood?: string | null
+          phone?: string | null
+          products_json?: Json | null
+          profile_image?: string | null
+          region?: string | null
+          schedule?: string | null
+          state?: string | null
+          status?: string | null
+          whatsapp?: string | null
+        }
+        Update: {
+          address?: string | null
+          category?:
+            | Database["public"]["Enums"]["establishment_category"]
+            | null
+          cep?: string | null
+          created_at?: string | null
+          data_origin?: string | null
+          delivery_other?: string | null
+          delivery_type?: string | null
+          description?: string | null
+          document_status?: never
+          document_type?: string | null
+          external_link?: string | null
+          favorite_images?: Json | null
+          google_maps_link?: string | null
+          has_delivery?: boolean | null
+          id?: string | null
+          images?: Json | null
+          name?: string | null
+          neighborhood?: string | null
+          phone?: string | null
+          products_json?: Json | null
+          profile_image?: string | null
+          region?: string | null
+          schedule?: string | null
+          state?: string | null
+          status?: string | null
+          whatsapp?: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       can_approve_establishments: {
