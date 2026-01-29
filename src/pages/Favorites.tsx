@@ -1,8 +1,8 @@
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
-import { EstablishmentCard } from "@/components/EstablishmentCard";
+import { EstablishmentCardCompact } from "@/components/EstablishmentCardCompact";
 import { ProductCard } from "@/components/ProductCard";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useFavorites } from "@/hooks/useFavorites";
 import { useUserLocation } from "@/contexts/LocationContext";
@@ -10,6 +10,7 @@ import { Heart, Store, Package, Loader2 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useEffect } from "react";
 
 interface Establishment {
   id: string;
@@ -47,8 +48,17 @@ interface ProductVariation {
 }
 
 export default function Favorites() {
-  const { favorites, productFavorites } = useFavorites();
+  const { favorites, productFavorites, isInitialized } = useFavorites();
   const { locationDetails } = useUserLocation();
+  const queryClient = useQueryClient();
+
+  // Force refetch when favorites change to ensure sync
+  useEffect(() => {
+    if (isInitialized) {
+      queryClient.invalidateQueries({ queryKey: ["favorites-establishments"] });
+      queryClient.invalidateQueries({ queryKey: ["favorites-products"] });
+    }
+  }, [favorites, productFavorites, isInitialized, queryClient]);
 
   const { data: establishments = [], isLoading: establishmentsLoading } = useQuery({
     queryKey: ["favorites-establishments", favorites],
@@ -64,7 +74,8 @@ export default function Favorites() {
       if (error) throw error;
       return (data || []) as Establishment[];
     },
-    enabled: favorites.length > 0,
+    enabled: favorites.length > 0 && isInitialized,
+    staleTime: 0, // Always refetch
   });
 
   const { data: products = [], isLoading: productsLoading } = useQuery({
@@ -80,7 +91,8 @@ export default function Favorites() {
       if (error) throw error;
       return (data || []) as Product[];
     },
-    enabled: productFavorites.length > 0,
+    enabled: productFavorites.length > 0 && isInitialized,
+    staleTime: 0, // Always refetch
   });
 
   const { data: variations = [] } = useQuery({
@@ -209,31 +221,34 @@ export default function Favorites() {
                     </p>
                   </div>
                 ) : (
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {sortedEstablishments.map((establishment, index) => (
-                      <div 
-                        key={establishment.id}
-                        className="animate-fade-in hover-lift"
-                        style={{ animationDelay: `${0.05 * (index % 9)}s` }}
-                      >
-                        <EstablishmentCard
-                          id={establishment.id}
-                          name={establishment.name}
-                          category={establishment.category}
-                          address={establishment.address}
-                          distance={0}
-                          phone={establishment.phone}
-                          whatsapp={establishment.whatsapp}
-                          externalLink={establishment.external_link}
-                          schedule={establishment.schedule}
-                          profileImage={establishment.profile_image}
-                          bannerImage={establishment.banner_image}
-                          images={Array.isArray(establishment.images) ? establishment.images as string[] : null}
-                          isPaid={establishment.is_paid}
-                          products={getEstablishmentProducts(establishment.id)}
-                        />
-                      </div>
-                    ))}
+                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
+                    {sortedEstablishments.map((establishment, index) => {
+                      const estProducts = getEstablishmentProducts(establishment.id);
+                      const minPrice = estProducts.length > 0 
+                        ? Math.min(...estProducts.map(p => p.price))
+                        : null;
+                      
+                      return (
+                        <div 
+                          key={establishment.id}
+                          className="animate-fade-in"
+                          style={{ animationDelay: `${0.03 * (index % 12)}s` }}
+                        >
+                          <EstablishmentCardCompact
+                            id={establishment.id}
+                            name={establishment.name}
+                            category={establishment.category}
+                            profileImage={establishment.profile_image}
+                            bannerImage={establishment.banner_image}
+                            isPaid={establishment.is_paid}
+                            neighborhood={establishment.neighborhood}
+                            city={establishment.city}
+                            minPrice={minPrice}
+                            productNames={estProducts.slice(0, 2).map(p => p.name)}
+                          />
+                        </div>
+                      );
+                    })}
                   </div>
                 )}
               </TabsContent>
@@ -250,7 +265,7 @@ export default function Favorites() {
                     </p>
                   </div>
                 ) : (
-                  <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
                     {products.map((product, index) => {
                       const productVariations = getProductVariations(product.id);
                       const hasVariations = productVariations.length > 0;
@@ -260,7 +275,7 @@ export default function Favorites() {
                         <div 
                           key={product.id}
                           className="animate-fade-in"
-                          style={{ animationDelay: `${0.05 * (index % 12)}s` }}
+                          style={{ animationDelay: `${0.03 * (index % 12)}s` }}
                         >
                           <ProductCard
                             id={product.id}

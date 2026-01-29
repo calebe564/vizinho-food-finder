@@ -2,10 +2,10 @@ import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { SearchBar } from "@/components/SearchBar";
 import { FilterBar } from "@/components/FilterBar";
-import { EstablishmentCard } from "@/components/EstablishmentCard";
-import { useQuery } from "@tanstack/react-query";
+import { EstablishmentCardCompact } from "@/components/EstablishmentCardCompact";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
 import { Database } from "@/integrations/supabase/types";
 import { useUserLocation } from "@/contexts/LocationContext";
@@ -33,11 +33,18 @@ interface Establishment {
 export default function AllEstablishments() {
   const [searchParams] = useSearchParams();
   const initialCategory = searchParams.get("category") || "";
+  const queryClient = useQueryClient();
   
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState(initialCategory);
   const [sortBy, setSortBy] = useState("distance");
   const { coordinates, manualLocation, setManualLocation, isLoading: locationLoading } = useUserLocation();
+
+  // Force refetch when component mounts to ensure deleted establishments are removed
+  useEffect(() => {
+    queryClient.invalidateQueries({ queryKey: ["establishments"] });
+    queryClient.invalidateQueries({ queryKey: ["products-search"] });
+  }, [queryClient]);
 
   const { data: establishments = [], isLoading } = useQuery({
     queryKey: ["establishments", selectedCategory],
@@ -55,6 +62,7 @@ export default function AllEstablishments() {
       if (error) throw error;
       return (data || []) as Establishment[];
     },
+    staleTime: 0, // Always refetch to ensure sync
   });
 
   const { data: products = [] } = useQuery({
@@ -170,30 +178,34 @@ export default function AllEstablishments() {
               <p className="text-sm text-muted-foreground mt-2">Tente ajustar os filtros ou busca</p>
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {sortedEstablishments.map((establishment, index) => (
-                <div 
-                  key={establishment.id}
-                  className="animate-fade-in hover-lift"
-                  style={{ animationDelay: `${0.05 * (index % 9)}s` }}
-                >
-                  <EstablishmentCard
-                    id={establishment.id}
-                    name={establishment.name}
-                    category={establishment.category}
-                    address={establishment.address}
-                    phone={establishment.phone}
-                    whatsapp={establishment.whatsapp}
-                    externalLink={establishment.external_link}
-                    schedule={establishment.schedule}
-                    profileImage={establishment.profile_image}
-                    bannerImage={establishment.banner_image}
-                    images={Array.isArray(establishment.images) ? establishment.images as string[] : null}
-                    isPaid={establishment.is_paid}
-                    products={getEstablishmentProducts(establishment.id)}
-                  />
-                </div>
-              ))}
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
+              {sortedEstablishments.map((establishment, index) => {
+                const estProducts = getEstablishmentProducts(establishment.id);
+                const minPrice = estProducts.length > 0 
+                  ? Math.min(...estProducts.map(p => p.price))
+                  : null;
+                
+                return (
+                  <div 
+                    key={establishment.id}
+                    className="animate-fade-in"
+                    style={{ animationDelay: `${0.03 * (index % 15)}s` }}
+                  >
+                    <EstablishmentCardCompact
+                      id={establishment.id}
+                      name={establishment.name}
+                      category={establishment.category}
+                      profileImage={establishment.profile_image}
+                      bannerImage={establishment.banner_image}
+                      isPaid={establishment.is_paid}
+                      neighborhood={establishment.neighborhood}
+                      city={establishment.city}
+                      minPrice={minPrice}
+                      productNames={estProducts.slice(0, 2).map(p => p.name)}
+                    />
+                  </div>
+                );
+              })}
             </div>
           )}
         </div>

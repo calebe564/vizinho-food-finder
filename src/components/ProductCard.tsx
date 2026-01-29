@@ -4,6 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Heart, ImageIcon } from "lucide-react";
 import { useFavorites } from "@/hooks/useFavorites";
+import { useUserRole } from "@/hooks/useUserRole";
 import { toast } from "sonner";
 
 interface ProductCardProps {
@@ -34,6 +35,7 @@ export function ProductCard({
   maxPrice,
 }: ProductCardProps) {
   const { isProductFavorite, toggleProductFavorite } = useFavorites();
+  const { isAdmin } = useUserRole();
   const isFav = isProductFavorite(id);
 
   const handleToggleFavorite = (e: React.MouseEvent) => {
@@ -73,18 +75,20 @@ export function ProductCard({
             </div>
           )}
 
-          {/* Favorite button */}
-          <Button
-            variant="ghost"
-            size="icon"
-            className="absolute top-3 right-3 h-8 w-8 bg-background/80 hover:bg-background rounded-full"
-            onClick={handleToggleFavorite}
-          >
-            <Heart className={`h-4 w-4 ${isFav ? "fill-red-500 text-red-500" : ""}`} />
-          </Button>
+          {/* Favorite button - hidden for admins */}
+          {!isAdmin && (
+            <Button
+              variant="ghost"
+              size="icon"
+              className="absolute top-3 right-3 h-8 w-8 bg-background/80 hover:bg-background rounded-full"
+              onClick={handleToggleFavorite}
+            >
+              <Heart className={`h-4 w-4 ${isFav ? "fill-red-500 text-red-500" : ""}`} />
+            </Button>
+          )}
 
-          {/* Favorite indicator */}
-          {isFav && (
+          {/* Favorite indicator - hidden for admins */}
+          {isFav && !isAdmin && (
             <div className="absolute top-3 left-3">
               <Badge className="bg-red-500 text-white shadow-lg">
                 <Heart className="h-3 w-3 mr-1 fill-white" />
@@ -109,13 +113,14 @@ export function ProductCard({
                 <Badge variant="secondary" className="text-xs">
                   {variationCount} {variationCount === 1 ? "variação" : "variações"}
                 </Badge>
+                {/* Show price range without "A partir de" text */}
                 {minPrice !== undefined && maxPrice !== undefined && minPrice !== maxPrice ? (
                   <p className="text-sm font-semibold text-primary">
                     {formatPrice(minPrice)} - {formatPrice(maxPrice)}
                   </p>
                 ) : (
                   <p className="text-sm font-semibold text-primary">
-                    A partir de {formatPrice(minPrice || price)}
+                    {formatPrice(minPrice || price)}
                   </p>
                 )}
               </div>
