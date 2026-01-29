@@ -17,12 +17,16 @@ export function Header() {
   const [isOpen, setIsOpen] = useState(false);
   const { totalFavorites } = useFavorites();
   const { user, profile, signOut, isAdmin } = useAuth();
-  const { isEmpresario, isLoading: roleLoading } = useUserRole();
+  const { isEmpresario, isAdmin: isAdminRole, isLoading: roleLoading } = useUserRole();
   const { hasApprovedRequest, isLoading: requestLoading } = useEstablishmentRequest();
   const navigate = useNavigate();
   const hasFavorites = totalFavorites > 0;
   
-  const showMyEstablishment = user && (isEmpresario || hasApprovedRequest) && !roleLoading && !requestLoading;
+  // Show "Minha Empresa" only for business owners, NOT for admins
+  const showMyEstablishment = user && (isEmpresario || hasApprovedRequest) && !isAdminRole && !roleLoading && !requestLoading;
+  
+  // Hide claim button for admins - admins cannot claim businesses
+  const showClaimButton = user && !isAdminRole && !roleLoading;
 
   const handleSignOut = async () => {
     await signOut();
@@ -117,8 +121,8 @@ export function Header() {
                 </DropdownMenuItem>
               )}
               
-              {/* Reivindicar empresa - usuários logados */}
-              {user && (
+              {/* Reivindicar empresa - HIDDEN for admins */}
+              {showClaimButton && (
                 <DropdownMenuItem asChild>
                   <Link to="/reivindicar-empresa" className="flex items-center gap-2 cursor-pointer">
                     <ClipboardCheck className="h-4 w-4" />
@@ -278,8 +282,8 @@ export function Header() {
                   </Link>
                 )}
                 
-                {/* Reivindicar empresa - mobile */}
-                {user && (
+                {/* Reivindicar empresa - HIDDEN for admins */}
+                {showClaimButton && (
                   <Link
                     to="/reivindicar-empresa"
                     onClick={() => setIsOpen(false)}

@@ -79,7 +79,7 @@ export default function AdminEstablishments() {
         .delete()
         .eq("establishment_id", deleteId);
 
-      // 4. Remover claims pendentes
+      // 4. Remover claims pendentes e histórico
       await supabase
         .from("establishment_claims")
         .delete()
@@ -91,7 +91,13 @@ export default function AdminEstablishments() {
         .delete()
         .eq("establishment_id", deleteId);
 
-      // 6. Finalmente, remover o estabelecimento
+      // 6. Remover notas de negócios
+      await supabase
+        .from("business_notes")
+        .delete()
+        .eq("establishment_id", deleteId);
+
+      // 7. Finalmente, remover o estabelecimento
       const { error } = await supabase
         .from("establishments")
         .delete()
@@ -99,11 +105,14 @@ export default function AdminEstablishments() {
 
       if (error) throw error;
 
-      toast.success("Estabelecimento e todos os dados relacionados foram excluídos");
+      // 8. Trigger state update for global consistency
+      toast.success("Estabelecimento e todos os dados relacionados foram excluídos com sucesso!");
+      
+      // Refresh the list to ensure UI is synchronized
       fetchEstablishments();
     } catch (error: any) {
       console.error("Error deleting establishment:", error);
-      toast.error("Erro ao excluir estabelecimento");
+      toast.error("Erro ao excluir estabelecimento: " + (error.message || "Erro desconhecido"));
     } finally {
       setDeleteId(null);
     }

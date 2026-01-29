@@ -13,6 +13,7 @@ import { toast } from "sonner";
 import { useFavorites } from "@/hooks/useFavorites";
 import { shareContent, shareViaWhatsApp, copyToClipboard } from "@/lib/shareUtils";
 import { useAuth } from "@/contexts/AuthContext";
+import { useUserRole } from "@/hooks/useUserRole";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -86,6 +87,7 @@ export default function EstablishmentDetail() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { isAdmin, isLoading: roleLoading } = useUserRole();
   const { isFavorite, toggleFavorite } = useFavorites();
   const isFav = id ? isFavorite(id) : false;
 
@@ -265,8 +267,8 @@ export default function EstablishmentDetail() {
                     <Copy className="h-4 w-4 mr-2" />
                     Copiar link
                   </DropdownMenuItem>
-                  {/* Reivindicar moved to dropdown menu only */}
-                  {!establishment?.cnpj && (
+                  {/* Claim button: HIDDEN for admins and only shown when business has no owner */}
+                  {!roleLoading && !isAdmin && !establishment?.cnpj && (
                     <DropdownMenuItem 
                       onClick={() => {
                         if (user) {
