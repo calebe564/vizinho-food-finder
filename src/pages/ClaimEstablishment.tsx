@@ -24,10 +24,11 @@ import {
   Phone,
   Mail,
   Briefcase,
-  Hash
+  Hash,
+  FileText
 } from 'lucide-react';
-import { CNPJInput } from '@/components/CNPJInput';
-import { validateCNPJ } from '@/lib/validationUtils';
+import { DocumentInput, type DocumentLookupResult, type CPFFormData } from '@/components/DocumentInput';
+import { validateDocument, validateAge, type DocumentType } from '@/lib/validationUtils';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -59,15 +60,19 @@ function StepIndicator({ currentStep, totalSteps, labels }: StepIndicatorProps) 
   );
 }
 
-interface CNPJData {
-  razaoSocial: string;
-  nomeFantasia: string;
-  situacao: string;
-  municipio: string;
-  uf: string;
-  bairro: string;
-  logradouro: string;
-  numero: string;
+interface DocumentData {
+  documentType: DocumentType;
+  razaoSocial?: string;
+  nomeFantasia?: string;
+  situacao?: string;
+  municipio?: string;
+  uf?: string;
+  bairro?: string;
+  logradouro?: string;
+  numero?: string;
+  // CPF specific
+  nomeCompleto?: string;
+  dataNascimento?: string;
 }
 
 interface RequesterData {
@@ -86,7 +91,7 @@ interface EstablishmentResult {
   city: string;
 }
 
-const STEP_LABELS = ['CNPJ', 'Confirmar', 'Seus Dados', 'Selecionar', 'Enviar'];
+const STEP_LABELS = ['Documento', 'Confirmar', 'Seus Dados', 'Selecionar', 'Enviar'];
 
 export default function ClaimEstablishment() {
   const navigate = useNavigate();
@@ -96,12 +101,20 @@ export default function ClaimEstablishment() {
   // Step state
   const [currentStep, setCurrentStep] = useState(1);
   
-  // Step 1: CNPJ
-  const [cnpj, setCnpj] = useState('');
-  const [loadingCnpj, setLoadingCnpj] = useState(false);
+  // Step 1: Document (CNPJ or CPF)
+  const [document, setDocument] = useState('');
+  const [documentType, setDocumentType] = useState<DocumentType>('unknown');
+  const [loadingDocument, setLoadingDocument] = useState(false);
+  const [cpfFormData, setCpfFormData] = useState<CPFFormData>({
+    nomeCompleto: profile?.full_name || '',
+    dataNascimento: '',
+    endereco: '',
+    telefone: '',
+    categoria: '',
+  });
   
-  // Step 2: CNPJ Data confirmation
-  const [cnpjData, setCnpjData] = useState<CNPJData | null>(null);
+  // Step 2: Document Data confirmation
+  const [documentData, setDocumentData] = useState<DocumentData | null>(null);
   
   // Step 3: Requester Data (PRIVATE)
   const [requesterData, setRequesterData] = useState<RequesterData>({
@@ -131,6 +144,10 @@ export default function ClaimEstablishment() {
         nome: profile.full_name || prev.nome,
         email: profile.email || prev.email,
       }));
+      setCpfFormData(prev => ({
+        ...prev,
+        nomeCompleto: profile.full_name || prev.nomeCompleto,
+      }));
     }
   }, [profile]);
 
@@ -142,24 +159,50 @@ export default function ClaimEstablishment() {
     }
   }, [roleLoading, isAdmin, navigate]);
 
-  // Step 1: Validate CNPJ and fetch data from API
-  const handleCnpjAdvance = async () => {
-    const cleanCnpj = cnpj.replace(/\D/g, '');
+  // Step 1: Validate document and fetch data from API (for CNPJ)
+  const handleDocumentAdvance = async () => {
+    const cleanDocument = document.replace(/\D/g, '');
     
-    if (!validateCNPJ(cleanCnpj)) {
-      setError('CNPJ inválido. Verifique os dígitos.');
+    const validation = validateDocument(cleanDocument);
+    if (!validation.isValid) {
+      setError('Documento inválido. Verifique os dígitos.');
       return;
     }
 
-    setLoadingCnpj(true);
     setError('');
 
+    // For CPF, validate age and move to step 2
+    if (validation.type === 'cpf') {
+      if (!cpfFormData.dataNascimento) {
+        setError('Data de nascimento é obrigatória para CPF.');
+        return;
+      }
+      if (!validateAge(cpfFormData.dataNascimento)) {
+        setError('Você deve ter pelo menos 18 anos para reivindicar uma empresa.');
+        return;
+      }
+      if (!cpfFormData.nomeCompleto.trim()) {
+        setError('Nome completo é obrigatório.');
+        return;
+      }
+
+      setDocumentData({
+        documentType: 'cpf',
+        nomeCompleto: cpfFormData.nomeCompleto,
+        dataNascimento: cpfFormData.dataNascimento,
+      });
+      setCurrentStep(2);
+      return;
+    }
+
+    // For CNPJ, fetch from API
+    setLoadingDocument(true);
+
     try {
-      // Fetch from ReceitaWS API
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 10000);
       
-      const response = await fetch(`https://www.receitaws.com.br/v1/cnpj/${cleanCnpj}`, {
+      const response = await fetch(`https://www.receitaws.com.br/v1/cnpj/${cleanDocument}`, {
         method: 'GET',
         headers: { 'Accept': 'application/json' },
         signal: controller.signal,
@@ -183,7 +226,8 @@ export default function ClaimEstablishment() {
       }
 
       // Store CNPJ data
-      setCnpjData({
+      setDocumentData({
+        documentType: 'cnpj',
         razaoSocial: data.nome || '',
         nomeFantasia: data.fantasia || '',
         situacao: data.situacao || '',
@@ -208,16 +252,16 @@ export default function ClaimEstablishment() {
         setError('Erro ao consultar CNPJ. Verifique a conexão e tente novamente.');
       }
     } finally {
-      setLoadingCnpj(false);
+      setLoadingDocument(false);
     }
   };
 
-  // Step 2: Confirm CNPJ data
-  const handleConfirmCnpjData = () => {
-    if (!cnpjData) return;
+  // Step 2: Confirm document data
+  const handleConfirmDocumentData = () => {
+    if (!documentData) return;
     
-    if (cnpjData.situacao !== 'ATIVA') {
-      toast.warning(`CNPJ com situação: ${cnpjData.situacao}. Você pode continuar, mas isso pode afetar a aprovação.`);
+    if (documentData.documentType === 'cnpj' && documentData.situacao !== 'ATIVA') {
+      toast.warning(`CNPJ com situação: ${documentData.situacao}. Você pode continuar, mas isso pode afetar a aprovação.`);
     }
     
     setCurrentStep(3);
@@ -334,12 +378,16 @@ export default function ClaimEstablishment() {
     setError('');
 
     try {
+      const cleanDocument = document.replace(/\D/g, '');
       const { error: claimError } = await supabase
         .from('establishment_claims')
         .insert({
           establishment_id: selectedEstablishment.id,
           user_id: user.id,
-          cnpj: cnpj.replace(/\D/g, ''),
+          cnpj: documentType === 'cnpj' ? cleanDocument : null,
+          cpf_hash: documentType === 'cpf' ? cleanDocument : null,
+          document_type: documentType,
+          birth_date: documentType === 'cpf' && cpfFormData.dataNascimento ? cpfFormData.dataNascimento : null,
           status: 'pending',
           // Private requester data
           requester_name: requesterData.nome,
@@ -417,23 +465,27 @@ export default function ClaimEstablishment() {
                 </div>
               </CardHeader>
               <CardContent className="space-y-6">
-                {/* STEP 1: CNPJ Input */}
+                {/* STEP 1: Document Input */}
                 {currentStep === 1 && (
                   <div className="space-y-4">
                     <div className="text-center mb-4">
-                      <Hash className="h-8 w-8 mx-auto text-primary mb-2" />
-                      <h3 className="font-semibold">Digite o CNPJ da empresa</h3>
+                      <FileText className="h-8 w-8 mx-auto text-primary mb-2" />
+                      <h3 className="font-semibold">Digite o documento da empresa</h3>
                       <p className="text-sm text-muted-foreground">
-                        Vamos validar o CNPJ na Receita Federal
+                        CNPJ (pessoa jurídica) ou CPF (negócio em nome de pessoa física)
                       </p>
                     </div>
                     
-                    <CNPJInput
-                      value={cnpj}
-                      onChange={setCnpj}
+                    <DocumentInput
+                      value={document}
+                      onChange={setDocument}
                       required
                       autoLookup={false}
                       showLookupButton={false}
+                      showCPFFields={true}
+                      cpfData={cpfFormData}
+                      onCPFDataChange={setCpfFormData}
+                      onDocumentTypeChange={setDocumentType}
                     />
 
                     {error && (
@@ -444,59 +496,83 @@ export default function ClaimEstablishment() {
                     )}
 
                     <Button 
-                      onClick={handleCnpjAdvance}
-                      disabled={loadingCnpj || cnpj.replace(/\D/g, '').length < 14}
+                      onClick={handleDocumentAdvance}
+                      disabled={loadingDocument || document.replace(/\D/g, '').length < 11}
                       className="w-full"
                     >
-                      {loadingCnpj ? (
+                      {loadingDocument ? (
                         <Loader2 className="h-4 w-4 animate-spin mr-2" />
                       ) : (
                         <ArrowRight className="h-4 w-4 mr-2" />
                       )}
-                      Consultar e Avançar
+                      {documentType === 'cpf' ? 'Avançar' : 'Consultar e Avançar'}
                     </Button>
                   </div>
                 )}
 
-                {/* STEP 2: CNPJ Data Confirmation */}
-                {currentStep === 2 && cnpjData && (
+                {/* STEP 2: Document Data Confirmation */}
+                {currentStep === 2 && documentData && (
                   <div className="space-y-4">
                     <div className="text-center mb-4">
-                      <CheckCircle className="h-8 w-8 mx-auto text-green-600 mb-2" />
-                      <h3 className="font-semibold">Dados do CNPJ</h3>
+                      <CheckCircle className="h-8 w-8 mx-auto text-primary mb-2" />
+                      <h3 className="font-semibold">
+                        {documentData.documentType === 'cpf' ? 'Dados do CPF' : 'Dados do CNPJ'}
+                      </h3>
                       <p className="text-sm text-muted-foreground">
-                        Confira as informações obtidas
+                        Confira as informações
                       </p>
                     </div>
 
                     <div className="bg-muted rounded-lg p-4 space-y-3">
-                      <div>
-                        <Label className="text-xs text-muted-foreground">Razão Social</Label>
-                        <p className="font-medium">{cnpjData.razaoSocial || '-'}</p>
-                      </div>
-                      {cnpjData.nomeFantasia && (
-                        <div>
-                          <Label className="text-xs text-muted-foreground">Nome Fantasia</Label>
-                          <p className="font-medium">{cnpjData.nomeFantasia}</p>
-                        </div>
+                      {documentData.documentType === 'cnpj' ? (
+                        <>
+                          <div>
+                            <Label className="text-xs text-muted-foreground">Razão Social</Label>
+                            <p className="font-medium">{documentData.razaoSocial || '-'}</p>
+                          </div>
+                          {documentData.nomeFantasia && (
+                            <div>
+                              <Label className="text-xs text-muted-foreground">Nome Fantasia</Label>
+                              <p className="font-medium">{documentData.nomeFantasia}</p>
+                            </div>
+                          )}
+                          <div>
+                            <Label className="text-xs text-muted-foreground">Situação</Label>
+                            <Badge 
+                              variant={documentData.situacao === 'ATIVA' ? 'default' : 'destructive'}
+                              className="mt-1"
+                            >
+                              {documentData.situacao}
+                            </Badge>
+                          </div>
+                          <div>
+                            <Label className="text-xs text-muted-foreground">Localização</Label>
+                            <p className="font-medium">
+                              {documentData.logradouro && `${documentData.logradouro}, ${documentData.numero} - `}
+                              {documentData.bairro && `${documentData.bairro}, `}
+                              {documentData.municipio} - {documentData.uf}
+                            </p>
+                          </div>
+                        </>
+                      ) : (
+                        <>
+                          <div>
+                            <Label className="text-xs text-muted-foreground">Nome Completo</Label>
+                            <p className="font-medium">{documentData.nomeCompleto || '-'}</p>
+                          </div>
+                          <div>
+                            <Label className="text-xs text-muted-foreground">Data de Nascimento</Label>
+                            <p className="font-medium">
+                              {documentData.dataNascimento 
+                                ? new Date(documentData.dataNascimento).toLocaleDateString('pt-BR')
+                                : '-'}
+                            </p>
+                          </div>
+                          <div className="bg-amber-50 dark:bg-amber-900/20 p-2 rounded text-xs text-amber-700 dark:text-amber-300">
+                            🔒 CPF é um dado privado e não será exibido publicamente
+                          </div>
+                        </>
                       )}
-                      <div>
-                        <Label className="text-xs text-muted-foreground">Situação</Label>
-                        <Badge 
-                          variant={cnpjData.situacao === 'ATIVA' ? 'default' : 'destructive'}
-                          className="mt-1"
-                        >
-                          {cnpjData.situacao}
-                        </Badge>
-                      </div>
-                      <div>
-                        <Label className="text-xs text-muted-foreground">Localização</Label>
-                        <p className="font-medium">
-                          {cnpjData.logradouro && `${cnpjData.logradouro}, ${cnpjData.numero} - `}
-                          {cnpjData.bairro && `${cnpjData.bairro}, `}
-                          {cnpjData.municipio} - {cnpjData.uf}
-                        </p>
-                      </div>
                     </div>
 
                     <div className="flex gap-2">
@@ -504,7 +580,7 @@ export default function ClaimEstablishment() {
                         <ArrowLeft className="h-4 w-4 mr-2" />
                         Voltar
                       </Button>
-                      <Button onClick={handleConfirmCnpjData} className="flex-1">
+                      <Button onClick={handleConfirmDocumentData} className="flex-1">
                         Confirmar
                         <ArrowRight className="h-4 w-4 ml-2" />
                       </Button>

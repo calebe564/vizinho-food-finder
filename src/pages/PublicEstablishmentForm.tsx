@@ -17,8 +17,8 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useUserRole } from "@/hooks/useUserRole";
 import { AuthRequiredDialog } from "@/components/AuthRequiredDialog";
 import { CadastroAIHelper } from "@/components/CadastroAIHelper";
-import { CNPJInput } from "@/components/CNPJInput";
-import { validateCNPJ } from "@/lib/validationUtils";
+import { DocumentInput, type DocumentLookupResult, type CPFFormData } from "@/components/DocumentInput";
+import { validateDocument, validateAge, type DocumentType } from "@/lib/validationUtils";
 
 type EstablishmentCategory = Database["public"]["Enums"]["establishment_category"];
 
@@ -84,7 +84,16 @@ export default function PublicEstablishmentForm() {
   const [showAuthDialog, setShowAuthDialog] = useState(false);
   const [loading, setLoading] = useState(false);
   const [loadingCep, setLoadingCep] = useState(false);
-  const [cnpj, setCnpj] = useState("");
+  const [document, setDocument] = useState("");
+  const [documentType, setDocumentType] = useState<DocumentType>('unknown');
+  const [documentLookupResult, setDocumentLookupResult] = useState<DocumentLookupResult | null>(null);
+  const [cpfFormData, setCpfFormData] = useState<CPFFormData>({
+    nomeCompleto: '',
+    dataNascimento: '',
+    endereco: '',
+    telefone: '',
+    categoria: '',
+  });
 
   // Show auth dialog if user is not logged in
   if (!authLoading && !user) {
@@ -380,18 +389,40 @@ export default function PublicEstablishmentForm() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Check if CNPJ is required (only for regular users)
-    const cnpjRequired = !isAdmMaster && !isAdmin;
-    const cleanCnpj = cnpj.replace(/\D/g, '');
+    // Check if document is required (only for regular users)
+    const documentRequired = !isAdmMaster && !isAdmin;
+    const cleanDocument = document.replace(/\D/g, '');
     
-    if (cnpjRequired) {
-      if (!cleanCnpj) {
-        toast.error("CNPJ é obrigatório para cadastrar uma empresa");
+    if (documentRequired) {
+      if (!cleanDocument) {
+        toast.error("Documento (CNPJ ou CPF) é obrigatório para cadastrar uma empresa");
         return;
       }
-      if (!validateCNPJ(cleanCnpj)) {
-        toast.error("CNPJ inválido. Verifique o número digitado.");
+      
+      const validation = validateDocument(cleanDocument);
+      if (!validation.isValid) {
+        toast.error("Documento inválido. Verifique o número digitado.");
         return;
+      }
+      
+      // If CPF, validate additional required fields
+      if (validation.type === 'cpf') {
+        if (!cpfFormData.nomeCompleto.trim()) {
+          toast.error("Nome completo é obrigatório para CPF");
+          return;
+        }
+        if (!cpfFormData.dataNascimento) {
+          toast.error("Data de nascimento é obrigatória para CPF");
+          return;
+        }
+        if (!validateAge(cpfFormData.dataNascimento)) {
+          toast.error("Você deve ter pelo menos 18 anos para cadastrar uma empresa");
+          return;
+        }
+        if (!documentLookupResult?.cpfValidated) {
+          toast.error("Valide os dados do CPF antes de continuar");
+          return;
+        }
       }
     }
     
@@ -542,7 +573,11 @@ export default function PublicEstablishmentForm() {
           favorite_images: favoriteImages,
           profile_image: logoUrl || null,
           user_id: user?.id || null,
-          cnpj: cleanCnpj || null,
+          cnpj: documentType === 'cnpj' ? cleanDocument : null,
+          cpf_hash: documentType === 'cpf' ? cleanDocument : null,
+          document_type: documentType !== 'unknown' ? documentType : 'cnpj',
+          birth_date: documentType === 'cpf' && cpfFormData.dataNascimento ? cpfFormData.dataNascimento : null,
+          data_origin: documentLookupResult?.razaoSocial ? 'api' : 'manual',
           cep: addressData.cep.replace(/\D/g, "") || null,
           state: addressData.uf || null,
           has_delivery: deliveryData.hasDelivery,
@@ -692,32 +727,40 @@ export default function PublicEstablishmentForm() {
                   </div>
                 </div>
 
-                {/* CNPJ Field */}
-                <CNPJInput 
-                  value={cnpj}
-                  onChange={setCnpj}
+                {/* Document Field (CNPJ or CPF) */}
+                <DocumentInput 
+                  value={document}
+                  onChange={setDocument}
                   required={!isAdmMaster && !isAdmin}
-                  label={isAdmMaster || isAdmin ? "CNPJ (opcional para administradores)" : "CNPJ"}
+                  label={isAdmMaster || isAdmin ? "Documento (opcional para administradores)" : "Documento (CNPJ ou CPF)"}
                   autoLookup={true}
+                  showCPFFields={true}
+                  cpfData={cpfFormData}
+                  onCPFDataChange={setCpfFormData}
+                  onDocumentTypeChange={setDocumentType}
                   onLookupSuccess={(data) => {
-                    // Preencher nome da empresa se vazio
-                    if (!formData.name && (data.nomeFantasia || data.razaoSocial)) {
-                      handleChange("name", data.nomeFantasia || data.razaoSocial);
-                    }
-                    // Preencher endereço se houver CEP
-                    if (data.cep && !addressData.cep) {
-                      setAddressData(prev => ({
-                        ...prev,
-                        cep: data.cep,
-                        logradouro: data.logradouro || prev.logradouro,
-                        bairro: data.bairro || prev.bairro,
-                        localidade: data.municipio || prev.localidade,
-                        uf: data.uf || prev.uf,
-                      }));
-                    }
-                    // Preencher WhatsApp se vazio
-                    if (data.telefone && !contactData.whatsapp) {
-                      setContactData(prev => ({ ...prev, whatsapp: data.telefone }));
+                    setDocumentLookupResult(data);
+                    // Para CNPJ, preencher dados automaticamente
+                    if (data.documentType === 'cnpj') {
+                      // Preencher nome da empresa se vazio
+                      if (!formData.name && (data.nomeFantasia || data.razaoSocial)) {
+                        handleChange("name", data.nomeFantasia || data.razaoSocial);
+                      }
+                      // Preencher endereço se houver CEP
+                      if (data.cep && !addressData.cep) {
+                        setAddressData(prev => ({
+                          ...prev,
+                          cep: data.cep || '',
+                          logradouro: data.logradouro || prev.logradouro,
+                          bairro: data.bairro || prev.bairro,
+                          localidade: data.municipio || prev.localidade,
+                          uf: data.uf || prev.uf,
+                        }));
+                      }
+                      // Preencher WhatsApp se vazio
+                      if (data.telefone && !contactData.whatsapp) {
+                        setContactData(prev => ({ ...prev, whatsapp: data.telefone || '' }));
+                      }
                     }
                   }}
                 />
