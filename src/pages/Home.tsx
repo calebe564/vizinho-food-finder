@@ -31,6 +31,7 @@ interface Establishment {
   banner_image: string | null;
   images: unknown;
   is_paid: boolean;
+  has_delivery: boolean | null;
 }
 
 interface ProductWithEstablishment {
@@ -509,6 +510,8 @@ export default function Home() {
                         city={est.city}
                         minPrice={minPrice}
                         productNames={estProducts.slice(0, 2).map(p => p.name)}
+                        schedule={est.schedule}
+                        hasDelivery={est.has_delivery ?? false}
                       />
                     );
                   })}

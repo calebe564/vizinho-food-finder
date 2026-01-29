@@ -1,5 +1,5 @@
 import { Link, useNavigate } from "react-router-dom";
-import { Home, Building2, Store, Menu, Heart, LogIn, LogOut, User, Briefcase, UserPlus, X, MapPin, MoreVertical, MessageSquare, ClipboardCheck } from "lucide-react";
+import { Home, Building2, Store, Menu, Heart, LogIn, LogOut, User, Briefcase, UserPlus, X, MapPin, MoreVertical, MessageSquare, ClipboardCheck, Bot } from "lucide-react";
 import { ThemeToggle } from "./ThemeToggle";
 import { Button } from "./ui/button";
 import { Sheet, SheetContent, SheetTrigger, SheetClose } from "./ui/sheet";
@@ -12,6 +12,7 @@ import { useUserRole } from "@/hooks/useUserRole";
 import { useEstablishmentRequest } from "@/hooks/useEstablishmentRequest";
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
 import { useUnreadConversations } from "@/hooks/useUnreadConversations";
+import { AIChatSheet } from "./AIChatSheet";
 
 export function Header() {
   const [isOpen, setIsOpen] = useState(false);
@@ -144,6 +145,16 @@ export function Header() {
                   </Link>
                 </DropdownMenuItem>
               )}
+              
+              {/* AI Assistant */}
+              <DropdownMenuItem asChild onSelect={(e) => e.preventDefault()}>
+                <AIChatSheet trigger={
+                  <button className="flex items-center gap-2 w-full text-left cursor-pointer px-2 py-1.5 text-sm">
+                    <Bot className="h-4 w-4" />
+                    Assistente
+                  </button>
+                } />
+              </DropdownMenuItem>
               
               <DropdownMenuSeparator />
               
@@ -293,6 +304,14 @@ export function Header() {
                     <span className="font-medium">Reivindicar Empresa</span>
                   </Link>
                 )}
+                
+                {/* AI Assistant - Mobile */}
+                <AIChatSheet trigger={
+                  <button className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-secondary transition-colors w-full text-left">
+                    <Bot className="h-5 w-5 text-muted-foreground" />
+                    <span className="font-medium">Assistente</span>
+                  </button>
+                } />
                 
                 <div className="h-px bg-border my-2" />
                 
