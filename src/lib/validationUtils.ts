@@ -1,5 +1,53 @@
 import { z } from 'zod';
 
+// Document type detection (auto-detect based on length)
+export type DocumentType = 'cpf' | 'cnpj' | 'unknown';
+
+export function detectDocumentType(document: string): DocumentType {
+  const clean = document.replace(/\D/g, '');
+  if (clean.length === 11) return 'cpf';
+  if (clean.length === 14) return 'cnpj';
+  return 'unknown';
+}
+
+// CPF validation
+export function validateCPF(cpf: string): boolean {
+  // Remove non-digits
+  const cleanCpf = cpf.replace(/\D/g, '');
+  
+  // Must have 11 digits
+  if (cleanCpf.length !== 11) return false;
+  
+  // Check for repeated digits (e.g., 111.111.111-11)
+  if (/^(\d)\1+$/.test(cleanCpf)) return false;
+  
+  // Calculate first verification digit
+  let sum = 0;
+  for (let i = 0; i < 9; i++) {
+    sum += parseInt(cleanCpf[i]) * (10 - i);
+  }
+  let remainder = (sum * 10) % 11;
+  if (remainder === 10 || remainder === 11) remainder = 0;
+  if (remainder !== parseInt(cleanCpf[9])) return false;
+  
+  // Calculate second verification digit
+  sum = 0;
+  for (let i = 0; i < 10; i++) {
+    sum += parseInt(cleanCpf[i]) * (11 - i);
+  }
+  remainder = (sum * 10) % 11;
+  if (remainder === 10 || remainder === 11) remainder = 0;
+  
+  return remainder === parseInt(cleanCpf[10]);
+}
+
+// Format CPF for display
+export function formatCPF(cpf: string): string {
+  const clean = cpf.replace(/\D/g, '');
+  if (clean.length !== 11) return cpf;
+  return clean.replace(/^(\d{3})(\d{3})(\d{3})(\d{2})$/, '$1.$2.$3-$4');
+}
+
 // CNPJ validation
 export function validateCNPJ(cnpj: string): boolean {
   // Remove non-digits
@@ -39,6 +87,41 @@ export function formatCNPJ(cnpj: string): string {
   const clean = cnpj.replace(/\D/g, '');
   if (clean.length !== 14) return cnpj;
   return clean.replace(/^(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})$/, '$1.$2.$3/$4-$5');
+}
+
+// Unified document validation (CPF or CNPJ)
+export function validateDocument(document: string): { isValid: boolean; type: DocumentType } {
+  const type = detectDocumentType(document);
+  
+  if (type === 'cpf') {
+    return { isValid: validateCPF(document), type: 'cpf' };
+  }
+  if (type === 'cnpj') {
+    return { isValid: validateCNPJ(document), type: 'cnpj' };
+  }
+  
+  return { isValid: false, type: 'unknown' };
+}
+
+// Format document based on type
+export function formatDocument(document: string): string {
+  const type = detectDocumentType(document);
+  if (type === 'cpf') return formatCPF(document);
+  if (type === 'cnpj') return formatCNPJ(document);
+  return document;
+}
+
+// Age validation (must be 18+)
+export function validateAge(birthDate: string | Date): boolean {
+  const birth = typeof birthDate === 'string' ? new Date(birthDate) : birthDate;
+  const today = new Date();
+  const age = today.getFullYear() - birth.getFullYear();
+  const monthDiff = today.getMonth() - birth.getMonth();
+  
+  if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birth.getDate())) {
+    return age - 1 >= 18;
+  }
+  return age >= 18;
 }
 
 // Password strength validation for new users
