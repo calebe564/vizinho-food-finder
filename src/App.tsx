@@ -11,7 +11,7 @@ import { AuthProvider } from "@/contexts/AuthContext";
 import { HelmetProvider } from "react-helmet-async";
 import { lazy, Suspense } from "react";
 import { ProtectedRoute } from "./components/ProtectedRoute";
-import { AIChatButton } from "./components/AIChatButton";
+// AI Chat button removed - now integrated into Header menu
 import { ErrorBoundary } from "./components/ErrorBoundary";
 
 // Lazy loading para melhor performance
@@ -65,7 +65,7 @@ function App() {
                   <Sonner />
                   <BrowserRouter>
                     <LocationProvider>
-                      <AIChatButton />
+                      {/* AI Chat Button moved to Header menu */}
                       <ErrorBoundary>
                         <Suspense fallback={<PageLoader />}>
                           <Routes>

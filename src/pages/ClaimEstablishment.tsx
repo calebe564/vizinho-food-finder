@@ -135,6 +135,15 @@ export default function ClaimEstablishment() {
   // Step 5: Submit
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
+  const [showManualFallback, setShowManualFallback] = useState(false);
+  const [manualCnpjData, setManualCnpjData] = useState({
+    razaoSocial: '',
+    nomeFantasia: '',
+    endereco: '',
+    telefone: '',
+    cidade: '',
+    uf: '',
+  });
 
   // Pre-fill user data
   useEffect(() => {
@@ -247,13 +256,41 @@ export default function ClaimEstablishment() {
       setCurrentStep(2);
     } catch (err) {
       if (err instanceof Error && err.name === 'AbortError') {
-        setError('Consulta demorou muito. Tente novamente.');
+        setError('Consulta demorou muito. Você pode tentar novamente ou preencher manualmente.');
       } else {
-        setError('Erro ao consultar CNPJ. Verifique a conexão e tente novamente.');
+        setError('Erro ao consultar CNPJ. Você pode tentar novamente ou preencher manualmente.');
       }
+      setShowManualFallback(true);
     } finally {
       setLoadingDocument(false);
     }
+  };
+
+  // Manual CNPJ fallback - advance without API
+  const handleManualCnpjAdvance = () => {
+    if (!manualCnpjData.razaoSocial.trim()) {
+      setError('Razão Social é obrigatória.');
+      return;
+    }
+    if (!manualCnpjData.cidade.trim()) {
+      setError('Cidade é obrigatória.');
+      return;
+    }
+
+    setDocumentData({
+      documentType: 'cnpj',
+      razaoSocial: manualCnpjData.razaoSocial,
+      nomeFantasia: manualCnpjData.nomeFantasia,
+      situacao: 'NÃO VERIFICADO',
+      municipio: manualCnpjData.cidade,
+      uf: manualCnpjData.uf,
+      logradouro: manualCnpjData.endereco,
+    });
+
+    setSearchCity(manualCnpjData.cidade);
+    setError('');
+    setShowManualFallback(false);
+    setCurrentStep(2);
   };
 
   // Step 2: Confirm document data
@@ -507,6 +544,82 @@ export default function ClaimEstablishment() {
                       )}
                       {documentType === 'cpf' ? 'Avançar' : 'Consultar e Avançar'}
                     </Button>
+
+                    {/* Manual fallback button when CNPJ lookup fails */}
+                    {showManualFallback && documentType === 'cnpj' && (
+                      <div className="space-y-4 pt-4 border-t border-border">
+                        <div className="text-center">
+                          <p className="text-sm text-muted-foreground">
+                            Não foi possível consultar o CNPJ automaticamente
+                          </p>
+                        </div>
+
+                        <div className="space-y-3 bg-secondary/50 rounded-xl p-4">
+                          <h4 className="font-medium text-sm">Preencher dados manualmente</h4>
+                          
+                          <div className="space-y-2">
+                            <Label className="text-sm">Razão Social *</Label>
+                            <Input
+                              value={manualCnpjData.razaoSocial}
+                              onChange={(e) => setManualCnpjData(prev => ({ ...prev, razaoSocial: e.target.value }))}
+                              placeholder="Nome da empresa conforme registro"
+                              className="h-10"
+                            />
+                          </div>
+
+                          <div className="space-y-2">
+                            <Label className="text-sm">Nome Fantasia</Label>
+                            <Input
+                              value={manualCnpjData.nomeFantasia}
+                              onChange={(e) => setManualCnpjData(prev => ({ ...prev, nomeFantasia: e.target.value }))}
+                              placeholder="Nome popular da empresa"
+                              className="h-10"
+                            />
+                          </div>
+
+                          <div className="grid grid-cols-2 gap-2">
+                            <div className="space-y-2">
+                              <Label className="text-sm">Cidade *</Label>
+                              <Input
+                                value={manualCnpjData.cidade}
+                                onChange={(e) => setManualCnpjData(prev => ({ ...prev, cidade: e.target.value }))}
+                                placeholder="Cidade"
+                                className="h-10"
+                              />
+                            </div>
+                            <div className="space-y-2">
+                              <Label className="text-sm">UF</Label>
+                              <Input
+                                value={manualCnpjData.uf}
+                                onChange={(e) => setManualCnpjData(prev => ({ ...prev, uf: e.target.value }))}
+                                placeholder="MG"
+                                maxLength={2}
+                                className="h-10"
+                              />
+                            </div>
+                          </div>
+
+                          <div className="space-y-2">
+                            <Label className="text-sm">Endereço</Label>
+                            <Input
+                              value={manualCnpjData.endereco}
+                              onChange={(e) => setManualCnpjData(prev => ({ ...prev, endereco: e.target.value }))}
+                              placeholder="Rua, número, bairro"
+                              className="h-10"
+                            />
+                          </div>
+                        </div>
+
+                        <Button 
+                          onClick={handleManualCnpjAdvance}
+                          variant="secondary"
+                          className="w-full"
+                        >
+                          <ArrowRight className="h-4 w-4 mr-2" />
+                          Continuar Manualmente
+                        </Button>
+                      </div>
+                    )}
                   </div>
                 )}
 

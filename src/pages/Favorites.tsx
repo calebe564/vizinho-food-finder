@@ -27,6 +27,7 @@ interface Establishment {
   banner_image: string | null;
   images: unknown;
   is_paid: boolean;
+  has_delivery: boolean | null;
 }
 
 interface Product {
@@ -245,6 +246,8 @@ export default function Favorites() {
                             city={establishment.city}
                             minPrice={minPrice}
                             productNames={estProducts.slice(0, 2).map(p => p.name)}
+                            schedule={establishment.schedule}
+                            hasDelivery={establishment.has_delivery ?? false}
                           />
                         </div>
                       );

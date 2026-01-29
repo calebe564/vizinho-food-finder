@@ -1,7 +1,8 @@
 import { Link } from "react-router-dom";
-import { MapPin, Star, Store } from "lucide-react";
+import { MapPin, Star, Store, Truck } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { isOpenNow } from "@/lib/scheduleUtils";
 
 interface EstablishmentCardCompactProps {
   id: string;
@@ -15,6 +16,8 @@ interface EstablishmentCardCompactProps {
   city?: string;
   minPrice?: number | null;
   productNames?: string[];
+  schedule?: string;
+  hasDelivery?: boolean;
 }
 
 const categoryLabels: Record<string, string> = {
@@ -122,6 +125,8 @@ export function EstablishmentCardCompact({
   city,
   minPrice,
   productNames,
+  schedule,
+  hasDelivery,
 }: EstablishmentCardCompactProps) {
   const displayImage = bannerImage || profileImage;
   
@@ -132,6 +137,9 @@ export function EstablishmentCardCompact({
   
   // Format location as "Bairro · Cidade – UF"
   const locationText = formatLocation(neighborhood, city);
+  
+  // Calculate open status
+  const isOpen = schedule ? isOpenNow(schedule) : null;
   
   return (
     <Link to={`/estabelecimento/${id}`} className="block active:scale-[0.98] transition-transform">
@@ -161,40 +169,66 @@ export function EstablishmentCardCompact({
             </div>
           </div>
           
-          {/* Sponsored badge - top right */}
-          {isPaid && (
-            <div className="absolute top-1.5 right-1.5">
-              <Badge className="bg-accent text-accent-foreground text-[9px] px-1.5 py-0.5 rounded-full">
+          {/* Badges - Top row */}
+          <div className="absolute top-1.5 left-1.5 right-1.5 flex justify-between items-start gap-1">
+            {/* Status badges - left */}
+            <div className="flex flex-wrap gap-1">
+              {/* Open/Closed badge */}
+              {isOpen !== null && (
+                <span
+                  className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[9px] font-semibold shadow-sm ${
+                    isOpen
+                      ? "bg-green-500 text-white"
+                      : "bg-red-500 text-white"
+                  }`}
+                >
+                  <span className={`w-1.5 h-1.5 rounded-full bg-white ${isOpen ? "animate-pulse" : "opacity-70"}`} />
+                  {isOpen ? "Aberto" : "Fechado"}
+                </span>
+              )}
+              
+              {/* Delivery badge */}
+              {hasDelivery && (
+                <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full text-[9px] font-semibold bg-blue-500 text-white shadow-sm">
+                  <Truck className="h-2.5 w-2.5" />
+                  Delivery
+                </span>
+              )}
+            </div>
+            
+            {/* Sponsored badge - right */}
+            {isPaid && (
+              <Badge className="bg-accent text-accent-foreground text-[9px] px-1.5 py-0.5 rounded-full flex-shrink-0">
                 <Star className="h-2 w-2 mr-0.5 fill-current" />
                 Destaque
               </Badge>
-            </div>
-          )}
+            )}
+          </div>
         </div>
 
         {/* Content - more compact */}
         <div className="p-2.5">
           {/* Name - up to 2 lines */}
-          <h3 className="text-xs font-bold line-clamp-2 text-foreground leading-tight mb-1">
+          <h3 className="text-xs font-bold line-clamp-2 text-foreground leading-tight mb-1 md:text-sm">
             {name}
           </h3>
           
           {/* Category/Products */}
-          <p className="text-[10px] text-muted-foreground line-clamp-1 mb-1">
+          <p className="text-[10px] text-muted-foreground line-clamp-1 mb-1 md:text-xs">
             {displayProducts.join(" • ")}
           </p>
           
           {/* Price range */}
           {minPrice !== null && minPrice !== undefined && (
-            <p className="text-[10px] font-medium text-primary mb-1">
+            <p className="text-[10px] font-medium text-primary mb-1 md:text-xs">
               A partir de R$ {minPrice.toFixed(2).replace(".", ",")}
             </p>
           )}
           
           {/* Location */}
           {locationText && (
-            <div className="flex items-center gap-1 text-[10px] text-muted-foreground">
-              <MapPin className="h-2.5 w-2.5 flex-shrink-0" />
+            <div className="flex items-center gap-1 text-[10px] text-muted-foreground md:text-xs">
+              <MapPin className="h-2.5 w-2.5 flex-shrink-0 md:h-3 md:w-3" />
               <span className="line-clamp-1">{locationText}</span>
             </div>
           )}
