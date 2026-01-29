@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
+import { useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -15,9 +16,12 @@ import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { Plus, Pencil, Trash2, Eye, EyeOff } from "lucide-react";
 import { ConfirmPasswordDialog } from "@/components/ConfirmPasswordDialog";
+import { useFavorites } from "@/hooks/useFavorites";
 
 export default function AdminEstablishments() {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
+  const { removeDeletedEstablishment } = useFavorites();
   const [establishments, setEstablishments] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
@@ -105,10 +109,18 @@ export default function AdminEstablishments() {
 
       if (error) throw error;
 
-      // 8. Trigger state update for global consistency
+      // 8. Remove from local favorites if user had it saved
+      removeDeletedEstablishment(deleteId);
+      
+      // 9. Invalidate all related queries globally to sync UI
+      queryClient.invalidateQueries({ queryKey: ["establishments"] });
+      queryClient.invalidateQueries({ queryKey: ["favorites-establishments"] });
+      queryClient.invalidateQueries({ queryKey: ["products-favorites-list"] });
+      queryClient.invalidateQueries({ queryKey: ["products-search"] });
+      
       toast.success("Estabelecimento e todos os dados relacionados foram excluídos com sucesso!");
       
-      // Refresh the list to ensure UI is synchronized
+      // Refresh the local list
       fetchEstablishments();
     } catch (error: any) {
       console.error("Error deleting establishment:", error);

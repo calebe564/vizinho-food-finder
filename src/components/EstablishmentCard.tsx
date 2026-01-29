@@ -11,6 +11,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useFavorites } from "@/hooks/useFavorites";
+import { useUserRole } from "@/hooks/useUserRole";
 import { shareContent, shareViaWhatsApp, copyToClipboard } from "@/lib/shareUtils";
 import { toast } from "sonner";
 
@@ -90,7 +91,9 @@ export function EstablishmentCard({
   products,
   establishment,
 }: EstablishmentCardProps) {
-  const displayLabel = proximityLabel || (distance !== undefined ? `${distance.toFixed(1)} km de você` : undefined);
+  const { isAdmin } = useUserRole();
+  // Remove distance display - use proximityLabel only when explicitly passed
+  const displayLabel = proximityLabel;
   const { isFavorite, toggleFavorite } = useFavorites();
   
   const actualId = establishment?.id || id || "";
@@ -200,38 +203,40 @@ export function EstablishmentCard({
             </Avatar>
           </div>
 
-          {/* Actions menu */}
-          <div className="absolute top-3 right-3">
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild onClick={(e) => e.preventDefault()}>
-                <Button 
-                  variant="ghost" 
-                  size="icon" 
-                  className="h-8 w-8 bg-card/90 hover:bg-card rounded-full shadow-sm"
-                  onClick={(e) => e.stopPropagation()}
-                >
-                  <MoreVertical className="h-4 w-4" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="bg-popover shadow-elevated rounded-xl">
-                <DropdownMenuItem onClick={handleToggleFavorite} className="cursor-pointer gap-2">
-                  <Heart className={`h-4 w-4 ${isFav ? "fill-destructive text-destructive" : ""}`} />
-                  {isFav ? "Remover dos favoritos" : "Favoritar"}
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={handleShare} className="cursor-pointer gap-2">
-                  <Share2 className="h-4 w-4" />
-                  Compartilhar
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={handleCopyLink} className="cursor-pointer gap-2">
-                  <Globe className="h-4 w-4" />
-                  Copiar link
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </div>
+          {/* Actions menu - hidden for admins */}
+          {!isAdmin && (
+            <div className="absolute top-3 right-3">
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild onClick={(e) => e.preventDefault()}>
+                  <Button 
+                    variant="ghost" 
+                    size="icon" 
+                    className="h-8 w-8 bg-card/90 hover:bg-card rounded-full shadow-sm"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <MoreVertical className="h-4 w-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="bg-popover shadow-elevated rounded-xl">
+                  <DropdownMenuItem onClick={handleToggleFavorite} className="cursor-pointer gap-2">
+                    <Heart className={`h-4 w-4 ${isFav ? "fill-destructive text-destructive" : ""}`} />
+                    {isFav ? "Remover dos favoritos" : "Favoritar"}
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={handleShare} className="cursor-pointer gap-2">
+                    <Share2 className="h-4 w-4" />
+                    Compartilhar
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={handleCopyLink} className="cursor-pointer gap-2">
+                    <Globe className="h-4 w-4" />
+                    Copiar link
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
+          )}
 
-          {/* Favorite indicator */}
-          {isFav && (
+          {/* Favorite indicator - hidden for admins */}
+          {isFav && !isAdmin && (
             <div className="absolute bottom-3 right-3">
               <Badge className="bg-destructive text-destructive-foreground shadow-md rounded-full">
                 <Heart className="h-3 w-3 mr-1 fill-current" />
