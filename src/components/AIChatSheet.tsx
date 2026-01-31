@@ -92,9 +92,9 @@ export function AIChatSheet({ trigger }: AIChatSheetProps) {
     };
     setMessages([initialMessage]);
     setHasActiveSession(true);
+    setInput("");
     localStorage.setItem(CHAT_SESSION_KEY, "active");
     localStorage.setItem(CHAT_MESSAGES_KEY, JSON.stringify([initialMessage]));
-    toast.success("Chat iniciado!");
   };
 
   const clearSession = () => {
@@ -113,7 +113,9 @@ export function AIChatSheet({ trigger }: AIChatSheetProps) {
 
   const handleOpenChange = (open: boolean) => {
     setIsOpen(open);
-    if (open && !hasActiveSession) {
+    // SEMPRE iniciar uma nova sessão limpa quando abre
+    if (open) {
+      clearSession();
       startNewSession();
     }
   };

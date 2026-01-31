@@ -9,6 +9,8 @@ import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { AdvertisementBanner } from "@/components/AdvertisementBanner";
 import { LocationFilter } from "@/components/LocationFilterModal";
+import { isOpenNow } from "@/lib/scheduleUtils";
+import { getProximityScore, areNeighborhoodsEquivalent } from "@/lib/locationUtils";
 
 import { useUserLocation } from "@/contexts/LocationContext";
 import { useSearchParams } from "react-router-dom";
@@ -75,36 +77,19 @@ interface LocationSelection {
 
 function calculateProximityScore(establishment: Establishment, userLocation: LocationSelection | null): number {
   if (!userLocation) return 999;
-  const normalize = (str: string) => str?.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim() || "";
-  const estNeighborhood = normalize(establishment.neighborhood || "");
-  const estRegion = normalize(establishment.region || "");
-  const estCity = normalize(establishment.city || "");
-  const userNeighborhood = normalize(userLocation.neighborhood);
-  const userRegion = normalize(userLocation.region);
-  const userCity = normalize(userLocation.city);
   
-  // Check exact or partial match for neighborhood
-  if (estNeighborhood && userNeighborhood) {
-    if (estNeighborhood === userNeighborhood || estNeighborhood.includes(userNeighborhood) || userNeighborhood.includes(estNeighborhood)) {
-      return 1;
+  return getProximityScore(
+    { 
+      neighborhood: establishment.neighborhood, 
+      region: establishment.region, 
+      city: establishment.city 
+    },
+    { 
+      neighborhood: userLocation.neighborhood, 
+      region: userLocation.region, 
+      city: userLocation.city 
     }
-  }
-  
-  // Check region match
-  if (estRegion && userRegion) {
-    if (estRegion === userRegion || estRegion.includes(userRegion) || userRegion.includes(estRegion)) {
-      return 2;
-    }
-  }
-  
-  // Check city match
-  if (estCity && userCity) {
-    if (estCity === userCity || estCity.includes(userCity) || userCity.includes(estCity)) {
-      return 3;
-    }
-  }
-  
-  return 4;
+  );
 }
 
 const ITEMS_PER_PAGE = 12;
@@ -233,7 +218,7 @@ export default function Home() {
       });
   }, [allProductsWithEstablishment, searchTerm, searchMode, category, selectedLocation]);
 
-  // Filter establishments
+  // Filter establishments - ORDENAÇÃO: Abertos primeiro, depois fechados
   const filteredEstablishments = useMemo(() => {
     return establishments
       .filter((est) => {
@@ -258,9 +243,17 @@ export default function Home() {
       .map((est) => ({
         ...est,
         proximityScore: calculateProximityScore(est, selectedLocation),
+        isOpen: isOpenNow(est.schedule),
       }))
       .sort((a, b) => {
+        // PRIORIDADE 1: Abertos sempre primeiro
+        if (a.isOpen && !b.isOpen) return -1;
+        if (!a.isOpen && b.isOpen) return 1;
+        
+        // PRIORIDADE 2: Pagos primeiro (dentro do mesmo status)
         if (a.is_paid !== b.is_paid) return a.is_paid ? -1 : 1;
+        
+        // PRIORIDADE 3: Ordenação selecionada
         if (sortBy === "proximity") return a.proximityScore - b.proximityScore;
         if (sortBy === "name-asc") return a.name.localeCompare(b.name, 'pt-BR');
         if (sortBy === "name-desc") return b.name.localeCompare(a.name, 'pt-BR');
