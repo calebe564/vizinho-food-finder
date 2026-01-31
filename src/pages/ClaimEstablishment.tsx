@@ -548,9 +548,13 @@ export default function ClaimEstablishment() {
                     {/* Manual fallback button when CNPJ lookup fails */}
                     {showManualFallback && documentType === 'cnpj' && (
                       <div className="space-y-4 pt-4 border-t border-border">
-                        <div className="text-center">
-                          <p className="text-sm text-muted-foreground">
+                        <div className="text-center bg-amber-50 dark:bg-amber-900/20 rounded-lg p-3">
+                          <AlertCircle className="h-5 w-5 mx-auto text-amber-600 dark:text-amber-400 mb-2" />
+                          <p className="text-sm text-amber-800 dark:text-amber-300 font-medium">
                             Não foi possível consultar o CNPJ automaticamente
+                          </p>
+                          <p className="text-xs text-amber-600 dark:text-amber-400 mt-1">
+                            Você pode preencher os dados manualmente
                           </p>
                         </div>
 

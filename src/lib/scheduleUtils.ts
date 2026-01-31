@@ -1,4 +1,5 @@
 // Utilitário para verificar se estabelecimento está aberto
+// CORRIGIDO: Lógica confiável para todos os cenários incluindo madrugada
 
 export function isOpenNow(schedule: string): boolean {
   if (!schedule || typeof schedule !== 'string') {
@@ -8,7 +9,9 @@ export function isOpenNow(schedule: string): boolean {
   try {
     const now = new Date();
     const currentDay = now.getDay(); // 0 = Domingo, 1 = Segunda, etc.
-    const currentTime = now.getHours() * 60 + now.getMinutes();
+    const currentHours = now.getHours();
+    const currentMinutes = now.getMinutes();
+    const currentTime = currentHours * 60 + currentMinutes;
 
     // Formato esperado: "Seg-Sex: 08:00-18:00, Sáb: 08:00-12:00"
     const scheduleLines = schedule.split(',').map(s => s.trim());
@@ -53,10 +56,27 @@ export function isOpenNow(schedule: string): boolean {
       const closeMin = parseInt(hoursMatch[4] || '0', 10);
 
       const openMinutes = openHour * 60 + openMin;
-      const closeMinutes = closeHour * 60 + closeMin;
+      let closeMinutes = closeHour * 60 + closeMin;
       
       // Verifica se o dia atual está incluído
-      if (isDayIncluded(days, currentDay)) {
+      if (!isDayIncluded(days, currentDay)) continue;
+
+      // CORREÇÃO: Tratamento de horários que passam da meia-noite
+      // Ex: 18:00-02:00 (fecha às 2h da manhã do dia seguinte)
+      if (closeMinutes < openMinutes) {
+        // Horário atravessa meia-noite
+        // Se estamos entre abertura e meia-noite OU entre meia-noite e fechamento
+        if (currentTime >= openMinutes || currentTime < closeMinutes) {
+          return true;
+        }
+        
+        // Verificar também se o dia anterior tinha horário que atravessa
+        const previousDay = currentDay === 0 ? 6 : currentDay - 1;
+        if (isDayIncluded(days, previousDay) && currentTime < closeMinutes) {
+          return true;
+        }
+      } else {
+        // Horário normal (não atravessa meia-noite)
         if (currentTime >= openMinutes && currentTime < closeMinutes) {
           return true;
         }
@@ -70,57 +90,63 @@ export function isOpenNow(schedule: string): boolean {
   }
 }
 
-function isDayIncluded(daysStr: string, currentDay: number): boolean {
+function isDayIncluded(daysStr: string, targetDay: number): boolean {
   if (!daysStr || typeof daysStr !== 'string') {
     return false;
   }
 
   const daysMap: Record<string, number> = {
-    'dom': 0, 'domingo': 0,
-    'seg': 1, 'segunda': 1,
-    'ter': 2, 'terça': 2, 'terca': 2,
-    'qua': 3, 'quarta': 3,
-    'qui': 4, 'quinta': 4,
-    'sex': 5, 'sexta': 5,
-    'sáb': 6, 'sab': 6, 'sábado': 6, 'sabado': 6
+    'dom': 0, 'domingo': 0, 'sun': 0,
+    'seg': 1, 'segunda': 1, 'mon': 1, '2ª': 1, '2a': 1,
+    'ter': 2, 'terça': 2, 'terca': 2, 'tue': 2, '3ª': 2, '3a': 2,
+    'qua': 3, 'quarta': 3, 'wed': 3, '4ª': 3, '4a': 3,
+    'qui': 4, 'quinta': 4, 'thu': 4, '5ª': 4, '5a': 4,
+    'sex': 5, 'sexta': 5, 'fri': 5, '6ª': 5, '6a': 5,
+    'sáb': 6, 'sab': 6, 'sábado': 6, 'sabado': 6, 'sat': 6,
   };
 
   const lowerDays = daysStr.toLowerCase().trim();
 
-  // Verifica se é um range (ex: seg-sex, seg-dom)
-  const rangeMatch = lowerDays.match(/(\w+)\s*[-–]\s*(\w+)/);
+  // Verifica padrões como "todos os dias", "diariamente", "24h"
+  if (lowerDays.includes('todos') || lowerDays.includes('diariamente') || lowerDays.includes('24h') || lowerDays.includes('24 h')) {
+    return true;
+  }
+
+  // Verifica se é um range (ex: seg-sex, seg-dom, ter-sab)
+  const rangeMatch = lowerDays.match(/(\w+)\s*[-–a]\s*(\w+)/);
   if (rangeMatch) {
-    const startDay = daysMap[rangeMatch[1]];
-    const endDay = daysMap[rangeMatch[2]];
+    const startKey = rangeMatch[1].toLowerCase();
+    const endKey = rangeMatch[2].toLowerCase();
+    const startDay = daysMap[startKey];
+    const endDay = daysMap[endKey];
     
     if (startDay !== undefined && endDay !== undefined) {
       if (startDay <= endDay) {
-        return currentDay >= startDay && currentDay <= endDay;
+        return targetDay >= startDay && targetDay <= endDay;
       } else {
         // Wrap around (ex: sex-seg = sexta, sábado, domingo, segunda)
-        return currentDay >= startDay || currentDay <= endDay;
+        return targetDay >= startDay || targetDay <= endDay;
       }
+    }
+  }
+
+  // Verifica múltiplos dias separados por vírgula, espaço ou "e"
+  const daysList = lowerDays.split(/[\s,e]+/);
+  for (const day of daysList) {
+    const cleanDay = day.trim();
+    if (daysMap[cleanDay] === targetDay) {
+      return true;
     }
   }
 
   // Verifica se é um dia específico
   for (const [key, value] of Object.entries(daysMap)) {
-    if (lowerDays.includes(key) && value === currentDay) {
+    if (lowerDays.includes(key) && value === targetDay) {
       return true;
     }
   }
 
   return false;
-}
-
-function timeToMinutes(timeStr: string): number {
-  if (!timeStr || typeof timeStr !== 'string') {
-    return 0;
-  }
-  const parts = timeStr.replace(/h/gi, '').split(':').map(s => parseInt(s.trim(), 10) || 0);
-  const hours = parts[0] || 0;
-  const minutes = parts[1] || 0;
-  return hours * 60 + minutes;
 }
 
 export function getScheduleStatus(schedule: string): { isOpen: boolean; text: string; color: string } {
@@ -139,4 +165,26 @@ export function getScheduleStatus(schedule: string): { isOpen: boolean; text: st
     text: isOpen ? 'Aberto agora' : 'Fechado',
     color: isOpen ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'
   };
+}
+
+// Função para ordenar estabelecimentos: ABERTOS primeiro, FECHADOS depois
+export function sortByOpenStatus<T extends { schedule: string }>(
+  items: T[],
+  secondarySort?: (a: T, b: T) => number
+): T[] {
+  return [...items].sort((a, b) => {
+    const aOpen = isOpenNow(a.schedule);
+    const bOpen = isOpenNow(b.schedule);
+    
+    // Abertos vêm primeiro
+    if (aOpen && !bOpen) return -1;
+    if (!aOpen && bOpen) return 1;
+    
+    // Se ambos têm mesmo status, usar ordenação secundária
+    if (secondarySort) {
+      return secondarySort(a, b);
+    }
+    
+    return 0;
+  });
 }

@@ -10,6 +10,8 @@ import { useSearchParams } from "react-router-dom";
 import { Database } from "@/integrations/supabase/types";
 import { useUserLocation } from "@/contexts/LocationContext";
 import { MapPin, Store, Loader2 } from "lucide-react";
+import { isOpenNow } from "@/lib/scheduleUtils";
+import { areNeighborhoodsEquivalent } from "@/lib/locationUtils";
 
 type EstablishmentCategory = Database["public"]["Enums"]["establishment_category"];
 
@@ -83,14 +85,12 @@ export default function AllEstablishments() {
 
   const matchesManualLocation = (est: Establishment) => {
     if (!manualLocation) return true;
-    const locationLower = manualLocation.toLowerCase();
-    return (
-      (est.neighborhood?.toLowerCase().includes(locationLower) || false) ||
-      est.city.toLowerCase().includes(locationLower) ||
-      est.address.toLowerCase().includes(locationLower)
-    );
+    // Usar normalização de bairros para matching
+    return areNeighborhoodsEquivalent(est.neighborhood || '', manualLocation) ||
+           areNeighborhoodsEquivalent(est.city, manualLocation);
   };
 
+  // ORDENAÇÃO: Abertos primeiro, depois fechados
   const sortedEstablishments = useMemo(() => {
     return establishments
       .filter((est) => {
@@ -105,14 +105,21 @@ export default function AllEstablishments() {
         }
         return matchesManualLocation(est);
       })
+      .map((est) => ({
+        ...est,
+        isOpen: isOpenNow(est.schedule),
+        matchScore: matchesManualLocation(est) ? 0 : 1,
+      }))
       .sort((a, b) => {
-        // Sort by neighborhood/city match (proximity by text)
+        // PRIORIDADE 1: Abertos sempre primeiro
+        if (a.isOpen && !b.isOpen) return -1;
+        if (!a.isOpen && b.isOpen) return 1;
+        
+        // PRIORIDADE 2: Ordenação selecionada
         if (sortBy === "distance") {
-          const aMatch = matchesManualLocation(a) ? 0 : 1;
-          const bMatch = matchesManualLocation(b) ? 0 : 1;
-          return aMatch - bMatch;
+          return a.matchScore - b.matchScore;
         }
-        if (sortBy === "name") return a.name.localeCompare(b.name);
+        if (sortBy === "name") return a.name.localeCompare(b.name, 'pt-BR');
         if (sortBy === "price-asc") {
           const aPrice = Math.min(...getEstablishmentProducts(a.id).map((p) => p.price), Infinity);
           const bPrice = Math.min(...getEstablishmentProducts(b.id).map((p) => p.price), Infinity);

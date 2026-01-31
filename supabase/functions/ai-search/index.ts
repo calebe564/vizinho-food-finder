@@ -23,7 +23,20 @@ interface Product {
     profile_image: string | null;
     category: string;
     active: boolean;
+    schedule: string;
   } | null;
+}
+
+interface Establishment {
+  id: string;
+  name: string;
+  neighborhood: string | null;
+  region: string | null;
+  city: string;
+  profile_image: string | null;
+  category: string;
+  description: string | null;
+  schedule: string;
 }
 
 interface Establishment {
@@ -61,7 +74,7 @@ serve(async (req) => {
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const supabase = createClient(supabaseUrl, supabaseKey);
 
-    // Fetch all products with their establishments
+    // Fetch all products with their establishments (include schedule for sorting)
     const { data: products, error: productsError } = await supabase
       .from('products')
       .select(`
@@ -80,7 +93,8 @@ serve(async (req) => {
           city,
           profile_image,
           category,
-          active
+          active,
+          schedule
         )
       `)
       .order('name');
@@ -90,10 +104,10 @@ serve(async (req) => {
       throw productsError;
     }
 
-    // Fetch all active establishments
+    // Fetch all active establishments (include schedule for sorting)
     const { data: establishments, error: establishmentsError } = await supabase
       .from('establishments')
-      .select('id, name, neighborhood, region, city, profile_image, category, description')
+      .select('id, name, neighborhood, region, city, profile_image, category, description, schedule')
       .eq('active', true)
       .order('name');
 
@@ -266,6 +280,23 @@ Responda APENAS em JSON válido com este formato:
       });
     }
 
+    // ORDENAÇÃO FINAL: Abertos primeiro, depois fechados
+    filteredProducts = filteredProducts.sort((a, b) => {
+      const aOpen = isEstablishmentOpen(a.establishments?.schedule || '');
+      const bOpen = isEstablishmentOpen(b.establishments?.schedule || '');
+      if (aOpen && !bOpen) return -1;
+      if (!aOpen && bOpen) return 1;
+      return 0;
+    });
+    
+    filteredEstablishments = filteredEstablishments.sort((a, b) => {
+      const aOpen = isEstablishmentOpen(a.schedule || '');
+      const bOpen = isEstablishmentOpen(b.schedule || '');
+      if (aOpen && !bOpen) return -1;
+      if (!aOpen && bOpen) return 1;
+      return 0;
+    });
+
     // Format response
     const formattedProducts = filteredProducts.slice(0, 20).map(p => ({
       id: p.id,
@@ -328,6 +359,84 @@ function getProximityScore(establishment: { neighborhood?: string | null; region
   if (city.includes(location) || location.includes(city)) return 1;
   
   return 0;
+}
+
+// Função para verificar se estabelecimento está aberto
+function isEstablishmentOpen(schedule: string): boolean {
+  if (!schedule || typeof schedule !== 'string') return false;
+  
+  try {
+    const now = new Date();
+    const currentDay = now.getDay();
+    const currentHours = now.getHours();
+    const currentMinutes = now.getMinutes();
+    const currentTime = currentHours * 60 + currentMinutes;
+
+    const daysMap: Record<string, number> = {
+      'dom': 0, 'domingo': 0,
+      'seg': 1, 'segunda': 1,
+      'ter': 2, 'terça': 2, 'terca': 2,
+      'qua': 3, 'quarta': 3,
+      'qui': 4, 'quinta': 4,
+      'sex': 5, 'sexta': 5,
+      'sáb': 6, 'sab': 6, 'sábado': 6, 'sabado': 6,
+    };
+
+    const scheduleLines = schedule.split(',').map(s => s.trim());
+
+    for (const line of scheduleLines) {
+      if (!line) continue;
+      
+      const lowerLine = line.toLowerCase();
+      if (lowerLine.includes('fechado')) continue;
+
+      const colonIndex = line.indexOf(':');
+      if (colonIndex === -1) continue;
+      
+      const days = line.substring(0, colonIndex).trim().toLowerCase();
+      const hours = line.substring(colonIndex + 1).trim();
+
+      // Check if current day is included
+      let dayIncluded = false;
+      const rangeMatch = days.match(/(\w+)\s*[-–]\s*(\w+)/);
+      if (rangeMatch) {
+        const startDay = daysMap[rangeMatch[1]];
+        const endDay = daysMap[rangeMatch[2]];
+        if (startDay !== undefined && endDay !== undefined) {
+          dayIncluded = startDay <= endDay 
+            ? (currentDay >= startDay && currentDay <= endDay)
+            : (currentDay >= startDay || currentDay <= endDay);
+        }
+      }
+      if (!dayIncluded) {
+        for (const [key, value] of Object.entries(daysMap)) {
+          if (days.includes(key) && value === currentDay) {
+            dayIncluded = true;
+            break;
+          }
+        }
+      }
+      
+      if (!dayIncluded) continue;
+
+      const hoursMatch = hours.match(/(\d{1,2}):?(\d{2})?\s*[-–]\s*(\d{1,2}):?(\d{2})?/);
+      if (!hoursMatch) continue;
+
+      const openMinutes = parseInt(hoursMatch[1], 10) * 60 + parseInt(hoursMatch[2] || '0', 10);
+      const closeMinutes = parseInt(hoursMatch[3], 10) * 60 + parseInt(hoursMatch[4] || '0', 10);
+      
+      if (closeMinutes < openMinutes) {
+        // Crosses midnight
+        if (currentTime >= openMinutes || currentTime < closeMinutes) return true;
+      } else {
+        if (currentTime >= openMinutes && currentTime < closeMinutes) return true;
+      }
+    }
+
+    return false;
+  } catch {
+    return false;
+  }
 }
 
 function performBasicSearch(query: string, products: Product[], establishments: Establishment[], corsHeaders: Record<string, string>) {
