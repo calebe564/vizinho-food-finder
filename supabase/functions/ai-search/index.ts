@@ -22,6 +22,8 @@ interface Product {
     city: string;
     profile_image: string | null;
     category: string;
+    category_2: string | null;
+    category_3: string | null;
     active: boolean;
     schedule: string;
   } | null;
@@ -35,19 +37,23 @@ interface Establishment {
   city: string;
   profile_image: string | null;
   category: string;
+  category_2: string | null;
+  category_3: string | null;
   description: string | null;
   schedule: string;
 }
 
-interface Establishment {
-  id: string;
-  name: string;
-  neighborhood: string | null;
-  region: string | null;
-  city: string;
-  profile_image: string | null;
-  category: string;
-  description: string | null;
+// Função para verificar se estabelecimento corresponde a categoria (incluindo secundárias)
+function matchesCategory(establishment: { category: string; category_2?: string | null; category_3?: string | null }, categoryFilter: string): boolean {
+  if (!categoryFilter) return true;
+  
+  const categories = [
+    establishment.category,
+    establishment.category_2,
+    establishment.category_3
+  ].filter(Boolean).map(c => c!.toLowerCase());
+  
+  return categories.includes(categoryFilter.toLowerCase());
 }
 
 serve(async (req) => {
@@ -104,10 +110,10 @@ serve(async (req) => {
       throw productsError;
     }
 
-    // Fetch all active establishments (include schedule for sorting)
+    // Fetch all active establishments (include schedule and categories for sorting)
     const { data: establishments, error: establishmentsError } = await supabase
       .from('establishments')
-      .select('id, name, neighborhood, region, city, profile_image, category, description, schedule')
+      .select('id, name, neighborhood, region, city, profile_image, category, category_2, category_3, description, schedule')
       .eq('active', true)
       .order('name');
 
@@ -238,14 +244,17 @@ Responda APENAS em JSON válido com este formato:
       return nameMatch || descMatch || establishmentMatch;
     });
 
-    // Search establishments
+    // Search establishments (including secondary categories)
     const typedEstablishments = (establishments || []) as Establishment[];
     const matchedEstablishments = typedEstablishments.filter(est => {
       const nameMatch = searchLower.some((term: string) => 
         est.name.toLowerCase().includes(term)
       );
+      // Buscar em todas as categorias (principal + secundárias)
       const categoryMatch = searchLower.some((term: string) => 
-        est.category.toLowerCase().includes(term)
+        est.category.toLowerCase().includes(term) ||
+        (est.category_2 && est.category_2.toLowerCase().includes(term)) ||
+        (est.category_3 && est.category_3.toLowerCase().includes(term))
       );
       const descMatch = est.description && searchLower.some((term: string) => 
         est.description!.toLowerCase().includes(term)
@@ -266,21 +275,32 @@ Responda APENAS em JSON válido com este formato:
     if (locationToFilter) {
       const locLower = locationToFilter.toLowerCase();
       
-      // Sort by proximity (same neighborhood first, then region, then city)
-      filteredProducts = matchedProducts.sort((a, b) => {
+      // PRIORIDADE 1: Filtrar por localização (só mostrar resultados da localização filtrada)
+      filteredProducts = matchedProducts.filter(p => {
+        const score = getProximityScore(p.establishments, locLower);
+        return score > 0; // Só incluir se tiver alguma correspondência de localização
+      });
+      
+      filteredEstablishments = matchedEstablishments.filter(e => {
+        const score = getProximityScore(e, locLower);
+        return score > 0;
+      });
+      
+      // Ordenar por proximidade dentro dos filtrados
+      filteredProducts = filteredProducts.sort((a, b) => {
         const aScore = getProximityScore(a.establishments, locLower);
         const bScore = getProximityScore(b.establishments, locLower);
         return bScore - aScore;
       });
       
-      filteredEstablishments = matchedEstablishments.sort((a, b) => {
+      filteredEstablishments = filteredEstablishments.sort((a, b) => {
         const aScore = getProximityScore(a, locLower);
         const bScore = getProximityScore(b, locLower);
         return bScore - aScore;
       });
     }
 
-    // ORDENAÇÃO FINAL: Abertos primeiro, depois fechados
+    // PRIORIDADE 2: ORDENAÇÃO FINAL - Abertos primeiro, depois fechados
     filteredProducts = filteredProducts.sort((a, b) => {
       const aOpen = isEstablishmentOpen(a.establishments?.schedule || '');
       const bOpen = isEstablishmentOpen(b.establishments?.schedule || '');

@@ -51,6 +51,8 @@ const formSchema = z.object({
   name: z.string().min(2, 'Nome muito curto'),
   description: z.string().optional(),
   category: z.string().min(1, 'Selecione uma categoria'),
+  category_2: z.string().optional(),
+  category_3: z.string().optional(),
   phone: z.string().min(8, 'Telefone inválido'),
   whatsapp: z.string().optional(),
   schedule: z.string().optional(),
@@ -69,6 +71,8 @@ interface EditEstablishmentDialogProps {
     name: string;
     description: string | null;
     category: string;
+    category_2?: string | null;
+    category_3?: string | null;
     phone: string;
     whatsapp: string | null;
     schedule: string | null;
@@ -93,6 +97,8 @@ export function EditEstablishmentDialog({
       name: initialData.name,
       description: initialData.description || '',
       category: initialData.category,
+      category_2: initialData.category_2 || '',
+      category_3: initialData.category_3 || '',
       phone: initialData.phone,
       whatsapp: initialData.whatsapp || '',
       schedule: initialData.schedule || '',
@@ -107,6 +113,8 @@ export function EditEstablishmentDialog({
         name: data.name,
         description: data.description || null,
         category: data.category as "acai" | "açougue" | "bar" | "cafe" | "espetinho" | "hamburgueria" | "hortifruti" | "lanchonete" | "outro" | "padaria" | "pizzaria" | "restaurante" | "sorveteria" | "supermercado",
+        category_2: data.category_2 || null,
+        category_3: data.category_3 || null,
         phone: data.phone,
         whatsapp: data.whatsapp || null,
         schedule: data.schedule || null,
@@ -179,6 +187,60 @@ export function EditEstablishmentDialog({
                 </FormItem>
               )}
             />
+
+            <div className="grid grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
+                name="category_2"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Categoria 2 (opcional)</FormLabel>
+                    <Select onValueChange={field.onChange} value={field.value || ''}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Nenhuma" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="">Nenhuma</SelectItem>
+                        {categories.map((cat) => (
+                          <SelectItem key={cat.value} value={cat.value}>
+                            {cat.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="category_3"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Categoria 3 (opcional)</FormLabel>
+                    <Select onValueChange={field.onChange} value={field.value || ''}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Nenhuma" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="">Nenhuma</SelectItem>
+                        {categories.map((cat) => (
+                          <SelectItem key={cat.value} value={cat.value}>
+                            {cat.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
 
             <FormField
               control={form.control}

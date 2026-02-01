@@ -12,6 +12,7 @@ import { useUserLocation } from "@/contexts/LocationContext";
 import { MapPin, Store, Loader2 } from "lucide-react";
 import { isOpenNow } from "@/lib/scheduleUtils";
 import { areNeighborhoodsEquivalent } from "@/lib/locationUtils";
+import { matchesCategory } from "@/lib/sortingUtils";
 
 type EstablishmentCategory = Database["public"]["Enums"]["establishment_category"];
 
@@ -19,6 +20,8 @@ interface Establishment {
   id: string;
   name: string;
   category: string;
+  category_2: string | null;
+  category_3: string | null;
   address: string;
   neighborhood: string | null;
   city: string;
@@ -90,21 +93,41 @@ export default function AllEstablishments() {
            areNeighborhoodsEquivalent(est.city, manualLocation);
   };
 
-  // ORDENAÇÃO: Abertos primeiro, depois fechados
+  // ORDENAÇÃO COM PRIORIDADES CORRETAS:
+  // 1. Localização filtrada (já filtrado pela query ou manualLocation)
+  // 2. Aberto/Fechado (Abertos SEMPRE primeiro)
+  // 3. Categoria (já filtrado pela query)
+  // 4. Proximidade/Nome
   const sortedEstablishments = useMemo(() => {
-    return establishments
-      .filter((est) => {
-        if (searchQuery) {
-          const searchLower = searchQuery.toLowerCase();
-          const matchesProduct = getEstablishmentProducts(est.id).some((p) =>
-            p.name.toLowerCase().includes(searchLower)
-          );
-          const matchesName = est.name.toLowerCase().includes(searchLower);
-          const matchesCategory = est.category.toLowerCase().includes(searchLower);
-          if (!matchesProduct && !matchesName && !matchesCategory) return false;
-        }
-        return matchesManualLocation(est);
-      })
+    // PASSO 1: Filtrar por localização e busca
+    const filtered = establishments.filter((est) => {
+      if (searchQuery) {
+        const searchLower = searchQuery.toLowerCase();
+        const matchesProduct = getEstablishmentProducts(est.id).some((p) =>
+          p.name.toLowerCase().includes(searchLower)
+        );
+        const matchesName = est.name.toLowerCase().includes(searchLower);
+        // Busca em todas as categorias (principal + secundárias)
+        const matchesCategorySearch = est.category.toLowerCase().includes(searchLower) ||
+                                      (est.category_2 && est.category_2.toLowerCase().includes(searchLower)) ||
+                                      (est.category_3 && est.category_3.toLowerCase().includes(searchLower));
+        
+        if (!matchesProduct && !matchesName && !matchesCategorySearch) return false;
+      }
+      
+      // Filtrar por localização manual
+      if (!matchesManualLocation(est)) return false;
+      
+      // Filtrar por categoria selecionada (incluindo categorias secundárias)
+      if (selectedCategory && selectedCategory !== 'todos') {
+        if (!matchesCategory(est, selectedCategory)) return false;
+      }
+      
+      return true;
+    });
+    
+    // PASSO 2: Ordenar com prioridades corretas
+    return filtered
       .map((est) => ({
         ...est,
         isOpen: isOpenNow(est.schedule),
@@ -115,7 +138,10 @@ export default function AllEstablishments() {
         if (a.isOpen && !b.isOpen) return -1;
         if (!a.isOpen && b.isOpen) return 1;
         
-        // PRIORIDADE 2: Ordenação selecionada
+        // PRIORIDADE 2: Pagos primeiro (dentro do mesmo status)
+        if (a.is_paid !== b.is_paid) return a.is_paid ? -1 : 1;
+        
+        // PRIORIDADE 3: Ordenação selecionada
         if (sortBy === "distance") {
           return a.matchScore - b.matchScore;
         }
@@ -132,7 +158,7 @@ export default function AllEstablishments() {
         }
         return 0;
       });
-  }, [establishments, manualLocation, sortBy, searchQuery, products]);
+  }, [establishments, manualLocation, sortBy, searchQuery, products, selectedCategory]);
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
