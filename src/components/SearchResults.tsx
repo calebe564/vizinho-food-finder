@@ -22,6 +22,9 @@ const categoryLabels: Record<string, string> = {
   hamburgueria: 'Hamburgueria',
   bar: 'Bar',
   cafe: 'Café',
+  sorveteria: 'Sorveteria',
+  acai: 'Açaí',
+  espetinho: 'Espetinho',
   outro: 'Outro',
 };
 

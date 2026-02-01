@@ -9,8 +9,9 @@ import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { AdvertisementBanner } from "@/components/AdvertisementBanner";
 import { LocationFilter } from "@/components/LocationFilterModal";
+import { sortEstablishments, sortProducts, matchesCategory } from "@/lib/sortingUtils";
+import { areNeighborhoodsEquivalent } from "@/lib/locationUtils";
 import { isOpenNow } from "@/lib/scheduleUtils";
-import { getProximityScore, areNeighborhoodsEquivalent } from "@/lib/locationUtils";
 
 import { useUserLocation } from "@/contexts/LocationContext";
 import { useSearchParams } from "react-router-dom";
@@ -21,6 +22,8 @@ interface Establishment {
   id: string;
   name: string;
   category: string;
+  category_2: string | null;
+  category_3: string | null;
   address: string;
   neighborhood: string | null;
   region: string | null;
@@ -43,6 +46,7 @@ interface ProductWithEstablishment {
   description: string | null;
   image: string | null;
   establishment_id: string;
+  establishment_schedule: string;
   establishment_name: string;
   establishment_category: string;
   establishment_image: string | null;
@@ -75,22 +79,7 @@ interface LocationSelection {
   state: string;
 }
 
-function calculateProximityScore(establishment: Establishment, userLocation: LocationSelection | null): number {
-  if (!userLocation) return 999;
-  
-  return getProximityScore(
-    { 
-      neighborhood: establishment.neighborhood, 
-      region: establishment.region, 
-      city: establishment.city 
-    },
-    { 
-      neighborhood: userLocation.neighborhood, 
-      region: userLocation.region, 
-      city: userLocation.city 
-    }
-  );
-}
+// Função removida - agora usamos sortEstablishments de sortingUtils
 
 const ITEMS_PER_PAGE = 12;
 
@@ -140,7 +129,7 @@ export default function Home() {
         supabase.from("advertisements").select("*").eq("active", true),
         supabase.from("products").select(`
           id, name, price, description, image, establishment_id,
-          establishments!inner(id, name, category, profile_image, neighborhood, city, active)
+          establishments!inner(id, name, category, profile_image, neighborhood, city, active, schedule)
         `).limit(500)
       ]);
       
@@ -159,6 +148,7 @@ export default function Home() {
             description: p.description,
             image: p.image,
             establishment_id: p.establishment_id,
+            establishment_schedule: p.establishments?.schedule || "",
             establishment_name: p.establishments?.name || "",
             establishment_category: p.establishments?.category || "",
             establishment_image: p.establishments?.profile_image || null,
@@ -177,72 +167,92 @@ export default function Home() {
   const getAdsByPosition = (position: string) => advertisements.filter(ad => ad.position === position);
   const getEstablishmentProducts = (establishmentId: string) => products.filter((p) => p.establishment_id === establishmentId);
 
-  // Filter products for product search mode
+  // Filter products for product search mode - NOVA LÓGICA COM ORDENAÇÃO CORRETA
   const filteredProducts = useMemo(() => {
     if (!searchTerm || searchMode !== "products") return [];
     
     const searchLower = searchTerm.toLowerCase();
     
-    return allProductsWithEstablishment
-      .filter((product) => {
-        const matchesProduct = product.name.toLowerCase().includes(searchLower);
-        const matchesCategory = category === "todos" || product.establishment_category === category;
-        return matchesProduct && matchesCategory;
-      })
+    // Filtrar por texto e categoria
+    let filtered = allProductsWithEstablishment.filter((product) => {
+      const matchesProduct = product.name.toLowerCase().includes(searchLower);
+      const matchesCategoryFilter = category === "todos" || product.establishment_category === category;
+      
+      // Aplicar filtro de localização se houver
+      if (locationFilter) {
+        const matchesLocation = areNeighborhoodsEquivalent(
+          product.establishment_neighborhood || '',
+          locationFilter.neighborhood
+        );
+        return matchesProduct && matchesCategoryFilter && matchesLocation;
+      }
+      
+      return matchesProduct && matchesCategoryFilter;
+    });
+    
+    // ORDENAR: Abertos primeiro, depois por proximidade
+    return filtered
+      .map(product => ({
+        ...product,
+        isEstablishmentOpen: isOpenNow(product.establishment_schedule),
+      }))
       .sort((a, b) => {
-        // Sort by proximity
-        if (!selectedLocation) return a.name.localeCompare(b.name, 'pt-BR');
+        // PRIORIDADE 1: Estabelecimentos abertos primeiro
+        if (a.isEstablishmentOpen && !b.isEstablishmentOpen) return -1;
+        if (!a.isEstablishmentOpen && b.isEstablishmentOpen) return 1;
         
-        const normalize = (str: string) => str?.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim() || "";
-        const userNeighborhood = normalize(selectedLocation.neighborhood);
-        const userCity = normalize(selectedLocation.city);
+        // PRIORIDADE 2: Proximidade
+        if (selectedLocation) {
+          const aMatch = areNeighborhoodsEquivalent(a.establishment_neighborhood || '', selectedLocation.neighborhood);
+          const bMatch = areNeighborhoodsEquivalent(b.establishment_neighborhood || '', selectedLocation.neighborhood);
+          if (aMatch && !bMatch) return -1;
+          if (!aMatch && bMatch) return 1;
+        }
         
-        const aNeighborhood = normalize(a.establishment_neighborhood || "");
-        const bNeighborhood = normalize(b.establishment_neighborhood || "");
-        const aCity = normalize(a.establishment_city || "");
-        const bCity = normalize(b.establishment_city || "");
-        
-        const aMatchNeighborhood = aNeighborhood.includes(userNeighborhood) || userNeighborhood.includes(aNeighborhood);
-        const bMatchNeighborhood = bNeighborhood.includes(userNeighborhood) || userNeighborhood.includes(bNeighborhood);
-        
-        if (aMatchNeighborhood && !bMatchNeighborhood) return -1;
-        if (!aMatchNeighborhood && bMatchNeighborhood) return 1;
-        
-        const aMatchCity = aCity.includes(userCity) || userCity.includes(aCity);
-        const bMatchCity = bCity.includes(userCity) || userCity.includes(bCity);
-        
-        if (aMatchCity && !bMatchCity) return -1;
-        if (!aMatchCity && bMatchCity) return 1;
-        
+        // PRIORIDADE 3: Nome
         return a.name.localeCompare(b.name, 'pt-BR');
       });
-  }, [allProductsWithEstablishment, searchTerm, searchMode, category, selectedLocation]);
+  }, [allProductsWithEstablishment, searchTerm, searchMode, category, selectedLocation, locationFilter]);
 
-  // Filter establishments - ORDENAÇÃO: Abertos primeiro, depois fechados
+  // Filter establishments - NOVA LÓGICA COM PRIORIDADES CORRETAS
+  // PRIORIDADE: 1. Localização filtrada → 2. Aberto/Fechado → 3. Categoria → 4. Proximidade
   const filteredEstablishments = useMemo(() => {
-    return establishments
-      .filter((est) => {
-        const searchLower = searchTerm.toLowerCase();
-        
-        if (!searchTerm) {
-          // No search term - filter by category only
-          return category === "todos" || est.category === category;
-        }
-        
-        // Only show establishments in company search mode
-        if (searchMode === "products") {
-          return false; // Products mode shows product cards, not establishments
-        }
-        
-        // Search by company name or category
-        const matchesName = est.name.toLowerCase().includes(searchLower);
-        const matchesCat = est.category.toLowerCase().includes(searchLower);
-        const matchesCategoryFilter = category === "todos" || est.category === category;
-        return (matchesName || matchesCat) && matchesCategoryFilter;
-      })
+    // PASSO 1: Aplicar filtro de localização PRIMEIRO
+    let filtered = establishments;
+    if (locationFilter) {
+      filtered = establishments.filter(est => 
+        areNeighborhoodsEquivalent(est.neighborhood || '', locationFilter.neighborhood)
+      );
+    }
+    
+    // PASSO 2: Aplicar filtro de busca e categoria
+    filtered = filtered.filter((est) => {
+      const searchLower = searchTerm.toLowerCase();
+      
+      if (!searchTerm) {
+        // Sem termo de busca - filtrar só por categoria (incluindo categorias secundárias)
+        return matchesCategory(est, category);
+      }
+      
+      // Em modo produtos, não mostrar estabelecimentos
+      if (searchMode === "products") {
+        return false;
+      }
+      
+      // Buscar por nome ou categoria
+      const matchesName = est.name.toLowerCase().includes(searchLower);
+      const matchesCat = est.category.toLowerCase().includes(searchLower) ||
+                         (est.category_2 && est.category_2.toLowerCase().includes(searchLower)) ||
+                         (est.category_3 && est.category_3.toLowerCase().includes(searchLower));
+      const matchesCategoryFilter = matchesCategory(est, category);
+      
+      return (matchesName || matchesCat) && matchesCategoryFilter;
+    });
+    
+    // PASSO 3: Ordenar - Abertos primeiro, depois por proximidade/nome
+    return filtered
       .map((est) => ({
         ...est,
-        proximityScore: calculateProximityScore(est, selectedLocation),
         isOpen: isOpenNow(est.schedule),
       }))
       .sort((a, b) => {
@@ -254,12 +264,18 @@ export default function Home() {
         if (a.is_paid !== b.is_paid) return a.is_paid ? -1 : 1;
         
         // PRIORIDADE 3: Ordenação selecionada
-        if (sortBy === "proximity") return a.proximityScore - b.proximityScore;
+        if (sortBy === "proximity" && selectedLocation) {
+          const aMatch = areNeighborhoodsEquivalent(a.neighborhood || '', selectedLocation.neighborhood);
+          const bMatch = areNeighborhoodsEquivalent(b.neighborhood || '', selectedLocation.neighborhood);
+          if (aMatch && !bMatch) return -1;
+          if (!aMatch && bMatch) return 1;
+        }
         if (sortBy === "name-asc") return a.name.localeCompare(b.name, 'pt-BR');
         if (sortBy === "name-desc") return b.name.localeCompare(a.name, 'pt-BR');
-        return 0;
+        
+        return a.name.localeCompare(b.name, 'pt-BR');
       });
-  }, [establishments, searchTerm, searchMode, category, sortBy, selectedLocation]);
+  }, [establishments, searchTerm, searchMode, category, sortBy, selectedLocation, locationFilter]);
 
   // Check if we're in product search mode with results
   const showProductResults = searchMode === "products" && searchTerm && filteredProducts.length > 0;

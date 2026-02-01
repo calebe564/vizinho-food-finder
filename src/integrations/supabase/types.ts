@@ -332,6 +332,8 @@ export type Database = {
           approved_by: string | null
           birth_date: string | null
           category: Database["public"]["Enums"]["establishment_category"]
+          category_2: string | null
+          category_3: string | null
           cep: string | null
           cnpj: string | null
           cpf_hash: string | null
@@ -369,6 +371,8 @@ export type Database = {
           approved_by?: string | null
           birth_date?: string | null
           category: Database["public"]["Enums"]["establishment_category"]
+          category_2?: string | null
+          category_3?: string | null
           cep?: string | null
           cnpj?: string | null
           cpf_hash?: string | null
@@ -406,6 +410,8 @@ export type Database = {
           approved_by?: string | null
           birth_date?: string | null
           category?: Database["public"]["Enums"]["establishment_category"]
+          category_2?: string | null
+          category_3?: string | null
           cep?: string | null
           cnpj?: string | null
           cpf_hash?: string | null
@@ -479,6 +485,8 @@ export type Database = {
           address: string
           banner_image: string | null
           category: Database["public"]["Enums"]["establishment_category"]
+          category_2: string | null
+          category_3: string | null
           cep: string | null
           city: string
           cnpj: string | null
@@ -511,6 +519,8 @@ export type Database = {
           address: string
           banner_image?: string | null
           category: Database["public"]["Enums"]["establishment_category"]
+          category_2?: string | null
+          category_3?: string | null
           cep?: string | null
           city?: string
           cnpj?: string | null
@@ -543,6 +553,8 @@ export type Database = {
           address?: string
           banner_image?: string | null
           category?: Database["public"]["Enums"]["establishment_category"]
+          category_2?: string | null
+          category_3?: string | null
           cep?: string | null
           city?: string
           cnpj?: string | null

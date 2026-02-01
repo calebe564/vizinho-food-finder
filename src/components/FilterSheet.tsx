@@ -24,6 +24,9 @@ const categories = [
   { value: "outro", label: "Outro" },
 ];
 
+// Exportar categorias para uso em outros componentes
+export const CATEGORIES = categories;
+
 const sortOptions = [
   { value: "proximity", label: "Mais próximos", icon: MapPin },
   { value: "name-asc", label: "Nome (A-Z)" },
