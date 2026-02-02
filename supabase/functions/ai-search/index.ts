@@ -26,6 +26,8 @@ interface Product {
     category_3: string | null;
     active: boolean;
     schedule: string;
+    has_delivery: boolean | null;
+    phone: string;
   } | null;
 }
 
@@ -41,6 +43,8 @@ interface Establishment {
   category_3: string | null;
   description: string | null;
   schedule: string;
+  has_delivery: boolean | null;
+  phone: string;
 }
 
 // Função para verificar se estabelecimento corresponde a categoria (incluindo secundárias)
@@ -80,7 +84,7 @@ serve(async (req) => {
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const supabase = createClient(supabaseUrl, supabaseKey);
 
-    // Fetch all products with their establishments (include schedule for sorting)
+    // Fetch all products with their establishments (include schedule, has_delivery, phone for sorting/display)
     const { data: products, error: productsError } = await supabase
       .from('products')
       .select(`
@@ -100,7 +104,9 @@ serve(async (req) => {
           profile_image,
           category,
           active,
-          schedule
+          schedule,
+          has_delivery,
+          phone
         )
       `)
       .order('name');
@@ -110,10 +116,10 @@ serve(async (req) => {
       throw productsError;
     }
 
-    // Fetch all active establishments (include schedule and categories for sorting)
+    // Fetch all active establishments (include schedule, has_delivery, phone and categories for sorting)
     const { data: establishments, error: establishmentsError } = await supabase
       .from('establishments')
-      .select('id, name, neighborhood, region, city, profile_image, category, category_2, category_3, description, schedule')
+      .select('id, name, neighborhood, region, city, profile_image, category, category_2, category_3, description, schedule, has_delivery, phone')
       .eq('active', true)
       .order('name');
 
@@ -333,6 +339,9 @@ Responda APENAS em JSON válido com este formato:
         city: p.establishments.city,
         profileImage: p.establishments.profile_image,
         category: p.establishments.category,
+        schedule: p.establishments.schedule,
+        hasDelivery: p.establishments.has_delivery ?? false,
+        phone: p.establishments.phone,
       } : null
     }));
 
@@ -480,6 +489,9 @@ function performBasicSearch(query: string, products: Product[], establishments: 
       city: p.establishments.city,
       profileImage: p.establishments.profile_image,
       category: p.establishments.category,
+      schedule: p.establishments.schedule,
+      hasDelivery: p.establishments.has_delivery ?? false,
+      phone: p.establishments.phone,
     } : null
   }));
   

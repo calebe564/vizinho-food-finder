@@ -14,6 +14,7 @@ import { useFavorites } from "@/hooks/useFavorites";
 import { useUserRole } from "@/hooks/useUserRole";
 import { shareContent, shareViaWhatsApp, copyToClipboard } from "@/lib/shareUtils";
 import { toast } from "sonner";
+import { StatusBadges } from "@/components/StatusBadge";
 
 interface Product {
   name: string;
@@ -35,6 +36,7 @@ interface Establishment {
   is_paid: boolean;
   latitude: number;
   longitude: number;
+  has_delivery?: boolean | null;
 }
 
 interface EstablishmentCardProps {
@@ -54,6 +56,7 @@ interface EstablishmentCardProps {
   isPaid?: boolean;
   products?: Product[];
   establishment?: Establishment;
+  hasDelivery?: boolean;
 }
 
 const categoryLabels: Record<string, string> = {
@@ -90,6 +93,7 @@ export function EstablishmentCard({
   isPaid,
   products,
   establishment,
+  hasDelivery,
 }: EstablishmentCardProps) {
   const { isAdmin } = useUserRole();
   // Remove distance display - use proximityLabel only when explicitly passed
@@ -107,6 +111,7 @@ export function EstablishmentCard({
   const actualBannerImage = establishment?.banner_image || bannerImage;
   const actualIsPaid = establishment?.is_paid ?? isPaid ?? false;
   const actualProducts = products || [];
+  const actualHasDelivery = establishment?.has_delivery ?? hasDelivery ?? false;
   
   const getCoverImage = () => {
     const estImages = establishment?.images;
@@ -179,25 +184,34 @@ export function EstablishmentCard({
   return (
     <Link to={`/estabelecimento/${actualId}`} className="block group">
       <Card className="overflow-hidden bg-card border border-border hover:border-accent/30 shadow-card hover:shadow-elevated transition-all duration-300 rounded-2xl">
-        {/* Image */}
+        {/* Image - larger on desktop */}
         <div className="relative">
           {coverImage ? (
             <img 
               src={coverImage} 
               alt={actualName} 
-              className="w-full h-44 object-cover transition-transform duration-500 group-hover:scale-105"
+              className="w-full h-44 md:h-52 lg:h-56 object-cover transition-transform duration-500 group-hover:scale-105"
             />
           ) : (
-            <div className="w-full h-44 bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center">
-              <Store className="h-16 w-16 text-primary/40" />
+            <div className="w-full h-44 md:h-52 lg:h-56 bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center">
+              <Store className="h-16 w-16 md:h-20 md:w-20 text-primary/40" />
             </div>
           )}
           
+          {/* Status badges - top left */}
+          <div className="absolute top-3 left-3">
+            <StatusBadges 
+              schedule={actualSchedule} 
+              hasDelivery={actualHasDelivery}
+              size="md"
+            />
+          </div>
+          
           {/* Logo - bottom left overlapping */}
-          <div className="absolute -bottom-6 left-4">
-            <Avatar className="h-14 w-14 border-3 border-card shadow-elevated">
+          <div className="absolute -bottom-6 left-4 md:-bottom-8 md:left-5">
+            <Avatar className="h-14 w-14 md:h-16 md:w-16 border-3 border-card shadow-elevated">
               <AvatarImage src={actualProfileImage || undefined} alt={actualName} />
-              <AvatarFallback className="bg-primary text-primary-foreground text-lg font-bold">
+              <AvatarFallback className="bg-primary text-primary-foreground text-lg md:text-xl font-bold">
                 {actualName.charAt(0).toUpperCase()}
               </AvatarFallback>
             </Avatar>
@@ -246,12 +260,12 @@ export function EstablishmentCard({
           )}
         </div>
 
-        <CardContent className="pt-8 pb-4 px-4">
+        <CardContent className="pt-8 md:pt-10 pb-4 md:pb-5 px-4 md:px-5">
           {/* Header with name, category and badge */}
           <div className="flex items-start justify-between gap-2 mb-3">
             <div className="flex-1 min-w-0">
-              <h3 className="text-base font-bold line-clamp-1 text-foreground">{actualName}</h3>
-              <p className="text-sm text-muted-foreground mt-0.5">
+              <h3 className="text-base md:text-lg font-bold line-clamp-1 text-foreground">{actualName}</h3>
+              <p className="text-sm md:text-base text-muted-foreground mt-0.5">
                 {categoryLabels[actualCategory] || actualCategory}
               </p>
             </div>

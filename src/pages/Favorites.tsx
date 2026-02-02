@@ -11,6 +11,7 @@ import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useEffect } from "react";
+import { isOpenNow } from "@/lib/scheduleUtils";
 
 interface Establishment {
   id: string;
@@ -131,8 +132,20 @@ export default function Favorites() {
     return variations.filter((v) => v.product_id === productId);
   };
 
-  // Sort establishments by neighborhood proximity (no lat/long)
+  // Sort establishments: OPEN first, then by neighborhood proximity
   const sortedEstablishments = [...establishments].sort((a, b) => {
+    // First priority: Open status
+    const aOpen = isOpenNow(a.schedule);
+    const bOpen = isOpenNow(b.schedule);
+    
+    if (aOpen && !bOpen) return -1;
+    if (!aOpen && bOpen) return 1;
+    
+    // Second priority: Paid/Highlight
+    if (a.is_paid && !b.is_paid) return -1;
+    if (!a.is_paid && b.is_paid) return 1;
+    
+    // Third priority: Neighborhood proximity
     const userNeighborhood = locationDetails?.neighborhood?.toLowerCase() || "";
     const userCity = locationDetails?.city?.toLowerCase() || "";
     
@@ -222,7 +235,7 @@ export default function Favorites() {
                     </p>
                   </div>
                 ) : (
-                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
+                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 md:gap-4">
                     {sortedEstablishments.map((establishment, index) => {
                       const estProducts = getEstablishmentProducts(establishment.id);
                       const minPrice = estProducts.length > 0 
@@ -268,7 +281,7 @@ export default function Favorites() {
                     </p>
                   </div>
                 ) : (
-                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
+                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 md:gap-4">
                     {products.map((product, index) => {
                       const productVariations = getProductVariations(product.id);
                       const hasVariations = productVariations.length > 0;

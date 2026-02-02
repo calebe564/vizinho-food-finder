@@ -17,6 +17,9 @@ export interface ProductSearchResult {
     city: string;
     profileImage: string | null;
     category: string;
+    schedule?: string;
+    hasDelivery?: boolean;
+    phone?: string;
   } | null;
 }
 
