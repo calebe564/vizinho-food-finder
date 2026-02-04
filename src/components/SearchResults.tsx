@@ -2,7 +2,7 @@ import { Link } from 'react-router-dom';
 import { Search, MapPin, Store, Loader2 } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
-import { ProductSearchResultCard } from './ProductSearchResultCard';
+import { ProductCardExtended } from './ProductCardExtended';
 import type { AISearchResults } from '@/hooks/useAISearch';
 
 interface SearchResultsProps {
@@ -67,16 +67,25 @@ export function SearchResults({ results, isLoading, searchTerm }: SearchResultsP
         </div>
       )}
 
-      {/* Products Section */}
+      {/* Products Section - Using Extended Cards */}
       {hasProducts && (
         <div>
           <h2 className="text-lg font-semibold text-foreground mb-4 flex items-center gap-2">
             <Store className="w-5 h-5 text-primary" />
             Produtos ({results.products.length})
           </h2>
-          <div className="grid gap-4 md:grid-cols-2">
+          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
             {results.products.map((product) => (
-              <ProductSearchResultCard key={product.id} product={product} />
+              <ProductCardExtended
+                key={product.id}
+                id={product.id}
+                name={product.name}
+                price={product.price}
+                description={product.description}
+                image={product.image}
+                unit={product.unit}
+                establishment={product.establishment}
+              />
             ))}
           </div>
         </div>

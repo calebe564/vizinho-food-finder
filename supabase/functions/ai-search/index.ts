@@ -28,6 +28,10 @@ interface Product {
     schedule: string;
     has_delivery: boolean | null;
     phone: string;
+    whatsapp: string | null;
+    address: string;
+    google_maps_link: string | null;
+    cnpj: string | null;
   } | null;
 }
 
@@ -84,7 +88,7 @@ serve(async (req) => {
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const supabase = createClient(supabaseUrl, supabaseKey);
 
-    // Fetch all products with their establishments (include schedule, has_delivery, phone for sorting/display)
+    // Fetch all products with their establishments (include all fields for complete product cards)
     const { data: products, error: productsError } = await supabase
       .from('products')
       .select(`
@@ -106,7 +110,11 @@ serve(async (req) => {
           active,
           schedule,
           has_delivery,
-          phone
+          phone,
+          whatsapp,
+          address,
+          google_maps_link,
+          cnpj
         )
       `)
       .order('name');
@@ -323,7 +331,7 @@ Responda APENAS em JSON válido com este formato:
       return 0;
     });
 
-    // Format response
+    // Format response with all establishment data for extended product cards
     const formattedProducts = filteredProducts.slice(0, 20).map(p => ({
       id: p.id,
       name: p.name,
@@ -342,6 +350,10 @@ Responda APENAS em JSON válido com este formato:
         schedule: p.establishments.schedule,
         hasDelivery: p.establishments.has_delivery ?? false,
         phone: p.establishments.phone,
+        whatsapp: p.establishments.whatsapp,
+        address: p.establishments.address,
+        googleMapsLink: p.establishments.google_maps_link,
+        cnpj: p.establishments.cnpj,
       } : null
     }));
 

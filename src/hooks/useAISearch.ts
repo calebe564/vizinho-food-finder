@@ -20,6 +20,10 @@ export interface ProductSearchResult {
     schedule?: string;
     hasDelivery?: boolean;
     phone?: string;
+    whatsapp?: string | null;
+    address?: string;
+    googleMapsLink?: string | null;
+    cnpj?: string | null;
   } | null;
 }
 

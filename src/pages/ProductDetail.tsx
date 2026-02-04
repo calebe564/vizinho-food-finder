@@ -8,9 +8,14 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { useFavorites } from "@/hooks/useFavorites";
 import { toast } from "sonner";
-import { ArrowLeft, Heart, Store, ImageIcon, Loader2 } from "lucide-react";
+import { 
+  ArrowLeft, Heart, Store, ImageIcon, Loader2, 
+  MessageCircle, Navigation, Clock, Phone, MapPin,
+  Truck, ShieldCheck, ShieldAlert
+} from "lucide-react";
 import { Helmet } from "react-helmet-async";
 import { useState } from "react";
+import { OpenClosedBadge, DeliveryBadge } from "@/components/StatusBadge";
 
 interface Product {
   id: string;
@@ -34,6 +39,16 @@ interface Establishment {
   id: string;
   name: string;
   profile_image: string | null;
+  phone: string;
+  whatsapp: string | null;
+  address: string;
+  neighborhood: string | null;
+  city: string;
+  schedule: string;
+  has_delivery: boolean | null;
+  google_maps_link: string | null;
+  cnpj: string | null;
+  category: string;
 }
 
 export default function ProductDetail() {
@@ -72,11 +87,11 @@ export default function ProductDetail() {
   });
 
   const { data: establishment } = useQuery({
-    queryKey: ["establishment-for-product", product?.establishment_id],
+    queryKey: ["establishment-for-product-detail", product?.establishment_id],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("establishments")
-        .select("id, name, profile_image")
+        .select("id, name, profile_image, phone, whatsapp, address, neighborhood, city, schedule, has_delivery, google_maps_link, cnpj, category")
         .eq("id", product!.establishment_id)
         .maybeSingle();
 
@@ -99,12 +114,9 @@ export default function ProductDetail() {
     if (!product) return [];
     const imgs: string[] = [];
     
-    // Check images array (new format)
     if (product.images && Array.isArray(product.images) && product.images.length > 0) {
       imgs.push(...product.images);
-    }
-    // Fallback to single image if no images array
-    else if (product.image) {
+    } else if (product.image) {
       imgs.push(product.image);
     }
     
@@ -124,6 +136,43 @@ export default function ProductDetail() {
     }
     return formatted;
   };
+
+  // WhatsApp link with pre-filled message
+  const getWhatsAppLink = () => {
+    const phone = establishment?.whatsapp || establishment?.phone;
+    if (!phone) return null;
+    
+    const cleanPhone = phone.replace(/\D/g, "");
+    const phoneWithCode = cleanPhone.startsWith("55") ? cleanPhone : `55${cleanPhone}`;
+    
+    const priceText = hasVariations 
+      ? `a partir de ${formatPrice(variations[0].price)}`
+      : formatPrice(product?.price || 0, product?.unit);
+    
+    const message = encodeURIComponent(
+      `Olá! Vi o produto "${product?.name}" (${priceText}) da ${establishment?.name} no Comércio Vizinho e gostaria de mais informações.`
+    );
+    
+    return `https://wa.me/${phoneWithCode}?text=${message}`;
+  };
+
+  // Google Maps link
+  const getMapsLink = () => {
+    if (establishment?.google_maps_link) {
+      return establishment.google_maps_link;
+    }
+    if (establishment?.address || establishment?.neighborhood) {
+      const query = [establishment.address, establishment.neighborhood, establishment.city]
+        .filter(Boolean)
+        .join(", ");
+      return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query)}`;
+    }
+    return null;
+  };
+
+  const whatsappLink = getWhatsAppLink();
+  const mapsLink = getMapsLink();
+  const isPJ = !!establishment?.cnpj;
 
   if (productLoading) {
     return (
@@ -194,7 +243,6 @@ export default function ProductDetail() {
                       alt={product.name}
                       className="w-full h-full object-cover"
                     />
-                    {/* Favorite button */}
                     <Button
                       variant="ghost"
                       size="icon"
@@ -204,7 +252,6 @@ export default function ProductDetail() {
                       <Heart className={`h-5 w-5 ${isFav ? "fill-red-500 text-red-500" : ""}`} />
                     </Button>
                   </div>
-                  {/* Thumbnails */}
                   {images.length > 1 && (
                     <div className="flex gap-2 overflow-x-auto pb-2">
                       {images.map((img, index) => (
@@ -286,29 +333,144 @@ export default function ProductDetail() {
                 </CardContent>
               </Card>
 
-              {/* Establishment Link */}
+              {/* Action Buttons - WhatsApp & Maps */}
+              <div className="grid grid-cols-2 gap-3">
+                {whatsappLink ? (
+                  <Button
+                    asChild
+                    size="lg"
+                    className="bg-green-600 hover:bg-green-700 text-white font-semibold"
+                  >
+                    <a href={whatsappLink} target="_blank" rel="noopener noreferrer">
+                      <MessageCircle className="w-5 h-5 mr-2" />
+                      Comprar via WhatsApp
+                    </a>
+                  </Button>
+                ) : (
+                  <Button size="lg" variant="outline" disabled className="opacity-50">
+                    <MessageCircle className="w-5 h-5 mr-2" />
+                    Sem WhatsApp
+                  </Button>
+                )}
+
+                {mapsLink ? (
+                  <Button
+                    asChild
+                    size="lg"
+                    variant="outline"
+                    className="border-primary text-primary hover:bg-primary hover:text-primary-foreground"
+                  >
+                    <a href={mapsLink} target="_blank" rel="noopener noreferrer">
+                      <Navigation className="w-5 h-5 mr-2" />
+                      Ver Localização
+                    </a>
+                  </Button>
+                ) : (
+                  <Button size="lg" variant="outline" disabled className="opacity-50">
+                    <Navigation className="w-5 h-5 mr-2" />
+                    Sem endereço
+                  </Button>
+                )}
+              </div>
+
+              {/* Establishment Card with Full Info */}
               {establishment && (
-                <Link to={`/estabelecimento/${establishment.id}`}>
-                  <Card className="hover:bg-secondary/50 transition-colors cursor-pointer">
-                    <CardContent className="p-4 flex items-center gap-4">
-                      {establishment.profile_image ? (
-                        <img
-                          src={establishment.profile_image}
-                          alt={establishment.name}
-                          className="w-12 h-12 rounded-xl object-cover"
-                        />
-                      ) : (
-                        <div className="w-12 h-12 rounded-xl bg-gradient-primary flex items-center justify-center">
-                          <Store className="h-6 w-6 text-primary-foreground" />
+                <Card className="overflow-hidden">
+                  <CardContent className="p-0">
+                    <Link 
+                      to={`/estabelecimento/${establishment.id}`}
+                      className="block p-4 hover:bg-secondary/50 transition-colors"
+                    >
+                      <div className="flex items-center gap-4">
+                        {establishment.profile_image ? (
+                          <img
+                            src={establishment.profile_image}
+                            alt={establishment.name}
+                            className="w-14 h-14 rounded-xl object-cover"
+                          />
+                        ) : (
+                          <div className="w-14 h-14 rounded-xl bg-gradient-primary flex items-center justify-center">
+                            <Store className="h-7 w-7 text-primary-foreground" />
+                          </div>
+                        )}
+                        <div className="flex-1">
+                          <p className="text-sm text-muted-foreground">Vendido por</p>
+                          <p className="font-bold text-lg">{establishment.name}</p>
                         </div>
-                      )}
-                      <div>
-                        <p className="text-sm text-muted-foreground">Vendido por</p>
-                        <p className="font-semibold">{establishment.name}</p>
                       </div>
-                    </CardContent>
-                  </Card>
-                </Link>
+                    </Link>
+
+                    {/* Status Badges */}
+                    <div className="px-4 pb-3 flex flex-wrap gap-2">
+                      <OpenClosedBadge schedule={establishment.schedule} size="md" />
+                      <DeliveryBadge hasDelivery={establishment.has_delivery} size="md" />
+                    </div>
+
+                    {/* Establishment Details */}
+                    <div className="px-4 pb-4 space-y-3 border-t border-border pt-4">
+                      {/* Schedule */}
+                      <div className="flex items-start gap-3">
+                        <Clock className="w-5 h-5 text-primary flex-shrink-0 mt-0.5" />
+                        <div>
+                          <p className="text-sm font-medium">Horário de Funcionamento</p>
+                          <p className="text-sm text-muted-foreground whitespace-pre-line">
+                            {establishment.schedule || "Não informado"}
+                          </p>
+                        </div>
+                      </div>
+
+                      {/* Address */}
+                      <div className="flex items-start gap-3">
+                        <MapPin className="w-5 h-5 text-primary flex-shrink-0 mt-0.5" />
+                        <div>
+                          <p className="text-sm font-medium">Endereço</p>
+                          <p className="text-sm text-muted-foreground">
+                            {[establishment.address, establishment.neighborhood, establishment.city]
+                              .filter(Boolean)
+                              .join(", ") || "Não informado"}
+                          </p>
+                        </div>
+                      </div>
+
+                      {/* Phone */}
+                      <div className="flex items-start gap-3">
+                        <Phone className="w-5 h-5 text-primary flex-shrink-0 mt-0.5" />
+                        <div>
+                          <p className="text-sm font-medium">Telefone</p>
+                          <p className="text-sm text-muted-foreground">
+                            {establishment.phone || "Não informado"}
+                          </p>
+                        </div>
+                      </div>
+
+                      {/* Delivery */}
+                      <div className="flex items-start gap-3">
+                        <Truck className="w-5 h-5 text-primary flex-shrink-0 mt-0.5" />
+                        <div>
+                          <p className="text-sm font-medium">Delivery</p>
+                          <p className="text-sm text-muted-foreground">
+                            {establishment.has_delivery ? "Entrega disponível" : "Sem delivery"}
+                          </p>
+                        </div>
+                      </div>
+
+                      {/* Business Type Badge (PJ/PF) */}
+                      <div className="pt-2">
+                        {isPJ ? (
+                          <Badge className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-100 gap-1.5">
+                            <ShieldCheck className="w-4 h-4" />
+                            Pessoa Jurídica – Garantia
+                          </Badge>
+                        ) : (
+                          <Badge variant="outline" className="text-amber-600 border-amber-300 gap-1.5">
+                            <ShieldAlert className="w-4 h-4" />
+                            Pessoa Física – Sem Garantia
+                          </Badge>
+                        )}
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
               )}
 
               {/* Favorite Button */}
