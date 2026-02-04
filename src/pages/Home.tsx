@@ -4,7 +4,7 @@ import { HeroCarousel } from "@/components/HeroCarousel";
 import { SearchBar } from "@/components/SearchBar";
 import { FilterSheet } from "@/components/FilterSheet";
 import { EstablishmentCardCompact } from "@/components/EstablishmentCardCompact";
-import { ProductCardSearch } from "@/components/ProductCardSearch";
+import { ProductCardExtended } from "@/components/ProductCardExtended";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { AdvertisementBanner } from "@/components/AdvertisementBanner";
@@ -45,6 +45,7 @@ interface ProductWithEstablishment {
   price: number;
   description: string | null;
   image: string | null;
+  unit: string | null;
   establishment_id: string;
   establishment_schedule: string;
   establishment_name: string;
@@ -52,6 +53,11 @@ interface ProductWithEstablishment {
   establishment_image: string | null;
   establishment_neighborhood: string | null;
   establishment_city: string | null;
+  establishment_phone: string | null;
+  establishment_whatsapp: string | null;
+  establishment_has_delivery: boolean | null;
+  establishment_address: string | null;
+  establishment_google_maps_link: string | null;
 }
 
 interface Product {
@@ -128,8 +134,8 @@ export default function Home() {
         supabase.from("products").select("establishment_id, name, price"),
         supabase.from("advertisements").select("*").eq("active", true),
         supabase.from("products").select(`
-          id, name, price, description, image, establishment_id,
-          establishments!inner(id, name, category, profile_image, neighborhood, city, active, schedule)
+          id, name, price, description, image, unit, establishment_id,
+          establishments!inner(id, name, category, profile_image, neighborhood, city, active, schedule, phone, whatsapp, has_delivery, address, google_maps_link)
         `).limit(500)
       ]);
       
@@ -147,6 +153,7 @@ export default function Home() {
             price: p.price,
             description: p.description,
             image: p.image,
+            unit: p.unit || null,
             establishment_id: p.establishment_id,
             establishment_schedule: p.establishments?.schedule || "",
             establishment_name: p.establishments?.name || "",
@@ -154,6 +161,11 @@ export default function Home() {
             establishment_image: p.establishments?.profile_image || null,
             establishment_neighborhood: p.establishments?.neighborhood || null,
             establishment_city: p.establishments?.city || null,
+            establishment_phone: p.establishments?.phone || null,
+            establishment_whatsapp: p.establishments?.whatsapp || null,
+            establishment_has_delivery: p.establishments?.has_delivery ?? false,
+            establishment_address: p.establishments?.address || null,
+            establishment_google_maps_link: p.establishments?.google_maps_link || null,
           }));
         setAllProductsWithEstablishment(mappedProducts);
       }
@@ -420,19 +432,28 @@ export default function Home() {
               <>
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                   {(paginatedItems as ProductWithEstablishment[]).map((product) => (
-                    <ProductCardSearch
+                    <ProductCardExtended
                       key={product.id}
                       id={product.id}
                       name={product.name}
                       price={product.price}
                       description={product.description}
                       image={product.image}
-                      establishmentId={product.establishment_id}
-                      establishmentName={product.establishment_name}
-                      establishmentCategory={product.establishment_category}
-                      establishmentImage={product.establishment_image}
-                      establishmentNeighborhood={product.establishment_neighborhood}
-                      establishmentCity={product.establishment_city}
+                      unit={product.unit}
+                      establishment={{
+                        id: product.establishment_id,
+                        name: product.establishment_name,
+                        category: product.establishment_category,
+                        profileImage: product.establishment_image,
+                        neighborhood: product.establishment_neighborhood,
+                        city: product.establishment_city,
+                        schedule: product.establishment_schedule,
+                        phone: product.establishment_phone || undefined,
+                        whatsapp: product.establishment_whatsapp || undefined,
+                        hasDelivery: product.establishment_has_delivery ?? false,
+                        address: product.establishment_address || undefined,
+                        googleMapsLink: product.establishment_google_maps_link,
+                      }}
                     />
                   ))}
                 </div>
