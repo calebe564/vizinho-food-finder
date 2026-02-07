@@ -129,7 +129,7 @@ export function ProductCardExtended({
   return (
     <Link to={`/produto/${id}`} className="block active:scale-[0.98] transition-transform">
       <Card className="overflow-hidden bg-card border border-border hover:border-accent/30 shadow-card hover:shadow-elevated transition-all duration-200 rounded-xl md:rounded-2xl h-full flex flex-col">
-        {/* Image area - compact on mobile, larger on desktop */}
+        {/* Image area - same as EstablishmentCardCompact */}
         <div className="relative aspect-[4/3] md:aspect-[3/2] lg:aspect-[4/3] bg-muted overflow-hidden">
           {image ? (
             <img 
@@ -164,52 +164,30 @@ export function ProductCardExtended({
           </div>
         </div>
 
-        {/* Content - compact on mobile, more spacious on desktop */}
+        {/* Content - compact, same as EstablishmentCardCompact */}
         <div className="p-2.5 md:p-3.5 lg:p-4 flex flex-col flex-1">
-          {/* Product Name - up to 2 lines */}
+          {/* Product Name */}
           <h3 className="text-xs font-bold line-clamp-2 text-foreground leading-tight mb-1 md:text-sm lg:text-base md:mb-1.5">
             {name}
           </h3>
           
-          {/* Price - prominent */}
-          <p className="text-sm md:text-base lg:text-lg font-bold text-primary mb-1.5 md:mb-2">
+          {/* Price */}
+          <p className="text-xs md:text-sm lg:text-base font-bold text-primary mb-1 md:mb-1.5">
             {formatPrice(price)}
           </p>
           
-          {/* Description */}
-          {description && (
-            <p className="text-[10px] text-muted-foreground line-clamp-1 mb-1.5 md:text-xs lg:text-sm">
-              {description}
-            </p>
-          )}
+          {/* Establishment Name */}
+          <p className="text-[10px] font-medium text-muted-foreground line-clamp-1 md:text-xs lg:text-sm">
+            {establishment?.name || "Empresa"}
+          </p>
           
-          {/* Establishment Info Section */}
-          <div className="mt-auto pt-2 border-t border-border/50">
-            {/* Establishment Name + Category */}
-            <div className="mb-1.5">
-              <p className="text-[10px] font-semibold text-foreground truncate md:text-xs lg:text-sm">
-                {establishment?.name || "Empresa"}
-              </p>
-              <p className="text-[10px] text-muted-foreground line-clamp-1 md:text-xs">
-                {categoryLabels[establishment?.category || ""] || establishment?.category || "Outro"}
-              </p>
+          {/* Location */}
+          {locationText && (
+            <div className="flex items-center gap-1 text-[10px] text-muted-foreground md:text-xs mt-0.5">
+              <MapPin className="h-2.5 w-2.5 flex-shrink-0" />
+              <span className="line-clamp-1">{locationText}</span>
             </div>
-            
-            {/* Location */}
-            {locationText && (
-              <div className="flex items-center gap-1 text-[10px] text-muted-foreground md:text-xs mb-1">
-                <MapPin className="h-2.5 w-2.5 flex-shrink-0" />
-                <span className="line-clamp-1">{locationText}</span>
-              </div>
-            )}
-            
-            {/* Phone */}
-            {establishment?.phone && (
-              <p className="text-[10px] text-muted-foreground truncate md:text-xs">
-                {establishment.phone}
-              </p>
-            )}
-          </div>
+          )}
         </div>
       </Card>
     </Link>
