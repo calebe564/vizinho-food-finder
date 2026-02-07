@@ -1,9 +1,7 @@
 import { Link } from "react-router-dom";
-import { MapPin, Store, Package, Clock, Phone, MessageCircle, Navigation } from "lucide-react";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { MapPin, Store, Package, Star } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card } from "@/components/ui/card";
 import { OpenClosedBadge, DeliveryBadge } from "@/components/StatusBadge";
 
 interface ProductCardExtendedProps {
@@ -47,6 +45,63 @@ const categoryLabels: Record<string, string> = {
   outro: "Outro",
 };
 
+// Map of known cities to their states
+const cityStateMap: Record<string, string> = {
+  "são paulo": "SP",
+  "belo horizonte": "MG",
+  "rio de janeiro": "RJ",
+  "brasília": "DF",
+  "curitiba": "PR",
+  "porto alegre": "RS",
+  "salvador": "BA",
+  "fortaleza": "CE",
+  "recife": "PE",
+  "manaus": "AM",
+  "goiânia": "GO",
+  "campinas": "SP",
+  "guarulhos": "SP",
+  "contagem": "MG",
+  "betim": "MG",
+  "ribeirão das neves": "MG",
+  "uberlândia": "MG",
+  "juiz de fora": "MG",
+  "nova lima": "MG",
+  "santa luzia": "MG",
+  "ibirité": "MG",
+  "sete lagoas": "MG",
+};
+
+function getStateAbbreviation(city?: string): string {
+  if (!city) return "";
+  const cityLower = city.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+  
+  for (const [cityName, state] of Object.entries(cityStateMap)) {
+    const normalizedCityName = cityName.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+    if (cityLower.includes(normalizedCityName)) {
+      return state;
+    }
+  }
+  
+  return "MG";
+}
+
+function formatLocation(neighborhood?: string | null, city?: string): string {
+  if (!neighborhood && !city) return "";
+  
+  const state = getStateAbbreviation(city);
+  const cityShort = city || "";
+  
+  if (neighborhood && cityShort) {
+    return `${neighborhood} · ${cityShort} – ${state}`;
+  }
+  
+  if (neighborhood) {
+    return neighborhood;
+  }
+  
+  return cityShort ? `${cityShort} – ${state}` : "";
+}
+
 export function ProductCardExtended({
   id,
   name,
@@ -68,197 +123,95 @@ export function ProductCardExtended({
   };
 
   const locationText = establishment
-    ? [establishment.neighborhood, establishment.city]
-        .filter(Boolean)
-        .join(" · ")
+    ? formatLocation(establishment.neighborhood, establishment.city)
     : "";
 
-  // Format phone number for WhatsApp link
-  const getWhatsAppLink = () => {
-    const phone = establishment?.whatsapp || establishment?.phone;
-    if (!phone) return null;
-    
-    // Remove non-numeric characters
-    const cleanPhone = phone.replace(/\D/g, "");
-    // Add country code if not present
-    const phoneWithCode = cleanPhone.startsWith("55") ? cleanPhone : `55${cleanPhone}`;
-    
-    // Create message with product info
-    const message = encodeURIComponent(
-      `Olá! Vi o produto "${name}" por ${formatPrice(price)} no Comércio Vizinho e gostaria de mais informações.`
-    );
-    
-    return `https://wa.me/${phoneWithCode}?text=${message}`;
-  };
-
-  const whatsappLink = getWhatsAppLink();
-
-  // Get Google Maps link
-  const getMapsLink = () => {
-    if (establishment?.googleMapsLink) {
-      return establishment.googleMapsLink;
-    }
-    // Fallback: search by address + city
-    if (establishment?.address || establishment?.neighborhood) {
-      const query = [establishment.address, establishment.neighborhood, establishment.city]
-        .filter(Boolean)
-        .join(", ");
-      return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query)}`;
-    }
-    return null;
-  };
-
-  const mapsLink = getMapsLink();
-
-  // Format schedule for display
-  const getScheduleDisplay = () => {
-    if (!establishment?.schedule) return null;
-    // Get first line of schedule for brief display
-    const firstLine = establishment.schedule.split(",")[0].trim();
-    return firstLine.length > 40 ? firstLine.substring(0, 40) + "..." : firstLine;
-  };
-
-  const scheduleDisplay = getScheduleDisplay();
-
   return (
-    <Card className="overflow-hidden hover:shadow-lg transition-all border-border hover:border-primary/30 group">
-      {/* Product Header with Image */}
-      <div className="flex gap-3 p-3 md:p-4">
-        {/* Product Image */}
-        <Link to={`/produto/${id}`} className="flex-shrink-0">
-          <div className="w-24 h-24 md:w-32 md:h-32 rounded-xl overflow-hidden bg-muted">
-            {image ? (
-              <img
-                src={image}
-                alt={name}
-                className="w-full h-full object-cover group-hover:scale-105 transition-transform"
-              />
-            ) : (
-              <div className="w-full h-full flex items-center justify-center text-muted-foreground bg-secondary">
-                <Package className="w-10 h-10 md:w-12 md:h-12" />
-              </div>
-            )}
+    <Link to={`/produto/${id}`} className="block active:scale-[0.98] transition-transform">
+      <Card className="overflow-hidden bg-card border border-border hover:border-accent/30 shadow-card hover:shadow-elevated transition-all duration-200 rounded-xl md:rounded-2xl h-full flex flex-col">
+        {/* Image area - compact on mobile, larger on desktop */}
+        <div className="relative aspect-[4/3] md:aspect-[3/2] lg:aspect-[4/3] bg-muted overflow-hidden">
+          {image ? (
+            <img 
+              src={image} 
+              alt={name}
+              className="w-full h-full object-cover hover:scale-105 transition-transform"
+              loading="lazy"
+              onError={(e) => {
+                e.currentTarget.style.display = 'none';
+                const fallback = e.currentTarget.nextElementSibling;
+                if (fallback) (fallback as HTMLElement).style.display = 'flex';
+              }}
+            />
+          ) : null}
+          
+          {/* Fallback when no image */}
+          <div 
+            className={`absolute inset-0 flex items-center justify-center bg-gradient-to-br from-primary/20 to-primary/5 ${image ? 'hidden' : 'flex'}`}
+          >
+            <div className="w-10 h-10 md:w-14 md:h-14 rounded-xl bg-primary/20 flex items-center justify-center">
+              <Package className="h-5 w-5 md:h-7 md:w-7 text-primary" />
+            </div>
           </div>
-        </Link>
+          
+          {/* Badges - Top row */}
+          <div className="absolute top-1.5 left-1.5 right-1.5 md:top-2.5 md:left-2.5 md:right-2.5 flex justify-between items-start gap-1">
+            {/* Status badges - left */}
+            <div className="flex flex-wrap gap-1 md:gap-1.5">
+              <OpenClosedBadge schedule={establishment?.schedule} size="sm" />
+              <DeliveryBadge hasDelivery={establishment?.hasDelivery} size="sm" />
+            </div>
+          </div>
+        </div>
 
-        {/* Product Info */}
-        <div className="flex-1 min-w-0 flex flex-col">
-          <Link to={`/produto/${id}`}>
-            <h3 className="font-bold text-foreground line-clamp-2 hover:text-primary transition-colors text-base md:text-lg">
-              {name}
-            </h3>
-          </Link>
-
+        {/* Content - compact on mobile, more spacious on desktop */}
+        <div className="p-2.5 md:p-3.5 lg:p-4 flex flex-col flex-1">
+          {/* Product Name - up to 2 lines */}
+          <h3 className="text-xs font-bold line-clamp-2 text-foreground leading-tight mb-1 md:text-sm lg:text-base md:mb-1.5">
+            {name}
+          </h3>
+          
+          {/* Price - prominent */}
+          <p className="text-sm md:text-base lg:text-lg font-bold text-primary mb-1.5 md:mb-2">
+            {formatPrice(price)}
+          </p>
+          
+          {/* Description */}
           {description && (
-            <p className="text-xs md:text-sm text-muted-foreground line-clamp-2 mt-1">
+            <p className="text-[10px] text-muted-foreground line-clamp-1 mb-1.5 md:text-xs lg:text-sm">
               {description}
             </p>
           )}
-
-          <div className="mt-auto pt-2">
-            <span className="text-lg md:text-xl font-bold text-primary">
-              {formatPrice(price)}
-            </span>
-          </div>
-        </div>
-      </div>
-
-      {/* Status Badges Row */}
-      <div className="px-3 pb-2 md:px-4 flex flex-wrap gap-2">
-        <OpenClosedBadge schedule={establishment?.schedule} size="md" />
-        <DeliveryBadge hasDelivery={establishment?.hasDelivery} size="md" />
-      </div>
-
-      {/* Establishment Info Section */}
-      <div className="px-3 pb-3 md:px-4 md:pb-4">
-        <div className="p-3 md:p-4 rounded-xl bg-secondary/50 space-y-3">
-          {/* Establishment Header */}
-          <Link
-            to={`/estabelecimento/${establishment?.id}`}
-            className="flex items-center gap-3 hover:opacity-80 transition-opacity"
-          >
-            <Avatar className="h-10 w-10 md:h-12 md:w-12 flex-shrink-0">
-              <AvatarImage src={establishment?.profileImage || undefined} alt={establishment?.name} />
-              <AvatarFallback className="bg-primary/10 text-primary text-sm md:text-base font-semibold">
-                {establishment?.name?.charAt(0).toUpperCase() || "?"}
-              </AvatarFallback>
-            </Avatar>
-
-            <div className="flex-1 min-w-0">
-              <p className="font-semibold text-foreground truncate text-sm md:text-base">
+          
+          {/* Establishment Info Section */}
+          <div className="mt-auto pt-2 border-t border-border/50">
+            {/* Establishment Name + Category */}
+            <div className="mb-1.5">
+              <p className="text-[10px] font-semibold text-foreground truncate md:text-xs lg:text-sm">
                 {establishment?.name || "Empresa"}
               </p>
-              <div className="flex items-center gap-2 flex-wrap">
-                <Badge variant="outline" className="text-xs px-1.5 py-0">
-                  {categoryLabels[establishment?.category || ""] || establishment?.category || "Outro"}
-                </Badge>
-                {locationText && (
-                  <span className="flex items-center gap-1 text-xs text-muted-foreground">
-                    <MapPin className="w-3 h-3 flex-shrink-0" />
-                    <span className="truncate">{locationText}</span>
-                  </span>
-                )}
-              </div>
+              <p className="text-[10px] text-muted-foreground line-clamp-1 md:text-xs">
+                {categoryLabels[establishment?.category || ""] || establishment?.category || "Outro"}
+              </p>
             </div>
-          </Link>
-
-          {/* Schedule & Phone Row */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-xs md:text-sm text-muted-foreground">
-            {scheduleDisplay && (
-              <div className="flex items-center gap-2">
-                <Clock className="w-4 h-4 flex-shrink-0 text-primary" />
-                <span className="truncate">{scheduleDisplay}</span>
+            
+            {/* Location */}
+            {locationText && (
+              <div className="flex items-center gap-1 text-[10px] text-muted-foreground md:text-xs mb-1">
+                <MapPin className="h-2.5 w-2.5 flex-shrink-0" />
+                <span className="line-clamp-1">{locationText}</span>
               </div>
             )}
+            
+            {/* Phone */}
             {establishment?.phone && (
-              <div className="flex items-center gap-2">
-                <Phone className="w-4 h-4 flex-shrink-0 text-primary" />
-                <span>{establishment.phone}</span>
-              </div>
-            )}
-          </div>
-
-          {/* Action Buttons */}
-          <div className="grid grid-cols-2 gap-2 pt-1">
-            {whatsappLink ? (
-              <Button
-                asChild
-                size="sm"
-                className="bg-green-600 hover:bg-green-700 text-white font-medium"
-              >
-                <a href={whatsappLink} target="_blank" rel="noopener noreferrer">
-                  <MessageCircle className="w-4 h-4 mr-1.5" />
-                  WhatsApp
-                </a>
-              </Button>
-            ) : (
-              <Button size="sm" variant="outline" disabled className="opacity-50">
-                <MessageCircle className="w-4 h-4 mr-1.5" />
-                Sem WhatsApp
-              </Button>
-            )}
-
-            {mapsLink ? (
-              <Button
-                asChild
-                size="sm"
-                variant="outline"
-                className="border-primary text-primary hover:bg-primary hover:text-primary-foreground"
-              >
-                <a href={mapsLink} target="_blank" rel="noopener noreferrer">
-                  <Navigation className="w-4 h-4 mr-1.5" />
-                  Ver no Maps
-                </a>
-              </Button>
-            ) : (
-              <Button size="sm" variant="outline" disabled className="opacity-50">
-                <Navigation className="w-4 h-4 mr-1.5" />
-                Sem endereço
-              </Button>
+              <p className="text-[10px] text-muted-foreground truncate md:text-xs">
+                {establishment.phone}
+              </p>
             )}
           </div>
         </div>
-      </div>
-    </Card>
+      </Card>
+    </Link>
   );
 }

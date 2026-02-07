@@ -1,7 +1,7 @@
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { EstablishmentCardCompact } from "@/components/EstablishmentCardCompact";
-import { ProductCard } from "@/components/ProductCard";
+import { ProductCardExtended } from "@/components/ProductCardExtended";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useFavorites } from "@/hooks/useFavorites";
@@ -269,49 +269,48 @@ export default function Favorites() {
                 )}
               </TabsContent>
 
-              <TabsContent value="products">
-                {products.length === 0 ? (
-                  <div className="text-center py-12 bg-secondary/30 rounded-2xl">
-                    <Package className="h-12 w-12 mx-auto text-muted-foreground mb-3" />
-                    <p className="text-lg font-medium text-muted-foreground">
-                      Nenhum produto favoritado
-                    </p>
-                    <p className="text-sm text-muted-foreground mt-1">
-                      Explore os produtos e favorite os seus preferidos
-                    </p>
-                  </div>
-                ) : (
-                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 md:gap-4">
-                    {products.map((product, index) => {
-                      const productVariations = getProductVariations(product.id);
-                      const hasVariations = productVariations.length > 0;
-                      const prices = productVariations.map(v => v.price);
-                      
-                      return (
-                        <div 
-                          key={product.id}
-                          className="animate-fade-in"
-                          style={{ animationDelay: `${0.03 * (index % 12)}s` }}
-                        >
-                          <ProductCard
-                            id={product.id}
-                            name={product.name}
-                            description={product.description}
-                            price={product.price}
-                            image={product.image}
-                            images={product.images as string[] | null}
-                            unit={product.unit}
-                            hasVariations={hasVariations}
-                            variationCount={productVariations.length}
-                            minPrice={hasVariations ? Math.min(...prices) : undefined}
-                            maxPrice={hasVariations ? Math.max(...prices) : undefined}
-                          />
-                        </div>
-                      );
-                    })}
-                  </div>
-                )}
-              </TabsContent>
+               <TabsContent value="products">
+                 {products.length === 0 ? (
+                   <div className="text-center py-12 bg-secondary/30 rounded-2xl">
+                     <Package className="h-12 w-12 mx-auto text-muted-foreground mb-3" />
+                     <p className="text-lg font-medium text-muted-foreground">
+                       Nenhum produto favoritado
+                     </p>
+                     <p className="text-sm text-muted-foreground mt-1">
+                       Explore os produtos e favorite os seus preferidos
+                     </p>
+                   </div>
+                 ) : (
+                   <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 md:gap-4">
+                     {products.map((product, index) => {
+                       const productVariations = getProductVariations(product.id);
+                       const hasVariations = productVariations.length > 0;
+                       
+                       return (
+                         <div 
+                           key={product.id}
+                           className="animate-fade-in"
+                           style={{ animationDelay: `${0.03 * (index % 12)}s` }}
+                         >
+                           <ProductCardExtended
+                             id={product.id}
+                             name={product.name}
+                             price={product.price}
+                             description={product.description}
+                             image={product.image}
+                             unit={product.unit}
+                             establishment={{
+                               id: "",
+                               name: "",
+                               category: "",
+                             }}
+                           />
+                         </div>
+                       );
+                     })}
+                   </div>
+                 )}
+               </TabsContent>
             </Tabs>
           )}
         </div>
