@@ -1,7 +1,7 @@
 import { useParams, Link, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { ArrowLeft, MapPin, Phone, Clock, Tag, Share2, MessageCircle, Globe, MoreVertical, Heart, Copy, Loader2, Truck, Navigation, Building2 } from "lucide-react";
+import { ArrowLeft, MapPin, Phone, Clock, Tag, Share2, MessageCircle, Globe, MoreVertical, Heart, Copy, Loader2, Truck, Navigation, Building2, Store } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -92,20 +92,27 @@ export default function EstablishmentDetail() {
   const isFav = id ? isFavorite(id) : false;
 
   // Fetch establishment with React Query for caching
-  const { data: establishment, isLoading: establishmentLoading } = useQuery({
+  const { data: establishment, isLoading: establishmentLoading, isError } = useQuery({
     queryKey: ["establishment", id],
     queryFn: async () => {
+      if (!id) return null;
+      
       const { data, error } = await supabase
         .from("establishments")
         .select("*")
         .eq("id", id)
+        .eq("active", true) // Só buscar estabelecimentos ativos
         .maybeSingle();
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error fetching establishment:', error);
+        throw error;
+      }
       return data as Establishment | null;
     },
     enabled: !!id,
     staleTime: 1000 * 60 * 5, // Cache for 5 minutes
+    retry: 1, // Limitar tentativas para não travar a UI
   });
 
   // Fetch products with React Query
@@ -215,11 +222,15 @@ export default function EstablishmentDetail() {
     );
   }
 
-  if (!establishment) {
+  if (!establishment || isError) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
-        <div className="text-center">
-          <p className="text-lg text-muted-foreground mb-4">Estabelecimento não encontrado</p>
+        <div className="text-center px-4">
+          <Store className="h-16 w-16 mx-auto text-muted-foreground mb-4" />
+          <h1 className="text-2xl font-bold mb-2">Estabelecimento não encontrado</h1>
+          <p className="text-muted-foreground mb-6">
+            Este estabelecimento pode ter sido removido ou não está mais disponível.
+          </p>
           <Link to="/">
             <Button>
               <ArrowLeft className="h-4 w-4 mr-2" />

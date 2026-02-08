@@ -49,6 +49,7 @@ interface Establishment {
   google_maps_link: string | null;
   cnpj: string | null;
   category: string;
+  active?: boolean;
 }
 
 export default function ProductDetail() {
@@ -86,19 +87,29 @@ export default function ProductDetail() {
     enabled: !!id,
   });
 
-  const { data: establishment } = useQuery({
+  const { data: establishment, isLoading: establishmentLoading, isError: establishmentError } = useQuery({
     queryKey: ["establishment-for-product-detail", product?.establishment_id],
     queryFn: async () => {
+      if (!product?.establishment_id) return null;
+      
       const { data, error } = await supabase
         .from("establishments")
-        .select("id, name, profile_image, phone, whatsapp, address, neighborhood, city, schedule, has_delivery, google_maps_link, cnpj, category")
-        .eq("id", product!.establishment_id)
+        .select("id, name, profile_image, phone, whatsapp, address, neighborhood, city, schedule, has_delivery, google_maps_link, cnpj, category, active")
+        .eq("id", product.establishment_id)
         .maybeSingle();
 
       if (error) throw error;
+      
+      // Verificar se o estabelecimento está ativo
+      if (data && !data.active) {
+        console.warn('Establishment is inactive:', product.establishment_id);
+        return null;
+      }
+      
       return data as Establishment | null;
     },
     enabled: !!product?.establishment_id,
+    retry: 1, // Limitar tentativas para não travar a UI
   });
 
   const isFav = product ? isProductFavorite(product.id) : false;
