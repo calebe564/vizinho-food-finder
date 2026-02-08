@@ -287,48 +287,60 @@ Responda APENAS em JSON válido com este formato:
     
     const locationToFilter = locationFilter || location;
     if (locationToFilter) {
-      const locLower = locationToFilter.toLowerCase();
+      const locNorm = locationToFilter.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim();
       
-      // PRIORIDADE 1: Filtrar por localização (só mostrar resultados da localização filtrada)
+      // PRIORIDADE 1: Filtrar por localização - usar normalização de bairros
       filteredProducts = matchedProducts.filter(p => {
-        const score = getProximityScore(p.establishments, locLower);
-        return score > 0; // Só incluir se tiver alguma correspondência de localização
-      });
-      
-      filteredEstablishments = matchedEstablishments.filter(e => {
-        const score = getProximityScore(e, locLower);
+        if (!p.establishments) return false;
+        const score = getProximityScore(p.establishments, locationToFilter);
         return score > 0;
       });
       
-      // Ordenar por proximidade dentro dos filtrados
-      filteredProducts = filteredProducts.sort((a, b) => {
-        const aScore = getProximityScore(a.establishments, locLower);
-        const bScore = getProximityScore(b.establishments, locLower);
-        return bScore - aScore;
-      });
-      
-      filteredEstablishments = filteredEstablishments.sort((a, b) => {
-        const aScore = getProximityScore(a, locLower);
-        const bScore = getProximityScore(b, locLower);
-        return bScore - aScore;
+      filteredEstablishments = matchedEstablishments.filter(e => {
+        const score = getProximityScore(e, locationToFilter);
+        return score > 0;
       });
     }
-
-    // PRIORIDADE 2: ORDENAÇÃO FINAL - Abertos primeiro, depois fechados
-    filteredProducts = filteredProducts.sort((a, b) => {
+    
+    // ORDENAÇÃO FINAL DETERMINÍSTICA (estável e consistente):
+    // 1. Abertos primeiro
+    // 2. Dentro de cada grupo, ordenar por proximidade
+    // 3. Dentro de cada proximidade, ordenar por nome (para consistência)
+    
+    filteredProducts = [...filteredProducts].sort((a, b) => {
+      // PRIORIDADE 1: Abertos primeiro
       const aOpen = isEstablishmentOpen(a.establishments?.schedule || '');
       const bOpen = isEstablishmentOpen(b.establishments?.schedule || '');
       if (aOpen && !bOpen) return -1;
       if (!aOpen && bOpen) return 1;
-      return 0;
+      
+      // PRIORIDADE 2: Proximidade (se há filtro de localização)
+      if (locationToFilter) {
+        const aScore = getProximityScore(a.establishments, locationToFilter);
+        const bScore = getProximityScore(b.establishments, locationToFilter);
+        if (bScore !== aScore) return bScore - aScore;
+      }
+      
+      // PRIORIDADE 3: Ordem alfabética para consistência
+      return a.name.localeCompare(b.name, 'pt-BR');
     });
     
-    filteredEstablishments = filteredEstablishments.sort((a, b) => {
+    filteredEstablishments = [...filteredEstablishments].sort((a, b) => {
+      // PRIORIDADE 1: Abertos primeiro
       const aOpen = isEstablishmentOpen(a.schedule || '');
       const bOpen = isEstablishmentOpen(b.schedule || '');
       if (aOpen && !bOpen) return -1;
       if (!aOpen && bOpen) return 1;
-      return 0;
+      
+      // PRIORIDADE 2: Proximidade (se há filtro de localização)
+      if (locationToFilter) {
+        const aScore = getProximityScore(a, locationToFilter);
+        const bScore = getProximityScore(b, locationToFilter);
+        if (bScore !== aScore) return bScore - aScore;
+      }
+      
+      // PRIORIDADE 3: Ordem alfabética para consistência
+      return a.name.localeCompare(b.name, 'pt-BR');
     });
 
     // Format response with all establishment data for extended product cards
@@ -388,16 +400,74 @@ Responda APENAS em JSON válido com este formato:
   }
 });
 
+// Mapa de equivalências de bairros para normalização no backend
+const NEIGHBORHOOD_EQUIVALENCES: Record<string, string[]> = {
+  'vilapinho': ['vila pinho', 'vilapinho', 'vila pinho (barreiro)', 'vila pinho - barreiro', 'vila pinho – barreiro', 'vila pinho - vale do jatoba', 'vila pinho – vale do jatoba', 'vila pinho vale do jatoba', 'vila pinho (vale do jatoba)'],
+  'vilapim': ['vila pim', 'vilapim', 'vilapim (barreiro)', 'vilapim - vale do jatoba', 'vilapim – vale do jatoba'],
+  'barreiro': ['barreiro', 'barreiro de baixo', 'barreiro de cima', 'centro barreiro', 'centro do barreiro'],
+  'valedojatoba': ['vale do jatoba', 'vale do jatobá', 'vale jatoba', 'jatoba', 'jatobá'],
+  'centro': ['centro', 'centro-sul', 'centro sul', 'hipercentro'],
+  'savassi': ['savassi', 'funcionarios', 'funcionários'],
+  'pampulha': ['pampulha', 'ouro preto', 'jardim atlantico', 'jardim atlântico'],
+  'vendanova': ['venda nova', 'venda-nova', 'vendanova'],
+  'belohorizonte': ['bh', 'belo horizonte', 'belohorizonte'],
+};
+
+// Normaliza string removendo acentos e caracteres especiais
+function normalizeLocationString(str: string): string {
+  if (!str || typeof str !== 'string') return '';
+  return str
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9\s]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+// Retorna o identificador canônico do bairro
+function getCanonicalNeighborhood(neighborhood: string): string {
+  if (!neighborhood) return '';
+  const normalized = normalizeLocationString(neighborhood);
+  if (!normalized) return '';
+  
+  for (const [canonical, variations] of Object.entries(NEIGHBORHOOD_EQUIVALENCES)) {
+    for (const variation of variations) {
+      const normVariation = normalizeLocationString(variation);
+      if (normVariation === normalized || normalized.includes(normVariation) || normVariation.includes(normalized)) {
+        return canonical;
+      }
+    }
+  }
+  return normalized;
+}
+
+// Verifica se dois bairros são equivalentes
+function areNeighborhoodsEquivalent(n1: string, n2: string): boolean {
+  if (!n1 || !n2) return false;
+  const c1 = getCanonicalNeighborhood(n1);
+  const c2 = getCanonicalNeighborhood(n2);
+  if (c1 && c2 && c1 === c2) return true;
+  const norm1 = normalizeLocationString(n1);
+  const norm2 = normalizeLocationString(n2);
+  if (norm1.length < 3 || norm2.length < 3) return norm1 === norm2;
+  return norm1.includes(norm2) || norm2.includes(norm1);
+}
+
 function getProximityScore(establishment: { neighborhood?: string | null; region?: string | null; city?: string } | null, location: string): number {
-  if (!establishment) return 0;
+  if (!establishment || !location) return 0;
   
-  const neighborhood = establishment.neighborhood?.toLowerCase() || '';
-  const region = establishment.region?.toLowerCase() || '';
-  const city = establishment.city?.toLowerCase() || '';
+  const locNorm = normalizeLocationString(location);
+  const neighborhood = establishment.neighborhood || '';
+  const region = establishment.region || '';
+  const city = establishment.city || '';
   
-  if (neighborhood.includes(location) || location.includes(neighborhood)) return 3;
-  if (region.includes(location) || location.includes(region)) return 2;
-  if (city.includes(location) || location.includes(city)) return 1;
+  // Usar equivalência de bairros para matching mais preciso
+  if (areNeighborhoodsEquivalent(neighborhood, location)) return 3;
+  if (areNeighborhoodsEquivalent(region, location)) return 2;
+  
+  const cityNorm = normalizeLocationString(city);
+  if (cityNorm.includes(locNorm) || locNorm.includes(cityNorm)) return 1;
   
   return 0;
 }
