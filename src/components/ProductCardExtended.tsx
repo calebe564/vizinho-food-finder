@@ -128,9 +128,9 @@ export function ProductCardExtended({
 
   return (
     <Link to={`/produto/${id}`} className="block active:scale-[0.98] transition-transform">
-      <Card className="overflow-hidden bg-card border border-border hover:border-accent/30 shadow-card hover:shadow-elevated transition-all duration-200 rounded-xl md:rounded-2xl h-full flex flex-col">
-        {/* Image area - same as EstablishmentCardCompact */}
-        <div className="relative aspect-[4/3] md:aspect-[3/2] lg:aspect-[4/3] bg-muted overflow-hidden">
+      <Card className="overflow-hidden bg-card border border-border hover:border-accent/30 shadow-card hover:shadow-elevated transition-all duration-200 rounded-lg md:rounded-xl h-full flex flex-col">
+        {/* Image area - SMALLER to match establishment cards */}
+        <div className="relative aspect-[3/2] bg-muted overflow-hidden">
           {image ? (
             <img 
               src={image} 
@@ -149,42 +149,49 @@ export function ProductCardExtended({
           <div 
             className={`absolute inset-0 flex items-center justify-center bg-gradient-to-br from-primary/20 to-primary/5 ${image ? 'hidden' : 'flex'}`}
           >
-            <div className="w-10 h-10 md:w-14 md:h-14 rounded-xl bg-primary/20 flex items-center justify-center">
-              <Package className="h-5 w-5 md:h-7 md:w-7 text-primary" />
+            <div className="w-8 h-8 md:w-10 md:h-10 rounded-lg bg-primary/20 flex items-center justify-center">
+              <Package className="h-4 w-4 md:h-5 md:w-5 text-primary" />
             </div>
           </div>
           
           {/* Badges - Top row */}
-          <div className="absolute top-1.5 left-1.5 right-1.5 md:top-2.5 md:left-2.5 md:right-2.5 flex justify-between items-start gap-1">
+          <div className="absolute top-1 left-1 right-1 md:top-2 md:left-2 md:right-2 flex justify-between items-start gap-1">
             {/* Status badges - left */}
-            <div className="flex flex-wrap gap-1 md:gap-1.5">
+            <div className="flex flex-wrap gap-0.5 md:gap-1">
               <OpenClosedBadge schedule={establishment?.schedule} size="sm" />
               <DeliveryBadge hasDelivery={establishment?.hasDelivery} size="sm" />
             </div>
           </div>
         </div>
 
-        {/* Content - compact, same as EstablishmentCardCompact */}
-        <div className="p-2.5 md:p-3.5 lg:p-4 flex flex-col flex-1">
+        {/* Content - compact */}
+        <div className="p-2 md:p-2.5 flex flex-col flex-1">
           {/* Product Name */}
-          <h3 className="text-xs font-bold line-clamp-2 text-foreground leading-tight mb-1 md:text-sm lg:text-base md:mb-1.5">
+          <h3 className="text-[11px] md:text-xs font-bold line-clamp-2 text-foreground leading-tight mb-0.5">
             {name}
           </h3>
           
           {/* Price */}
-          <p className="text-xs md:text-sm lg:text-base font-bold text-primary mb-1 md:mb-1.5">
+          <p className="text-[11px] md:text-xs font-bold text-primary mb-0.5">
             {formatPrice(price)}
           </p>
           
+          {/* Description - compact */}
+          {description && (
+            <p className="text-[9px] md:text-[10px] text-muted-foreground line-clamp-1 mb-0.5">
+              {description}
+            </p>
+          )}
+          
           {/* Establishment Name */}
-          <p className="text-[10px] font-medium text-muted-foreground line-clamp-1 md:text-xs lg:text-sm">
+          <p className="text-[9px] md:text-[10px] font-medium text-muted-foreground line-clamp-1">
             {establishment?.name || "Empresa"}
           </p>
           
           {/* Location */}
           {locationText && (
-            <div className="flex items-center gap-1 text-[10px] text-muted-foreground md:text-xs mt-0.5">
-              <MapPin className="h-2.5 w-2.5 flex-shrink-0" />
+            <div className="flex items-center gap-0.5 text-[9px] md:text-[10px] text-muted-foreground mt-0.5">
+              <MapPin className="h-2 w-2 flex-shrink-0" />
               <span className="line-clamp-1">{locationText}</span>
             </div>
           )}
