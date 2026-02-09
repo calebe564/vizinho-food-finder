@@ -74,7 +74,7 @@ export function SearchResults({ results, isLoading, searchTerm }: SearchResultsP
             <Store className="w-5 h-5 text-primary" />
             Produtos ({results.products.length})
           </h2>
-          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+          <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 md:gap-4">
             {results.products.map((product) => (
               <ProductCardExtended
                 key={product.id}
