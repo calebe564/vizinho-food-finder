@@ -18,6 +18,7 @@ interface Product {
     id: string;
     name: string;
     neighborhood: string | null;
+    neighborhood_normalized: string | null;
     region: string | null;
     city: string;
     profile_image: string | null;
@@ -39,6 +40,7 @@ interface Establishment {
   id: string;
   name: string;
   neighborhood: string | null;
+  neighborhood_normalized: string | null;
   region: string | null;
   city: string;
   profile_image: string | null;
@@ -103,6 +105,7 @@ serve(async (req) => {
           id,
           name,
           neighborhood,
+          neighborhood_normalized,
           region,
           city,
           profile_image,
@@ -127,7 +130,7 @@ serve(async (req) => {
     // Fetch all active establishments (include schedule, has_delivery, phone and categories for sorting)
     const { data: establishments, error: establishmentsError } = await supabase
       .from('establishments')
-      .select('id, name, neighborhood, region, city, profile_image, category, category_2, category_3, description, schedule, has_delivery, phone')
+      .select('id, name, neighborhood, neighborhood_normalized, region, city, profile_image, category, category_2, category_3, description, schedule, has_delivery, phone')
       .eq('active', true)
       .order('name');
 
@@ -454,15 +457,24 @@ function areNeighborhoodsEquivalent(n1: string, n2: string): boolean {
   return norm1.includes(norm2) || norm2.includes(norm1);
 }
 
-function getProximityScore(establishment: { neighborhood?: string | null; region?: string | null; city?: string } | null, location: string): number {
+function getProximityScore(establishment: { neighborhood?: string | null; neighborhood_normalized?: string | null; region?: string | null; city?: string } | null, location: string): number {
   if (!establishment || !location) return 0;
   
   const locNorm = normalizeLocationString(location);
   const neighborhood = establishment.neighborhood || '';
+  const neighborhoodNormalized = establishment.neighborhood_normalized || '';
   const region = establishment.region || '';
   const city = establishment.city || '';
   
-  // Usar equivalência de bairros para matching mais preciso
+  // Use DB-normalized field first for deterministic matching
+  const locDBNorm = normalizeLocationString(location).replace(/[^a-z0-9\s]/g, '').trim();
+  if (neighborhoodNormalized && locDBNorm) {
+    if (neighborhoodNormalized === locDBNorm || 
+        neighborhoodNormalized.includes(locDBNorm) || 
+        locDBNorm.includes(neighborhoodNormalized)) return 3;
+  }
+  
+  // Fallback to equivalence map
   if (areNeighborhoodsEquivalent(neighborhood, location)) return 3;
   if (areNeighborhoodsEquivalent(region, location)) return 2;
   

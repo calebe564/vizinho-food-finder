@@ -5,13 +5,14 @@
 // EXPANDIDO: inclui todas as variações conhecidas para garantir normalização correta
 const NEIGHBORHOOD_EQUIVALENCES: Record<string, string[]> = {
   // Vila Pinho - TODAS as variações devem ser tratadas como uma só
-  'vilapinho': [
+  'vila pinho': [
     'vila pinho', 'vilapinho', 'vila pinho (barreiro)', 'vila pinho - barreiro',
     'vila pinho – barreiro', 'vila pinho - vale do jatoba', 'vila pinho – vale do jatoba',
-    'vila pinho vale do jatoba', 'vila pinho (vale do jatoba)', 'vila pinho/barreiro'
+    'vila pinho vale do jatoba', 'vila pinho (vale do jatoba)', 'vila pinho/barreiro',
+    'vila pinho vale do jatobá', 'vila pinho vale do jatobá (barreiro)'
   ],
   // Vila Pim - variações similares
-  'vilapim': [
+  'vila pim': [
     'vila pim', 'vilapim', 'vilapim (barreiro)', 'vilapim - vale do jatoba', 
     'vilapim – vale do jatoba', 'vilapim vale do jatoba'
   ],
@@ -21,7 +22,7 @@ const NEIGHBORHOOD_EQUIVALENCES: Record<string, string[]> = {
     'centro do barreiro', 'barreiro centro', 'bairro barreiro'
   ],
   // Vale do Jatobá
-  'valedojatoba': [
+  'vale do jatoba': [
     'vale do jatoba', 'vale do jatobá', 'vale jatoba', 'vale jatobá',
     'jatoba', 'jatobá'
   ],
@@ -35,13 +36,23 @@ const NEIGHBORHOOD_EQUIVALENCES: Record<string, string[]> = {
     'bairro pampulha', 'regiao pampulha', 'região pampulha'
   ],
   // Venda Nova
-  'vendanova': ['venda nova', 'venda-nova', 'vendanova', 'regiao venda nova', 'região venda nova'],
+  'venda nova': ['venda nova', 'venda-nova', 'vendanova', 'regiao venda nova', 'região venda nova'],
   // Belo Horizonte cidade
-  'belohorizonte': ['bh', 'belo horizonte', 'belohorizonte', 'b.h.', 'b.h'],
+  'belo horizonte': ['bh', 'belo horizonte', 'belohorizonte', 'b.h.', 'b.h'],
   // Contagem
   'contagem': ['contagem', 'cidade industrial', 'eldorado contagem'],
   // Betim
   'betim': ['betim', 'centro de betim'],
+  // Castanheira
+  'castanheira': [
+    'castanheira', 'castanheira (barreiro)', 'castanheira - barreiro',
+    'castanheira – barreiro', 'castanheira barreiro'
+  ],
+  // Santa Rita
+  'santa rita': [
+    'santa rita', 'santa rita (barreiro)', 'santa rita - barreiro',
+    'santa rita – barreiro', 'santa rita barreiro'
+  ],
 };
 
 // Normaliza string removendo acentos e caracteres especiais
@@ -57,42 +68,59 @@ export function normalizeString(str: string): string {
     .trim();
 }
 
+// Normaliza bairro da mesma forma que a função do banco de dados
+// Remove parênteses, traços e sufixos, mantendo apenas o nome principal
+export function normalizeNeighborhoodDB(raw: string): string {
+  if (!raw || typeof raw !== 'string') return '';
+  
+  let n = raw.toLowerCase();
+  // Remove acentos
+  n = n.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+  // Remove parênteses e conteúdo
+  n = n.replace(/\([^)]*\)/g, '');
+  // Remove conteúdo após traço
+  n = n.replace(/\s*[-–—]\s*.*$/g, '');
+  // Remove caracteres especiais
+  n = n.replace(/[^a-z0-9\s]/g, '');
+  // Collapse spaces
+  n = n.trim().replace(/\s+/g, ' ');
+  return n;
+}
+
 // Retorna o identificador canônico do bairro
-// MELHORADO: busca mais robusta com matching bidirecional
+// Usa primeiro o mapa de equivalências, depois fallback para normalização DB
 export function getCanonicalNeighborhood(neighborhood: string): string {
   if (!neighborhood || typeof neighborhood !== 'string') return '';
   
   const normalized = normalizeString(neighborhood);
   if (!normalized) return '';
   
-  // Busca exata primeiro
+  // Busca no mapa de equivalências
   for (const [canonical, variations] of Object.entries(NEIGHBORHOOD_EQUIVALENCES)) {
     for (const variation of variations) {
       const normVariation = normalizeString(variation);
-      // Match exato
       if (normVariation === normalized) {
         return canonical;
       }
     }
   }
   
-  // Busca por inclusão (um contém o outro)
+  // Busca por inclusão
   for (const [canonical, variations] of Object.entries(NEIGHBORHOOD_EQUIVALENCES)) {
     for (const variation of variations) {
       const normVariation = normalizeString(variation);
-      // Se a variação está contida no input ou vice-versa
       if (normalized.includes(normVariation) || normVariation.includes(normalized)) {
         return canonical;
       }
     }
   }
   
-  // Se não encontrar equivalência, retorna o próprio normalizado
-  return normalized;
+  // Fallback: usar normalização DB (strip parens/dashes)
+  return normalizeNeighborhoodDB(neighborhood);
 }
 
 // Verifica se dois bairros são equivalentes
-// MELHORADO: verificação mais robusta e determinística
+// Usa canonical mapping + DB normalization para matching determinístico
 export function areNeighborhoodsEquivalent(neighborhood1: string, neighborhood2: string): boolean {
   if (!neighborhood1 || !neighborhood2) return false;
   
@@ -105,14 +133,43 @@ export function areNeighborhoodsEquivalent(neighborhood1: string, neighborhood2:
   // Mesma forma canônica - match definitivo
   if (canonical1 && canonical2 && canonical1 === canonical2) return true;
   
-  // Fallback: verificar se um contém o outro (para casos não mapeados)
+  // Fallback: comparar DB-normalized (strips parens/dashes)
+  const dbNorm1 = normalizeNeighborhoodDB(neighborhood1);
+  const dbNorm2 = normalizeNeighborhoodDB(neighborhood2);
+  if (dbNorm1 && dbNorm2 && dbNorm1 === dbNorm2) return true;
+  
+  // Last fallback: substring match para casos não mapeados
   const norm1 = normalizeString(neighborhood1);
   const norm2 = normalizeString(neighborhood2);
-  
-  // Evitar falsos positivos com strings muito curtas
   if (norm1.length < 3 || norm2.length < 3) return norm1 === norm2;
   
   return norm1.includes(norm2) || norm2.includes(norm1);
+}
+
+// Compara usando neighborhood_normalized pré-computado do banco
+// Mais rápido e determinístico que comparação textual
+export function matchesNormalizedNeighborhood(
+  establishmentNormalized: string | null | undefined,
+  filterNeighborhood: string
+): boolean {
+  if (!establishmentNormalized || !filterNeighborhood) return false;
+  const filterNorm = normalizeNeighborhoodDB(filterNeighborhood);
+  if (!filterNorm) return false;
+  
+  // Exact match on normalized forms
+  if (establishmentNormalized === filterNorm) return true;
+  
+  // Also check canonical equivalences
+  const estCanonical = getCanonicalNeighborhood(establishmentNormalized);
+  const filterCanonical = getCanonicalNeighborhood(filterNeighborhood);
+  if (estCanonical && filterCanonical && estCanonical === filterCanonical) return true;
+  
+  // Substring match as final fallback
+  if (establishmentNormalized.length >= 3 && filterNorm.length >= 3) {
+    return establishmentNormalized.includes(filterNorm) || filterNorm.includes(establishmentNormalized);
+  }
+  
+  return false;
 }
 
 // Calcula score de proximidade entre duas localizações

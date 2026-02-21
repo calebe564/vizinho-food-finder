@@ -11,7 +11,7 @@ import { Database } from "@/integrations/supabase/types";
 import { useUserLocation } from "@/contexts/LocationContext";
 import { MapPin, Store, Loader2 } from "lucide-react";
 import { isOpenNow } from "@/lib/scheduleUtils";
-import { areNeighborhoodsEquivalent } from "@/lib/locationUtils";
+import { areNeighborhoodsEquivalent, matchesNormalizedNeighborhood } from "@/lib/locationUtils";
 import { matchesCategory } from "@/lib/sortingUtils";
 
 type EstablishmentCategory = Database["public"]["Enums"]["establishment_category"];
@@ -24,6 +24,7 @@ interface Establishment {
   category_3: string | null;
   address: string;
   neighborhood: string | null;
+  neighborhood_normalized: string | null;
   city: string;
   phone: string;
   whatsapp: string | null;
@@ -88,8 +89,9 @@ export default function AllEstablishments() {
 
   const matchesManualLocation = (est: Establishment) => {
     if (!manualLocation) return true;
-    // Usar normalização de bairros para matching
-    return areNeighborhoodsEquivalent(est.neighborhood || '', manualLocation) ||
+    // Usar neighborhood_normalized do banco + fallback para normalização frontend
+    return matchesNormalizedNeighborhood(est.neighborhood_normalized, manualLocation) ||
+           areNeighborhoodsEquivalent(est.neighborhood || '', manualLocation) ||
            areNeighborhoodsEquivalent(est.city, manualLocation);
   };
 
