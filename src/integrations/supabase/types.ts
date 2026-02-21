@@ -351,6 +351,7 @@ export type Database = {
           images: Json | null
           name: string
           neighborhood: string
+          neighborhood_normalized: string | null
           phone: string
           products_json: Json | null
           profile_image: string | null
@@ -390,6 +391,7 @@ export type Database = {
           images?: Json | null
           name: string
           neighborhood: string
+          neighborhood_normalized?: string | null
           phone: string
           products_json?: Json | null
           profile_image?: string | null
@@ -429,6 +431,7 @@ export type Database = {
           images?: Json | null
           name?: string
           neighborhood?: string
+          neighborhood_normalized?: string | null
           phone?: string
           products_json?: Json | null
           profile_image?: string | null
@@ -506,6 +509,7 @@ export type Database = {
           longitude: number
           name: string
           neighborhood: string | null
+          neighborhood_normalized: string | null
           phone: string
           profile_image: string | null
           reference_point: string | null
@@ -540,6 +544,7 @@ export type Database = {
           longitude?: number
           name: string
           neighborhood?: string | null
+          neighborhood_normalized?: string | null
           phone: string
           profile_image?: string | null
           reference_point?: string | null
@@ -574,6 +579,7 @@ export type Database = {
           longitude?: number
           name?: string
           neighborhood?: string | null
+          neighborhood_normalized?: string | null
           phone?: string
           profile_image?: string | null
           reference_point?: string | null
@@ -1012,6 +1018,10 @@ export type Database = {
       is_admin: { Args: { _user_id: string }; Returns: boolean }
       is_admin_user: { Args: { _user_id: string }; Returns: boolean }
       is_authenticated_admin: { Args: never; Returns: boolean }
+      normalize_neighborhood: {
+        Args: { raw_neighborhood: string }
+        Returns: string
+      }
       revoke_admin_session: { Args: { _token_hash: string }; Returns: boolean }
       validate_admin_session: {
         Args: { _token_hash: string }

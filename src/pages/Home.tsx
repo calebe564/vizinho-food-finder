@@ -10,7 +10,7 @@ import { Footer } from "@/components/Footer";
 import { AdvertisementBanner } from "@/components/AdvertisementBanner";
 import { LocationFilter } from "@/components/LocationFilterModal";
 import { sortEstablishments, sortProducts, matchesCategory } from "@/lib/sortingUtils";
-import { areNeighborhoodsEquivalent } from "@/lib/locationUtils";
+import { areNeighborhoodsEquivalent, matchesNormalizedNeighborhood } from "@/lib/locationUtils";
 import { isOpenNow } from "@/lib/scheduleUtils";
 
 import { useUserLocation } from "@/contexts/LocationContext";
@@ -26,6 +26,7 @@ interface Establishment {
   category_3: string | null;
   address: string;
   neighborhood: string | null;
+  neighborhood_normalized: string | null;
   region: string | null;
   city: string;
   phone: string;
@@ -52,6 +53,7 @@ interface ProductWithEstablishment {
   establishment_category: string;
   establishment_image: string | null;
   establishment_neighborhood: string | null;
+  establishment_neighborhood_normalized: string | null;
   establishment_city: string | null;
   establishment_phone: string | null;
   establishment_whatsapp: string | null;
@@ -135,7 +137,7 @@ export default function Home() {
         supabase.from("advertisements").select("*").eq("active", true),
         supabase.from("products").select(`
           id, name, price, description, image, unit, establishment_id,
-          establishments!inner(id, name, category, profile_image, neighborhood, city, active, schedule, phone, whatsapp, has_delivery, address, google_maps_link)
+          establishments!inner(id, name, category, profile_image, neighborhood, neighborhood_normalized, city, active, schedule, phone, whatsapp, has_delivery, address, google_maps_link)
         `).limit(500)
       ]);
       
@@ -160,6 +162,7 @@ export default function Home() {
             establishment_category: p.establishments?.category || "",
             establishment_image: p.establishments?.profile_image || null,
             establishment_neighborhood: p.establishments?.neighborhood || null,
+            establishment_neighborhood_normalized: (p.establishments as any)?.neighborhood_normalized || null,
             establishment_city: p.establishments?.city || null,
             establishment_phone: p.establishments?.phone || null,
             establishment_whatsapp: p.establishments?.whatsapp || null,
@@ -192,7 +195,10 @@ export default function Home() {
       
       // Aplicar filtro de localização se houver
       if (locationFilter) {
-        const matchesLocation = areNeighborhoodsEquivalent(
+        const matchesLocation = matchesNormalizedNeighborhood(
+          product.establishment_neighborhood_normalized,
+          locationFilter.neighborhood
+        ) || areNeighborhoodsEquivalent(
           product.establishment_neighborhood || '',
           locationFilter.neighborhood
         );
@@ -215,8 +221,10 @@ export default function Home() {
         
         // PRIORIDADE 2: Proximidade
         if (selectedLocation) {
-          const aMatch = areNeighborhoodsEquivalent(a.establishment_neighborhood || '', selectedLocation.neighborhood);
-          const bMatch = areNeighborhoodsEquivalent(b.establishment_neighborhood || '', selectedLocation.neighborhood);
+          const aMatch = matchesNormalizedNeighborhood(a.establishment_neighborhood_normalized, selectedLocation.neighborhood) ||
+                         areNeighborhoodsEquivalent(a.establishment_neighborhood || '', selectedLocation.neighborhood);
+          const bMatch = matchesNormalizedNeighborhood(b.establishment_neighborhood_normalized, selectedLocation.neighborhood) ||
+                         areNeighborhoodsEquivalent(b.establishment_neighborhood || '', selectedLocation.neighborhood);
           if (aMatch && !bMatch) return -1;
           if (!aMatch && bMatch) return 1;
         }
@@ -233,6 +241,7 @@ export default function Home() {
     let filtered = establishments;
     if (locationFilter) {
       filtered = establishments.filter(est => 
+        matchesNormalizedNeighborhood(est.neighborhood_normalized, locationFilter.neighborhood) ||
         areNeighborhoodsEquivalent(est.neighborhood || '', locationFilter.neighborhood)
       );
     }
@@ -277,8 +286,10 @@ export default function Home() {
         
         // PRIORIDADE 3: Ordenação selecionada
         if (sortBy === "proximity" && selectedLocation) {
-          const aMatch = areNeighborhoodsEquivalent(a.neighborhood || '', selectedLocation.neighborhood);
-          const bMatch = areNeighborhoodsEquivalent(b.neighborhood || '', selectedLocation.neighborhood);
+          const aMatch = matchesNormalizedNeighborhood(a.neighborhood_normalized, selectedLocation.neighborhood) ||
+                         areNeighborhoodsEquivalent(a.neighborhood || '', selectedLocation.neighborhood);
+          const bMatch = matchesNormalizedNeighborhood(b.neighborhood_normalized, selectedLocation.neighborhood) ||
+                         areNeighborhoodsEquivalent(b.neighborhood || '', selectedLocation.neighborhood);
           if (aMatch && !bMatch) return -1;
           if (!aMatch && bMatch) return 1;
         }
