@@ -12,7 +12,7 @@ export function Footer() {
           {/* Logo e Sobre */}
           <div className="col-span-1 md:col-span-2">
             <Link to="/" className="flex items-center gap-2 mb-4">
-              <img src={logo} alt="Comércio Vizinho" className="h-12 w-12" />
+              <img src={logo} alt="Comércio Vizinho" className="h-12 w-12 rounded-full object-cover" />
               <span className="font-bold text-xl">Comércio Vizinho</span>
             </Link>
             <p className="text-sm text-muted-foreground mb-4">
