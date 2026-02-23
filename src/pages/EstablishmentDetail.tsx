@@ -521,6 +521,17 @@ export default function EstablishmentDetail() {
                     {isFav ? "Favoritado" : "Favoritar"}
                   </Button>
                 </div>
+
+                {/* Legal Disclaimer */}
+                <div className="pt-3 border-t mt-3">
+                  <p className="text-[11px] text-muted-foreground leading-relaxed">
+                    ⚠️ O Comércio Vizinho é apenas uma plataforma de divulgação. Não intermediamos pagamentos, 
+                    entregas ou negociações.{" "}
+                    <Link to="/termos-de-uso" className="text-primary hover:underline">
+                      Termos e Responsabilidades
+                    </Link>
+                  </p>
+                </div>
               </CardContent>
             </Card>
 

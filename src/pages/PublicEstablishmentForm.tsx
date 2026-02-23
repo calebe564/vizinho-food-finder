@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
+import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
@@ -172,6 +173,7 @@ export default function PublicEstablishmentForm() {
   const [products, setProducts] = useState<Product[]>([
     { id: crypto.randomUUID(), name: "", price: "", hasVariations: false, variations: [], image: null, imagePreview: null }
   ]);
+  const [termsAccepted, setTermsAccepted] = useState(false);
 
   // CEP Lookup via ViaCEP
   const handleCepBlur = async () => {
@@ -474,7 +476,11 @@ export default function PublicEstablishmentForm() {
       return;
     }
 
-    setLoading(true);
+    // Validate terms acceptance
+    if (!termsAccepted) {
+      toast.error("Você precisa aceitar os Termos e Responsabilidades para continuar");
+      return;
+    }
 
     try {
       const fullAddress = `${addressData.logradouro}, ${addressData.numero}${addressData.complemento ? ` - ${addressData.complemento}` : ""}, ${addressData.bairro}, ${addressData.localidade} - ${addressData.uf}, CEP: ${addressData.cep}`;
@@ -582,8 +588,10 @@ export default function PublicEstablishmentForm() {
           state: addressData.uf || null,
           has_delivery: deliveryData.hasDelivery,
           delivery_type: deliveryData.hasDelivery ? deliveryData.deliveryType || null : null,
-          delivery_other: deliveryData.hasDelivery && deliveryData.deliveryType === "outro" ? deliveryData.deliveryOther || null : null
-        }]);
+           delivery_other: deliveryData.hasDelivery && deliveryData.deliveryType === "outro" ? deliveryData.deliveryOther || null : null,
+           terms_accepted_at: new Date().toISOString(),
+           terms_version: '1.0'
+         }]);
 
       if (error) throw error;
 
@@ -1255,9 +1263,29 @@ export default function PublicEstablishmentForm() {
                 </div>
               </div>
 
+              {/* ========== SEÇÃO 6: TERMOS ========== */}
+              <div className="space-y-4">
+                <div className="flex items-start gap-3 p-4 rounded-xl border bg-secondary/30">
+                  <Checkbox
+                    id="terms"
+                    checked={termsAccepted}
+                    onCheckedChange={(checked) => setTermsAccepted(checked === true)}
+                    className="mt-0.5"
+                  />
+                  <label htmlFor="terms" className="text-sm leading-relaxed cursor-pointer">
+                    Declaro que li e concordo com os{" "}
+                    <Link to="/termos-de-uso" target="_blank" className="text-primary font-medium hover:underline">
+                      Termos e Responsabilidades
+                    </Link>{" "}
+                    da plataforma Comércio Vizinho, incluindo as limitações de responsabilidade 
+                    e os selos de identificação PF/PJ.
+                  </label>
+                </div>
+              </div>
+
               {/* Submit */}
               <div className="pt-6">
-                <Button type="submit" className="w-full h-14 text-lg rounded-xl" disabled={loading}>
+                <Button type="submit" className="w-full h-14 text-lg rounded-xl" disabled={loading || !termsAccepted}>
                   {loading ? (
                     <>
                       <Loader2 className="mr-2 h-5 w-5 animate-spin" />
