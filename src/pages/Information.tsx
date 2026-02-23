@@ -44,9 +44,9 @@ export default function Information() {
                     <FileText className="h-6 w-6 text-primary" />
                   </div>
                   <div className="flex-1">
-                    <CardTitle className="text-lg">Termos de Uso</CardTitle>
+                    <CardTitle className="text-lg">Termos e Responsabilidades</CardTitle>
                     <CardDescription>
-                      Regras e condições de uso da plataforma
+                      Regras, condições de uso e limitações de responsabilidade
                     </CardDescription>
                   </div>
                   <ArrowRight className="h-5 w-5 text-muted-foreground" />

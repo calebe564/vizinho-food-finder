@@ -362,6 +362,9 @@ export type Database = {
           schedule: string | null
           state: string | null
           status: string | null
+          terms_accepted_at: string | null
+          terms_ip: string | null
+          terms_version: string | null
           user_id: string | null
           whatsapp: string | null
         }
@@ -402,6 +405,9 @@ export type Database = {
           schedule?: string | null
           state?: string | null
           status?: string | null
+          terms_accepted_at?: string | null
+          terms_ip?: string | null
+          terms_version?: string | null
           user_id?: string | null
           whatsapp?: string | null
         }
@@ -442,6 +448,9 @@ export type Database = {
           schedule?: string | null
           state?: string | null
           status?: string | null
+          terms_accepted_at?: string | null
+          terms_ip?: string | null
+          terms_version?: string | null
           user_id?: string | null
           whatsapp?: string | null
         }
@@ -503,6 +512,7 @@ export type Database = {
           has_delivery: boolean | null
           id: string
           images: Json | null
+          is_destaque: boolean
           is_paid: boolean | null
           last_update: string | null
           latitude: number
@@ -511,6 +521,7 @@ export type Database = {
           neighborhood: string | null
           neighborhood_normalized: string | null
           phone: string
+          plan: string
           profile_image: string | null
           reference_point: string | null
           region: string | null
@@ -538,6 +549,7 @@ export type Database = {
           has_delivery?: boolean | null
           id?: string
           images?: Json | null
+          is_destaque?: boolean
           is_paid?: boolean | null
           last_update?: string | null
           latitude?: number
@@ -546,6 +558,7 @@ export type Database = {
           neighborhood?: string | null
           neighborhood_normalized?: string | null
           phone: string
+          plan?: string
           profile_image?: string | null
           reference_point?: string | null
           region?: string | null
@@ -573,6 +586,7 @@ export type Database = {
           has_delivery?: boolean | null
           id?: string
           images?: Json | null
+          is_destaque?: boolean
           is_paid?: boolean | null
           last_update?: string | null
           latitude?: number
@@ -581,6 +595,7 @@ export type Database = {
           neighborhood?: string | null
           neighborhood_normalized?: string | null
           phone?: string
+          plan?: string
           profile_image?: string | null
           reference_point?: string | null
           region?: string | null

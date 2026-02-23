@@ -64,7 +64,7 @@ export function Footer() {
               </li>
               <li>
                 <Link to="/termos-de-uso" className="text-muted-foreground hover:text-primary transition-colors">
-                  Termos de Uso
+                  Termos e Responsabilidades
                 </Link>
               </li>
               <li>
