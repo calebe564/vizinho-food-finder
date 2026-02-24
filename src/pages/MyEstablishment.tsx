@@ -28,7 +28,8 @@ import {
   Camera,
   ImagePlus,
   Settings,
-  User
+  User,
+  Star
 } from 'lucide-react';
 import {
   Dialog,
@@ -42,6 +43,7 @@ import { ProductFormDialog, type ProductJson } from '@/components/business/Produ
 import { BusinessNotesSheet } from '@/components/business/BusinessNotesSheet';
 import { ProfileCompletionCard } from '@/components/business/ProfileCompletionCard';
 import { InviteAdminDialog } from '@/components/business/InviteAdminDialog';
+import { HighlightRequestSection } from '@/components/business/HighlightRequestSection';
 
 interface EstablishmentData {
   id: string;
@@ -616,15 +618,19 @@ export default function MyEstablishment() {
             <BusinessNotesSheet establishmentId={establishmentData.id} />
 
             <Tabs defaultValue="info" className="space-y-4">
-              <TabsList className="grid w-full grid-cols-4">
+              <TabsList className="grid w-full grid-cols-5">
                 <TabsTrigger value="info" className="text-xs md:text-sm">
                   <Building2 className="h-4 w-4 md:mr-2" />
-                  <span className="hidden md:inline">Informações</span>
+                  <span className="hidden md:inline">Info</span>
                 </TabsTrigger>
                 <TabsTrigger value="products" className="text-xs md:text-sm">
                   <Package className="h-4 w-4 md:mr-2" />
                   <span className="hidden md:inline">Produtos</span>
                   <Badge variant="secondary" className="ml-1 text-xs">{products.length}</Badge>
+                </TabsTrigger>
+                <TabsTrigger value="functions" className="text-xs md:text-sm">
+                  <Star className="h-4 w-4 md:mr-2" />
+                  <span className="hidden md:inline">Funções</span>
                 </TabsTrigger>
                 <TabsTrigger value="photos" className="text-xs md:text-sm">
                   <Image className="h-4 w-4 md:mr-2" />
@@ -761,6 +767,11 @@ export default function MyEstablishment() {
                     )}
                   </CardContent>
                 </Card>
+              </TabsContent>
+
+              {/* Funções */}
+              <TabsContent value="functions">
+                <HighlightRequestSection establishmentId={establishmentData.id} />
               </TabsContent>
 
               {/* 4. Fotos */}
