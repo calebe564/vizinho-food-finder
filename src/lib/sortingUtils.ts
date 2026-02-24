@@ -14,6 +14,7 @@ export interface EstablishmentForSort {
   category_2?: string | null;
   category_3?: string | null;
   is_paid?: boolean;
+  is_destaque?: boolean;
   name: string;
 }
 
@@ -113,6 +114,12 @@ export function sortEstablishments<T extends EstablishmentForSort>(
   
   // PASSO 4: Ordenar
   return withMetadata.sort((a, b) => {
+    // PRIORIDADE 0: Destaques abertos primeiro
+    const aDestaque = a.is_destaque && a.isOpen;
+    const bDestaque = b.is_destaque && b.isOpen;
+    if (aDestaque && !bDestaque) return -1;
+    if (!aDestaque && bDestaque) return 1;
+
     // PRIORIDADE 1: Abertos sempre primeiro
     if (a.isOpen && !b.isOpen) return -1;
     if (!a.isOpen && b.isOpen) return 1;
