@@ -23,6 +23,9 @@ interface HighlightRequest {
 
 const REQUIRED_WIDTH = 1200;
 const REQUIRED_HEIGHT = 400;
+const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
+const ALLOWED_MIME_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
+const ALLOWED_EXTENSIONS = ['.jpg', '.jpeg', '.png', '.webp'];
 
 export function HighlightRequestSection({ establishmentId }: HighlightRequestSectionProps) {
   const { user } = useAuth();
@@ -73,12 +76,32 @@ export function HighlightRequestSection({ establishmentId }: HighlightRequestSec
     if (!file) return;
 
     setImageError(null);
+    setSelectedFile(null);
+    setPreviewUrl(null);
+
+    // Validate MIME type
+    if (!ALLOWED_MIME_TYPES.includes(file.type)) {
+      setImageError('Formato inválido. Use JPG, PNG ou WEBP.');
+      return;
+    }
+
+    // Validate extension
+    const ext = '.' + file.name.split('.').pop()?.toLowerCase();
+    if (!ALLOWED_EXTENSIONS.includes(ext)) {
+      setImageError('Extensão de arquivo inválida.');
+      return;
+    }
+
+    // Validate file size
+    if (file.size > MAX_FILE_SIZE) {
+      setImageError(`Arquivo muito grande (${(file.size / 1024 / 1024).toFixed(1)}MB). Máximo: 5MB.`);
+      return;
+    }
+
     const { valid, width, height } = await validateImage(file);
 
     if (!valid) {
       setImageError(`Imagem com ${width}x${height}px. O tamanho exigido é ${REQUIRED_WIDTH}x${REQUIRED_HEIGHT}px.`);
-      setSelectedFile(null);
-      setPreviewUrl(null);
       return;
     }
 
@@ -87,41 +110,66 @@ export function HighlightRequestSection({ establishmentId }: HighlightRequestSec
   };
 
   const handleSubmit = async () => {
-    if (!selectedFile || !user) return;
+    if (!selectedFile || !user) {
+      toast.error('Selecione uma imagem antes de enviar.');
+      return;
+    }
 
     setUploading(true);
     try {
-      const fileExt = selectedFile.name.split('.').pop();
+      // Step 1: Upload image
+      const fileExt = selectedFile.name.split('.').pop()?.toLowerCase();
       const fileName = `highlights/${crypto.randomUUID()}.${fileExt}`;
 
       const { error: uploadError } = await supabase.storage
         .from('establishment-images')
-        .upload(fileName, selectedFile);
+        .upload(fileName, selectedFile, {
+          contentType: selectedFile.type,
+          upsert: false,
+        });
 
-      if (uploadError) throw uploadError;
+      if (uploadError) {
+        console.error('Upload error:', uploadError);
+        toast.error('Erro ao fazer upload da imagem. Tente novamente.');
+        return;
+      }
 
-      const { data: { publicUrl } } = supabase.storage
+      // Step 2: Get public URL
+      const { data: urlData } = supabase.storage
         .from('establishment-images')
         .getPublicUrl(fileName);
 
+      if (!urlData?.publicUrl) {
+        toast.error('Erro ao obter URL da imagem.');
+        return;
+      }
+
+      // Step 3: Create highlight request
       const { error: insertError } = await supabase
         .from('highlight_requests')
         .insert({
           establishment_id: establishmentId,
           user_id: user.id,
-          image_url: publicUrl,
+          image_url: urlData.publicUrl,
           status: 'pending',
         });
 
-      if (insertError) throw insertError;
+      if (insertError) {
+        console.error('Insert error:', insertError);
+        toast.error('Erro ao criar solicitação. Verifique suas permissões.');
+        return;
+      }
 
-      toast.success('Solicitação enviada! Após aprovação administrativa (até 30 minutos), seu destaque será ativado.');
+      toast.success('Solicitação enviada com sucesso!');
       setSelectedFile(null);
       setPreviewUrl(null);
+      // Reset file input
+      const input = document.getElementById('highlight-upload') as HTMLInputElement;
+      if (input) input.value = '';
       fetchRequests();
     } catch (error) {
       console.error('Error submitting highlight request:', error);
-      toast.error('Erro ao enviar solicitação');
+      toast.error('Erro inesperado ao enviar solicitação.');
     } finally {
       setUploading(false);
     }
@@ -163,7 +211,7 @@ export function HighlightRequestSection({ establishmentId }: HighlightRequestSec
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Star className="h-5 w-5 text-amber-500" />
-            Destaque Promocional
+            Destaque
           </CardTitle>
           <CardDescription>
             Solicite o destaque da sua empresa e aumente sua visibilidade na plataforma.
