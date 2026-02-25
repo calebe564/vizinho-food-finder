@@ -7,6 +7,7 @@ import { ThemeToggle } from "@/components/ThemeToggle";
 import { useAuth } from "@/contexts/AuthContext";
 import { useUserRole } from "@/hooks/useUserRole";
 import { Badge } from "@/components/ui/badge";
+import { useAdminNotifications, type NotificationType } from "@/hooks/useAdminNotifications";
 import AdminDashboardHome from "./admin/AdminDashboardHome";
 import AdminEstablishments from "./admin/AdminEstablishments";
 import AdminEstablishmentForm from "./admin/AdminEstablishmentForm";
@@ -31,6 +32,7 @@ export default function AdminDashboard() {
   const location = useLocation();
   const { signOut, profile } = useAuth();
   const { role, isAdmMaster, canApproveEstablishments, isLoading: roleLoading } = useUserRole();
+  const { counts, markAsRead } = useAdminNotifications();
 
   const handleLogout = async () => {
     await signOut();
@@ -39,6 +41,19 @@ export default function AdminDashboard() {
   };
 
   const isActive = (path: string) => location.pathname === path || location.pathname.startsWith(path + "/");
+
+  const handleSectionClick = (tipo?: NotificationType) => {
+    if (tipo) markAsRead(tipo);
+  };
+
+  const NotifBadge = ({ count }: { count: number }) => {
+    if (count <= 0) return null;
+    return (
+      <span className="ml-auto bg-destructive text-destructive-foreground text-[10px] font-bold px-1.5 py-0.5 rounded-full min-w-[20px] text-center">
+        {count > 99 ? "99+" : count}
+      </span>
+    );
+  };
 
   if (roleLoading) {
     return (
@@ -108,7 +123,6 @@ export default function AdminDashboard() {
               </Button>
             </Link>
             
-            {/* Estabelecimentos - todos admin podem ver */}
             <Link to="/admin/dashboard/estabelecimentos">
               <Button 
                 variant={isActive("/admin/dashboard/estabelecimentos") ? "default" : "ghost"} 
@@ -119,31 +133,30 @@ export default function AdminDashboard() {
               </Button>
             </Link>
             
-            {/* Solicitações - apenas quem pode aprovar */}
             {canApproveEstablishments && (
-              <Link to="/admin/dashboard/solicitacoes">
+              <Link to="/admin/dashboard/solicitacoes" onClick={() => handleSectionClick('solicitacao')}>
                 <Button 
                   variant={isActive("/admin/dashboard/solicitacoes") ? "default" : "ghost"} 
                   className="w-full justify-start"
                 >
                   <FileText className="mr-2 h-4 w-4" />
                   Solicitações
+                  <NotifBadge count={counts.solicitacao} />
                 </Button>
               </Link>
             )}
             
-            {/* Conversas */}
-            <Link to="/admin/dashboard/conversas">
+            <Link to="/admin/dashboard/conversas" onClick={() => handleSectionClick('conversa')}>
               <Button 
                 variant={isActive("/admin/dashboard/conversas") ? "default" : "ghost"} 
                 className="w-full justify-start"
               >
                 <MessageSquare className="mr-2 h-4 w-4" />
                 Conversas
+                <NotifBadge count={counts.conversa} />
               </Button>
             </Link>
             
-            {/* Propagandas - apenas admin completo */}
             {canApproveEstablishments && (
               <Link to="/admin/dashboard/propagandas">
                 <Button 
@@ -156,33 +169,32 @@ export default function AdminDashboard() {
               </Link>
             )}
             
-            {/* Reivindicações de CNPJ - apenas quem pode aprovar */}
             {canApproveEstablishments && (
-              <Link to="/admin/dashboard/reivindicacoes">
+              <Link to="/admin/dashboard/reivindicacoes" onClick={() => handleSectionClick('reivindicacao')}>
                 <Button 
                   variant={isActive("/admin/dashboard/reivindicacoes") ? "default" : "ghost"} 
                   className="w-full justify-start"
                 >
                   <ClipboardCheck className="mr-2 h-4 w-4" />
                   Reivindicações
+                  <NotifBadge count={counts.reivindicacao} />
                 </Button>
               </Link>
             )}
             
-            {/* Solicitações de Destaque - apenas quem pode aprovar */}
             {canApproveEstablishments && (
-              <Link to="/admin/dashboard/destaques">
+              <Link to="/admin/dashboard/destaques" onClick={() => handleSectionClick('destaque')}>
                 <Button 
                   variant={isActive("/admin/dashboard/destaques") ? "default" : "ghost"} 
                   className="w-full justify-start"
                 >
                   <Star className="mr-2 h-4 w-4" />
                   Destaques
+                  <NotifBadge count={counts.destaque} />
                 </Button>
               </Link>
             )}
             
-            {/* Gerenciar Usuários - apenas ADM_MASTER */}
             {isAdmMaster && (
               <Link to="/admin/dashboard/usuarios">
                 <Button 

@@ -714,6 +714,42 @@ export type Database = {
           },
         ]
       }
+      notifications: {
+        Row: {
+          criado_em: string
+          descricao_resumida: string | null
+          destino: string
+          id: string
+          lido: boolean
+          lido_em: string | null
+          referencia_id: string | null
+          tipo: string
+          titulo: string
+        }
+        Insert: {
+          criado_em?: string
+          descricao_resumida?: string | null
+          destino?: string
+          id?: string
+          lido?: boolean
+          lido_em?: string | null
+          referencia_id?: string | null
+          tipo: string
+          titulo: string
+        }
+        Update: {
+          criado_em?: string
+          descricao_resumida?: string | null
+          destino?: string
+          id?: string
+          lido?: boolean
+          lido_em?: string | null
+          referencia_id?: string | null
+          tipo?: string
+          titulo?: string
+        }
+        Relationships: []
+      }
       product_variations: {
         Row: {
           created_at: string | null
@@ -1061,6 +1097,15 @@ export type Database = {
       }
       check_email_exists: { Args: { _email: string }; Returns: boolean }
       cleanup_admin_rate_limits: { Args: never; Returns: number }
+      create_admin_notification: {
+        Args: {
+          _descricao?: string
+          _referencia_id: string
+          _tipo: string
+          _titulo: string
+        }
+        Returns: undefined
+      }
       create_admin_session: {
         Args: {
           _expires_hours?: number

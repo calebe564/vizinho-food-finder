@@ -13,6 +13,7 @@ import { useEstablishmentRequest } from "@/hooks/useEstablishmentRequest";
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
 import { useUnreadConversations } from "@/hooks/useUnreadConversations";
 import { AIChatSheet } from "./AIChatSheet";
+import { useAdminNotifications } from "@/hooks/useAdminNotifications";
 
 export function Header() {
   const [isOpen, setIsOpen] = useState(false);
@@ -35,6 +36,7 @@ export function Header() {
   };
   
   const { unreadCount } = useUnreadConversations();
+  const { counts: adminNotifCounts } = useAdminNotifications();
   
   const navLinks = [
     { to: "/", label: "Início" },
@@ -91,8 +93,13 @@ export function Header() {
           {/* Desktop User Menu */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild className="hidden md:inline-flex">
-              <Button variant="ghost" size="icon" className="rounded-full bg-primary text-primary-foreground hover:bg-primary-hover">
+              <Button variant="ghost" size="icon" className="rounded-full bg-primary text-primary-foreground hover:bg-primary-hover relative">
                 <MoreVertical className="h-5 w-5" />
+                {isAdmin && adminNotifCounts.total > 0 && (
+                  <span className="absolute -top-0.5 -right-0.5 h-4 w-4 rounded-full bg-destructive text-destructive-foreground text-[10px] font-bold flex items-center justify-center">
+                    {adminNotifCounts.total > 9 ? "9+" : adminNotifCounts.total}
+                  </span>
+                )}
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-56 bg-popover shadow-elevated rounded-xl">
@@ -164,6 +171,11 @@ export function Header() {
                     <DropdownMenuItem asChild>
                       <Link to="/admin/dashboard" className="flex items-center gap-2 cursor-pointer text-primary font-medium">
                         Painel Administrativo
+                        {adminNotifCounts.total > 0 && (
+                          <span className="ml-auto bg-destructive text-destructive-foreground text-xs font-bold px-2 py-0.5 rounded-full">
+                            {adminNotifCounts.total > 9 ? "9+" : adminNotifCounts.total}
+                          </span>
+                        )}
                       </Link>
                     </DropdownMenuItem>
                   )}
@@ -186,8 +198,13 @@ export function Header() {
           {/* Mobile Menu Button */}
           <Sheet open={isOpen} onOpenChange={setIsOpen}>
             <SheetTrigger asChild className="md:hidden">
-              <Button variant="ghost" size="icon" className="rounded-full bg-primary text-primary-foreground hover:bg-primary-hover">
+              <Button variant="ghost" size="icon" className="rounded-full bg-primary text-primary-foreground hover:bg-primary-hover relative">
                 <MoreVertical className="h-5 w-5" />
+                {isAdmin && adminNotifCounts.total > 0 && (
+                  <span className="absolute -top-0.5 -right-0.5 h-4 w-4 rounded-full bg-destructive text-destructive-foreground text-[10px] font-bold flex items-center justify-center">
+                    {adminNotifCounts.total > 9 ? "9+" : adminNotifCounts.total}
+                  </span>
+                )}
               </Button>
             </SheetTrigger>
             <SheetContent side="right" className="w-[300px] p-0 bg-card">
@@ -327,6 +344,11 @@ export function Header() {
                         className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-secondary transition-colors text-primary"
                       >
                         <span className="font-medium">Painel Administrativo</span>
+                        {adminNotifCounts.total > 0 && (
+                          <span className="ml-auto bg-destructive text-destructive-foreground text-xs font-bold px-2 py-0.5 rounded-full">
+                            {adminNotifCounts.total > 9 ? "9+" : adminNotifCounts.total}
+                          </span>
+                        )}
                       </Link>
                     )}
                     <button
