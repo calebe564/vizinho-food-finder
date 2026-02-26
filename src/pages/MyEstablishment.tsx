@@ -771,7 +771,19 @@ export default function MyEstablishment() {
 
               {/* Funções */}
               <TabsContent value="functions">
-                <HighlightRequestSection establishmentId={establishmentData.id} />
+                {establishmentData.isFromRequest ? (
+                  <Card className="border-0 shadow-elevated rounded-2xl">
+                    <CardContent className="py-8 text-center">
+                      <Star className="h-10 w-10 text-muted-foreground mx-auto mb-3" />
+                      <p className="text-muted-foreground font-medium">Destaque disponível após aprovação</p>
+                      <p className="text-sm text-muted-foreground mt-1">
+                        Quando sua empresa for aprovada e vinculada, você poderá solicitar destaque.
+                      </p>
+                    </CardContent>
+                  </Card>
+                ) : (
+                  <HighlightRequestSection establishmentId={establishmentData.id} />
+                )}
               </TabsContent>
 
               {/* 4. Fotos */}

@@ -144,7 +144,20 @@ export function HighlightRequestSection({ establishmentId }: HighlightRequestSec
         return;
       }
 
-      // Step 3: Create highlight request
+      // Step 3: Verify user is linked to this establishment
+      const { data: linkCheck } = await supabase
+        .from('user_establishments')
+        .select('id')
+        .eq('user_id', user.id)
+        .eq('establishment_id', establishmentId)
+        .maybeSingle();
+
+      if (!linkCheck) {
+        toast.error('Sua empresa ainda não está vinculada ao seu usuário. Entre em contato com o suporte.');
+        return;
+      }
+
+      // Step 4: Create highlight request
       const { error: insertError } = await supabase
         .from('highlight_requests')
         .insert({
@@ -156,7 +169,11 @@ export function HighlightRequestSection({ establishmentId }: HighlightRequestSec
 
       if (insertError) {
         console.error('Insert error:', insertError);
-        toast.error('Erro ao criar solicitação. Verifique suas permissões.');
+        if (insertError.message?.includes('row-level security')) {
+          toast.error('Você não tem permissão para solicitar destaque desta empresa.');
+        } else {
+          toast.error('Erro ao enviar solicitação. Tente novamente.');
+        }
         return;
       }
 
