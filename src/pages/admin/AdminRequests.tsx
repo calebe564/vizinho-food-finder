@@ -57,6 +57,7 @@ interface Request {
   profile_image: string | null;
   images: string[] | null;
   favorite_images: string[] | null;
+  user_id: string | null;
 }
 
 const categoryLabels: Record<string, string> = {
@@ -203,6 +204,21 @@ export default function AdminRequests() {
                 }]);
             }
           }
+        }
+      }
+
+      // Criar vínculo user_establishments se houver user_id
+      if (request.user_id && establishment) {
+        const { error: linkError } = await supabase
+          .from("user_establishments")
+          .insert({
+            user_id: request.user_id,
+            establishment_id: establishment.id,
+            role: "owner",
+          });
+
+        if (linkError) {
+          console.error("Error creating user_establishment link:", linkError);
         }
       }
 
