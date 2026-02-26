@@ -112,8 +112,8 @@ export function HeroCarousel() {
     const { data, error } = await supabase
       .from("establishments")
       .select("id, name, category, profile_image, banner_image, favorite_images")
-      .eq("is_paid", true)
-      .eq("active", true);
+      .eq("active", true)
+      .or("is_paid.eq.true,is_destaque.eq.true");
 
     if (!error && data) {
       const items: CarouselItem[] = data.map((est) => {
