@@ -26,6 +26,7 @@ interface Establishment {
   neighborhood: string | null;
   neighborhood_normalized: string | null;
   city: string;
+  state: string | null;
   phone: string;
   whatsapp: string | null;
   external_link: string | null;
@@ -236,6 +237,7 @@ export default function AllEstablishments() {
                       isPaid={establishment.is_paid}
                       neighborhood={establishment.neighborhood}
                       city={establishment.city}
+                      state={establishment.state}
                       minPrice={minPrice}
                       productNames={estProducts.slice(0, 2).map(p => p.name)}
                       schedule={establishment.schedule}

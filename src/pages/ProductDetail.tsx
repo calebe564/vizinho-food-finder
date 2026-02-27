@@ -44,6 +44,7 @@ interface Establishment {
   address: string;
   neighborhood: string | null;
   city: string;
+  state: string | null;
   schedule: string;
   has_delivery: boolean | null;
   google_maps_link: string | null;
@@ -94,7 +95,7 @@ export default function ProductDetail() {
       
       const { data, error } = await supabase
         .from("establishments")
-        .select("id, name, profile_image, phone, whatsapp, address, neighborhood, city, schedule, has_delivery, google_maps_link, cnpj, category, active")
+        .select("id, name, profile_image, phone, whatsapp, address, neighborhood, city, state, schedule, has_delivery, google_maps_link, cnpj, category, active")
         .eq("id", product.establishment_id)
         .maybeSingle();
 
@@ -436,7 +437,7 @@ export default function ProductDetail() {
                         <div>
                           <p className="text-sm font-medium">Endereço</p>
                           <p className="text-sm text-muted-foreground">
-                            {[establishment.address, establishment.neighborhood, establishment.city]
+                            {[establishment.address, establishment.neighborhood, establishment.city, establishment.state]
                               .filter(Boolean)
                               .join(", ") || "Não informado"}
                           </p>

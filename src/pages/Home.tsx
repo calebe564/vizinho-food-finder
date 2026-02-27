@@ -29,7 +29,7 @@ interface Establishment {
   neighborhood_normalized: string | null;
   region: string | null;
   city: string;
-  phone: string;
+  state: string | null;
   whatsapp: string | null;
   external_link: string | null;
   schedule: string;
@@ -55,6 +55,7 @@ interface ProductWithEstablishment {
   establishment_neighborhood: string | null;
   establishment_neighborhood_normalized: string | null;
   establishment_city: string | null;
+  establishment_state: string | null;
   establishment_phone: string | null;
   establishment_whatsapp: string | null;
   establishment_has_delivery: boolean | null;
@@ -137,7 +138,7 @@ export default function Home() {
         supabase.from("advertisements").select("*").eq("active", true),
         supabase.from("products").select(`
           id, name, price, description, image, unit, establishment_id,
-          establishments!inner(id, name, category, profile_image, neighborhood, neighborhood_normalized, city, active, schedule, phone, whatsapp, has_delivery, address, google_maps_link)
+          establishments!inner(id, name, category, profile_image, neighborhood, neighborhood_normalized, city, state, active, schedule, phone, whatsapp, has_delivery, address, google_maps_link)
         `).limit(500)
       ]);
       
@@ -164,6 +165,7 @@ export default function Home() {
             establishment_neighborhood: p.establishments?.neighborhood || null,
             establishment_neighborhood_normalized: (p.establishments as any)?.neighborhood_normalized || null,
             establishment_city: p.establishments?.city || null,
+            establishment_state: p.establishments?.state || null,
             establishment_phone: p.establishments?.phone || null,
             establishment_whatsapp: p.establishments?.whatsapp || null,
             establishment_has_delivery: p.establishments?.has_delivery ?? false,
@@ -458,6 +460,7 @@ export default function Home() {
                         profileImage: product.establishment_image,
                         neighborhood: product.establishment_neighborhood,
                         city: product.establishment_city,
+                        state: product.establishment_state,
                         schedule: product.establishment_schedule,
                         phone: product.establishment_phone || undefined,
                         whatsapp: product.establishment_whatsapp || undefined,
@@ -549,6 +552,7 @@ export default function Home() {
                         isPaid={est.is_paid}
                         neighborhood={est.neighborhood}
                         city={est.city}
+                        state={est.state}
                         minPrice={minPrice}
                         productNames={estProducts.slice(0, 2).map(p => p.name)}
                         schedule={est.schedule}

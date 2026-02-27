@@ -14,6 +14,7 @@ interface EstablishmentCardCompactProps {
   isPaid?: boolean;
   neighborhood?: string | null;
   city?: string;
+  state?: string | null;
   minPrice?: number | null;
   productNames?: string[];
   schedule?: string;
@@ -55,62 +56,22 @@ const categoryProducts: Record<string, string[]> = {
   outro: ["Produtos", "Serviços"],
 };
 
-// Map of known cities to their states
-const cityStateMap: Record<string, string> = {
-  "são paulo": "SP",
-  "belo horizonte": "MG",
-  "rio de janeiro": "RJ",
-  "brasília": "DF",
-  "curitiba": "PR",
-  "porto alegre": "RS",
-  "salvador": "BA",
-  "fortaleza": "CE",
-  "recife": "PE",
-  "manaus": "AM",
-  "goiânia": "GO",
-  "campinas": "SP",
-  "guarulhos": "SP",
-  "contagem": "MG",
-  "betim": "MG",
-  "ribeirão das neves": "MG",
-  "uberlândia": "MG",
-  "juiz de fora": "MG",
-  "nova lima": "MG",
-  "santa luzia": "MG",
-  "ibirité": "MG",
-  "sete lagoas": "MG",
-};
-
-function getStateAbbreviation(city?: string): string {
-  if (!city) return "";
-  const cityLower = city.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-  
-  for (const [cityName, state] of Object.entries(cityStateMap)) {
-    const normalizedCityName = cityName.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-    if (cityLower.includes(normalizedCityName)) {
-      return state;
-    }
-  }
-  
-  // Default to MG if no match (based on current context)
-  return "MG";
-}
-
-function formatLocation(neighborhood?: string | null, city?: string): string {
+function formatLocation(neighborhood?: string | null, city?: string, state?: string | null): string {
   if (!neighborhood && !city) return "";
   
-  const state = getStateAbbreviation(city);
+  const uf = state || "";
   const cityShort = city || "";
   
-  if (neighborhood && cityShort) {
-    return `${neighborhood} · ${cityShort} – ${state}`;
+  if (neighborhood && cityShort && uf) {
+    return `${neighborhood} · ${cityShort} – ${uf}`;
   }
-  
+  if (neighborhood && cityShort) {
+    return `${neighborhood} · ${cityShort}`;
+  }
   if (neighborhood) {
     return neighborhood;
   }
-  
-  return cityShort ? `${cityShort} – ${state}` : "";
+  return uf ? `${cityShort} – ${uf}` : cityShort;
 }
 
 export function EstablishmentCardCompact({
@@ -123,6 +84,7 @@ export function EstablishmentCardCompact({
   isPaid,
   neighborhood,
   city,
+  state,
   minPrice,
   productNames,
   schedule,
@@ -136,7 +98,7 @@ export function EstablishmentCardCompact({
     : categoryProducts[category] || [categoryLabels[category] || category];
   
   // Format location as "Bairro · Cidade – UF"
-  const locationText = formatLocation(neighborhood, city);
+  const locationText = formatLocation(neighborhood, city, state);
   
   return (
     <Link to={`/estabelecimento/${id}`} className="block active:scale-[0.98] transition-transform">
