@@ -16,6 +16,7 @@ interface ProductCardExtendedProps {
     neighborhood?: string | null;
     region?: string | null;
     city?: string | null;
+    state?: string | null;
     profileImage?: string | null;
     category: string;
     schedule?: string;
@@ -27,46 +28,13 @@ interface ProductCardExtendedProps {
   } | null;
 }
 
-// Map of known cities to their states
-const cityStateMap: Record<string, string> = {
-  "são paulo": "SP",
-  "belo horizonte": "MG",
-  "rio de janeiro": "RJ",
-  "brasília": "DF",
-  "curitiba": "PR",
-  "porto alegre": "RS",
-  "salvador": "BA",
-  "fortaleza": "CE",
-  "recife": "PE",
-  "manaus": "AM",
-  "goiânia": "GO",
-  "campinas": "SP",
-  "contagem": "MG",
-  "betim": "MG",
-  "uberlândia": "MG",
-  "juiz de fora": "MG",
-  "nova lima": "MG",
-  "santa luzia": "MG",
-  "ibirité": "MG",
-  "sete lagoas": "MG",
-};
-
-function getStateAbbreviation(city?: string | null): string {
-  if (!city) return "MG";
-  const cityLower = city.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-  for (const [cityName, state] of Object.entries(cityStateMap)) {
-    const norm = cityName.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-    if (cityLower.includes(norm)) return state;
-  }
-  return "MG";
-}
-
-function formatLocation(neighborhood?: string | null, city?: string | null): string {
+function formatLocation(neighborhood?: string | null, city?: string | null, state?: string | null): string {
   if (!neighborhood && !city) return "";
-  const state = getStateAbbreviation(city);
-  if (neighborhood && city) return `${neighborhood} · ${city} – ${state}`;
+  const uf = state || "";
+  if (neighborhood && city && uf) return `${neighborhood} · ${city} – ${uf}`;
+  if (neighborhood && city) return `${neighborhood} · ${city}`;
   if (neighborhood) return neighborhood;
-  return city ? `${city} – ${state}` : "";
+  return uf ? `${city} – ${uf}` : (city || "");
 }
 
 function formatWhatsAppUrl(phone: string, productName: string, price: string, establishmentName: string): string {
@@ -107,7 +75,7 @@ export function ProductCardExtended({
   };
 
   const priceText = formatPrice(price);
-  const locationText = establishment ? formatLocation(establishment.neighborhood, establishment.city) : "";
+  const locationText = establishment ? formatLocation(establishment.neighborhood, establishment.city, establishment.state) : "";
   const hasWhatsapp = !!(establishment?.whatsapp && establishment.whatsapp.trim());
   const hasPhone = !!(establishment?.phone && establishment.phone.trim());
   const mapsLink = getMapsUrl(establishment);
