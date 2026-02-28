@@ -5,7 +5,18 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
-import { Loader2, Star, Upload, Clock, CheckCircle, XCircle, ImageIcon } from 'lucide-react';
+import { Loader2, Star, Upload, Clock, CheckCircle, XCircle, Trash2, RefreshCw } from 'lucide-react';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
 
 interface HighlightRequestSectionProps {
   establishmentId: string;
@@ -23,7 +34,7 @@ interface HighlightRequest {
 
 const REQUIRED_WIDTH = 1200;
 const REQUIRED_HEIGHT = 400;
-const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
+const MAX_FILE_SIZE = 5 * 1024 * 1024;
 const ALLOWED_MIME_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
 const ALLOWED_EXTENSIONS = ['.jpg', '.jpeg', '.png', '.webp'];
 
@@ -32,6 +43,8 @@ export function HighlightRequestSection({ establishmentId }: HighlightRequestSec
   const [requests, setRequests] = useState<HighlightRequest[]>([]);
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const [replacing, setReplacing] = useState(false);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [imageError, setImageError] = useState<string | null>(null);
@@ -79,27 +92,23 @@ export function HighlightRequestSection({ establishmentId }: HighlightRequestSec
     setSelectedFile(null);
     setPreviewUrl(null);
 
-    // Validate MIME type
     if (!ALLOWED_MIME_TYPES.includes(file.type)) {
       setImageError('Formato inválido. Use JPG, PNG ou WEBP.');
       return;
     }
 
-    // Validate extension
     const ext = '.' + file.name.split('.').pop()?.toLowerCase();
     if (!ALLOWED_EXTENSIONS.includes(ext)) {
       setImageError('Extensão de arquivo inválida.');
       return;
     }
 
-    // Validate file size
     if (file.size > MAX_FILE_SIZE) {
       setImageError(`Arquivo muito grande (${(file.size / 1024 / 1024).toFixed(1)}MB). Máximo: 5MB.`);
       return;
     }
 
     const { valid, width, height } = await validateImage(file);
-
     if (!valid) {
       setImageError(`Imagem com ${width}x${height}px. O tamanho exigido é ${REQUIRED_WIDTH}x${REQUIRED_HEIGHT}px.`);
       return;
@@ -107,6 +116,26 @@ export function HighlightRequestSection({ establishmentId }: HighlightRequestSec
 
     setSelectedFile(file);
     setPreviewUrl(URL.createObjectURL(file));
+  };
+
+  const uploadImage = async (file: File): Promise<string | null> => {
+    const fileExt = file.name.split('.').pop()?.toLowerCase();
+    const fileName = `highlights/${crypto.randomUUID()}.${fileExt}`;
+
+    const { error: uploadError } = await supabase.storage
+      .from('establishment-images')
+      .upload(fileName, file, { contentType: file.type, upsert: false });
+
+    if (uploadError) {
+      console.error('Upload error:', uploadError);
+      return null;
+    }
+
+    const { data: urlData } = supabase.storage
+      .from('establishment-images')
+      .getPublicUrl(fileName);
+
+    return urlData?.publicUrl || null;
   };
 
   const handleSubmit = async () => {
@@ -117,34 +146,12 @@ export function HighlightRequestSection({ establishmentId }: HighlightRequestSec
 
     setUploading(true);
     try {
-      // Step 1: Upload image
-      const fileExt = selectedFile.name.split('.').pop()?.toLowerCase();
-      const fileName = `highlights/${crypto.randomUUID()}.${fileExt}`;
-
-      const { error: uploadError } = await supabase.storage
-        .from('establishment-images')
-        .upload(fileName, selectedFile, {
-          contentType: selectedFile.type,
-          upsert: false,
-        });
-
-      if (uploadError) {
-        console.error('Upload error:', uploadError);
-        toast.error('Erro ao fazer upload da imagem. Tente novamente.');
+      const publicUrl = await uploadImage(selectedFile);
+      if (!publicUrl) {
+        toast.error('Erro ao fazer upload da imagem.');
         return;
       }
 
-      // Step 2: Get public URL
-      const { data: urlData } = supabase.storage
-        .from('establishment-images')
-        .getPublicUrl(fileName);
-
-      if (!urlData?.publicUrl) {
-        toast.error('Erro ao obter URL da imagem.');
-        return;
-      }
-
-      // Step 3: Verify user is linked to this establishment
       const { data: linkCheck } = await supabase
         .from('user_establishments')
         .select('id')
@@ -153,43 +160,121 @@ export function HighlightRequestSection({ establishmentId }: HighlightRequestSec
         .maybeSingle();
 
       if (!linkCheck) {
-        toast.error('Sua empresa ainda não está vinculada ao seu usuário. Entre em contato com o suporte.');
+        toast.error('Sua empresa ainda não está vinculada ao seu usuário.');
         return;
       }
 
-      // Step 4: Create highlight request
       const { error: insertError } = await supabase
         .from('highlight_requests')
         .insert({
           establishment_id: establishmentId,
           user_id: user.id,
-          image_url: urlData.publicUrl,
+          image_url: publicUrl,
           status: 'pending',
         });
 
       if (insertError) {
         console.error('Insert error:', insertError);
-        if (insertError.message?.includes('row-level security')) {
-          toast.error('Você não tem permissão para solicitar destaque desta empresa.');
-        } else {
-          toast.error('Erro ao enviar solicitação. Tente novamente.');
-        }
+        toast.error('Erro ao enviar solicitação.');
         return;
       }
 
       toast.success('Solicitação enviada com sucesso!');
-      setSelectedFile(null);
-      setPreviewUrl(null);
-      // Reset file input
-      const input = document.getElementById('highlight-upload') as HTMLInputElement;
-      if (input) input.value = '';
+      resetForm();
       fetchRequests();
     } catch (error) {
-      console.error('Error submitting highlight request:', error);
-      toast.error('Erro inesperado ao enviar solicitação.');
+      console.error('Error submitting:', error);
+      toast.error('Erro inesperado.');
     } finally {
       setUploading(false);
     }
+  };
+
+  const handleReplace = async () => {
+    if (!selectedFile || !user || !activeHighlight) return;
+
+    setReplacing(true);
+    try {
+      const publicUrl = await uploadImage(selectedFile);
+      if (!publicUrl) {
+        toast.error('Erro ao fazer upload da imagem.');
+        return;
+      }
+
+      // Update existing highlight: new image, status back to pending
+      const { error } = await supabase
+        .from('highlight_requests')
+        .update({
+          image_url: publicUrl,
+          status: 'pending',
+          reviewed_at: null,
+          reviewed_by: null,
+          starts_at: null,
+          expires_at: null,
+        })
+        .eq('id', activeHighlight.id);
+
+      if (error) {
+        console.error('Replace error:', error);
+        toast.error('Erro ao substituir banner.');
+        return;
+      }
+
+      // Remove destaque from establishment while pending
+      await supabase
+        .from('establishments')
+        .update({ is_destaque: false })
+        .eq('id', establishmentId);
+
+      toast.success('Banner substituído! Aguardando nova aprovação.');
+      resetForm();
+      fetchRequests();
+    } catch (error) {
+      console.error('Error replacing:', error);
+      toast.error('Erro inesperado.');
+    } finally {
+      setReplacing(false);
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!activeHighlight || !user) return;
+
+    setDeleting(true);
+    try {
+      const { error } = await supabase
+        .from('highlight_requests')
+        .delete()
+        .eq('id', activeHighlight.id);
+
+      if (error) {
+        console.error('Delete error:', error);
+        toast.error('Erro ao excluir destaque.');
+        return;
+      }
+
+      // Remove destaque from establishment
+      await supabase
+        .from('establishments')
+        .update({ is_destaque: false })
+        .eq('id', establishmentId);
+
+      toast.success('Destaque excluído com sucesso!');
+      fetchRequests();
+    } catch (error) {
+      console.error('Error deleting:', error);
+      toast.error('Erro inesperado.');
+    } finally {
+      setDeleting(false);
+    }
+  };
+
+  const resetForm = () => {
+    setSelectedFile(null);
+    setPreviewUrl(null);
+    setImageError(null);
+    const input = document.getElementById('highlight-upload') as HTMLInputElement;
+    if (input) input.value = '';
   };
 
   const hasPending = requests.some(r => r.status === 'pending');
@@ -223,7 +308,6 @@ export function HighlightRequestSection({ establishmentId }: HighlightRequestSec
 
   return (
     <div className="space-y-4">
-      {/* Destaque Promocional */}
       <Card className="border-0 shadow-elevated rounded-2xl">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
@@ -236,7 +320,7 @@ export function HighlightRequestSection({ establishmentId }: HighlightRequestSec
         </CardHeader>
         <CardContent className="space-y-4">
           {activeHighlight ? (
-            <div className="space-y-3">
+            <div className="space-y-4">
               <div className="bg-green-500/5 border border-green-200 rounded-xl p-4">
                 <p className="text-sm font-medium text-green-700 mb-2">✅ Destaque ativo</p>
                 <p className="text-xs text-muted-foreground">
@@ -245,6 +329,80 @@ export function HighlightRequestSection({ establishmentId }: HighlightRequestSec
               </div>
               <div className="rounded-xl overflow-hidden border">
                 <img src={activeHighlight.image_url} alt="Destaque ativo" className="w-full h-auto" />
+              </div>
+
+              {/* Management buttons */}
+              <div className="space-y-3">
+                <p className="text-sm font-medium text-foreground">Gerenciar Destaque</p>
+                
+                {/* Replace banner */}
+                <div className="space-y-2">
+                  <input
+                    type="file"
+                    accept="image/jpeg,image/png,image/webp"
+                    onChange={handleFileSelect}
+                    className="hidden"
+                    id="highlight-upload"
+                  />
+                  <label htmlFor="highlight-upload">
+                    <Button asChild variant="outline" className="w-full">
+                      <span>
+                        <RefreshCw className="h-4 w-4 mr-2" />
+                        Substituir Banner
+                      </span>
+                    </Button>
+                  </label>
+
+                  {imageError && (
+                    <div className="bg-destructive/10 border border-destructive/20 rounded-lg p-3">
+                      <p className="text-sm text-destructive">❌ {imageError}</p>
+                    </div>
+                  )}
+
+                  {previewUrl && (
+                    <div className="space-y-3">
+                      <p className="text-sm text-muted-foreground">Novo banner:</p>
+                      <div className="rounded-xl overflow-hidden border">
+                        <img src={previewUrl} alt="Preview" className="w-full h-auto" />
+                      </div>
+                      <p className="text-xs text-amber-600">⚠️ A substituição voltará o status para "pendente de aprovação".</p>
+                      <Button onClick={handleReplace} disabled={replacing} className="w-full">
+                        {replacing ? (
+                          <><Loader2 className="h-4 w-4 mr-2 animate-spin" />Substituindo...</>
+                        ) : (
+                          <><RefreshCw className="h-4 w-4 mr-2" />Confirmar Substituição</>
+                        )}
+                      </Button>
+                    </div>
+                  )}
+                </div>
+
+                {/* Delete highlight */}
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <Button variant="destructive" className="w-full" disabled={deleting}>
+                      {deleting ? (
+                        <><Loader2 className="h-4 w-4 mr-2 animate-spin" />Excluindo...</>
+                      ) : (
+                        <><Trash2 className="h-4 w-4 mr-2" />Excluir Destaque</>
+                      )}
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>Excluir destaque?</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        Seu destaque será removido imediatamente do slider da página inicial. Esta ação não pode ser desfeita.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                      <AlertDialogAction onClick={handleDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                        Excluir
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
               </div>
             </div>
           ) : hasPending ? (
@@ -292,15 +450,9 @@ export function HighlightRequestSection({ establishmentId }: HighlightRequestSec
                   </div>
                   <Button onClick={handleSubmit} disabled={uploading} className="w-full">
                     {uploading ? (
-                      <>
-                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                        Enviando...
-                      </>
+                      <><Loader2 className="h-4 w-4 mr-2 animate-spin" />Enviando...</>
                     ) : (
-                      <>
-                        <Star className="h-4 w-4 mr-2" />
-                        Solicitar Destaque
-                      </>
+                      <><Star className="h-4 w-4 mr-2" />Solicitar Destaque</>
                     )}
                   </Button>
                 </div>
@@ -310,7 +462,7 @@ export function HighlightRequestSection({ establishmentId }: HighlightRequestSec
         </CardContent>
       </Card>
 
-      {/* Histórico de solicitações */}
+      {/* Histórico */}
       {requests.length > 0 && (
         <Card className="border-0 shadow-elevated rounded-2xl">
           <CardHeader>
