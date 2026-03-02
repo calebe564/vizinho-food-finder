@@ -89,22 +89,36 @@ export function HeroCarousel() {
     // Fetch ONLY from highlight_requests with status=approved and valid expiration
     const { data: highlights, error } = await supabase
       .from("highlight_requests")
-      .select("id, establishment_id, image_url, expires_at, reviewed_at")
+      .select("id, establishment_id, image_url, expires_at, reviewed_at, created_at")
       .eq("status", "approved")
-      .gte("expires_at", new Date().toISOString());
+      .not("image_url", "is", null)
+      .gte("expires_at", new Date().toISOString())
+      .order("created_at", { ascending: false });
+
+    console.log("[HeroCarousel] highlights query:", { count: highlights?.length, error, highlights });
 
     if (error || !highlights || highlights.length === 0) {
       setCarouselItems([]);
       return;
     }
 
+    // DISTINCT ON establishment_id: keep only the most recent highlight per establishment
+    const seenEstablishments = new Set<string>();
+    const uniqueHighlights = highlights.filter((h) => {
+      if (seenEstablishments.has(h.establishment_id)) return false;
+      seenEstablishments.add(h.establishment_id);
+      return true;
+    });
+
     // Fetch establishment data for these highlights
-    const estIds = [...new Set(highlights.map((h) => h.establishment_id))];
+    const estIds = uniqueHighlights.map((h) => h.establishment_id);
     const { data: establishments } = await supabase
       .from("establishments")
       .select("id, name, category, profile_image, latitude, longitude")
       .eq("active", true)
       .in("id", estIds);
+
+    console.log("[HeroCarousel] establishments:", { count: establishments?.length, estIds });
 
     if (!establishments) {
       setCarouselItems([]);
@@ -113,7 +127,7 @@ export function HeroCarousel() {
 
     const estMap = new Map(establishments.map((e) => [e.id, e]));
 
-    const items: CarouselItem[] = highlights
+    const items: CarouselItem[] = uniqueHighlights
       .map((h) => {
         const est = estMap.get(h.establishment_id);
         if (!est) return null;
@@ -122,8 +136,8 @@ export function HeroCarousel() {
           establishmentId: est.id,
           establishmentName: est.name,
           category: est.category,
-          bannerImage: h.image_url, // ONLY from highlight_requests
-          profileImage: est.profile_image, // Logo - SEPARATE, never replaced
+          bannerImage: h.image_url,
+          profileImage: est.profile_image,
           latitude: Number(est.latitude) || 0,
           longitude: Number(est.longitude) || 0,
           approvedAt: h.reviewed_at,
@@ -131,6 +145,7 @@ export function HeroCarousel() {
       })
       .filter(Boolean) as CarouselItem[];
 
+    console.log("[HeroCarousel] final items:", items.length, items.map(i => i.establishmentName));
     setCarouselItems(sortByProximity(items));
   };
 
