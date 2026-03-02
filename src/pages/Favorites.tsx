@@ -237,13 +237,7 @@ export default function Favorites() {
                   </div>
                 ) : (
                   <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 md:gap-4">
-                    {sortedEstablishments.map((establishment, index) => {
-                      const estProducts = getEstablishmentProducts(establishment.id);
-                      const minPrice = estProducts.length > 0 
-                        ? Math.min(...estProducts.map(p => p.price))
-                        : null;
-                      
-                      return (
+                    {sortedEstablishments.map((establishment, index) => (
                         <div 
                           key={establishment.id}
                           className="animate-fade-in"
@@ -259,14 +253,11 @@ export default function Favorites() {
                             neighborhood={establishment.neighborhood}
                             city={establishment.city}
                             state={establishment.state}
-                            minPrice={minPrice}
-                            productNames={estProducts.slice(0, 2).map(p => p.name)}
                             schedule={establishment.schedule}
                             hasDelivery={establishment.has_delivery ?? false}
                           />
                         </div>
-                      );
-                    })}
+                    ))}
                   </div>
                 )}
               </TabsContent>

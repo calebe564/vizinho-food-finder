@@ -538,10 +538,7 @@ export default function Home() {
             ) : (
               <>
                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 md:gap-4">
-                  {(paginatedItems as typeof filteredEstablishments).map((est) => {
-                    const estProducts = getEstablishmentProducts(est.id);
-                    const minPrice = estProducts.length > 0 ? Math.min(...estProducts.map(p => p.price)) : null;
-                    return (
+                  {(paginatedItems as typeof filteredEstablishments).map((est) => (
                       <EstablishmentCardCompact 
                         key={est.id} 
                         id={est.id} 
@@ -553,13 +550,10 @@ export default function Home() {
                         neighborhood={est.neighborhood}
                         city={est.city}
                         state={est.state}
-                        minPrice={minPrice}
-                        productNames={estProducts.slice(0, 2).map(p => p.name)}
                         schedule={est.schedule}
                         hasDelivery={est.has_delivery ?? false}
                       />
-                    );
-                  })}
+                  ))}
                 </div>
 
                 {/* Pagination */}
