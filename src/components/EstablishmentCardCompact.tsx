@@ -11,6 +11,7 @@ interface EstablishmentCardCompactProps {
   proximityLabel?: string;
   profileImage?: string | null;
   bannerImage?: string | null;
+  mainPhotoUrl?: string | null;
   isPaid?: boolean;
   neighborhood?: string | null;
   city?: string;
@@ -62,6 +63,7 @@ export function EstablishmentCardCompact({
   proximityLabel,
   profileImage,
   bannerImage,
+  mainPhotoUrl,
   isPaid,
   neighborhood,
   city,
@@ -69,7 +71,8 @@ export function EstablishmentCardCompact({
   schedule,
   hasDelivery,
 }: EstablishmentCardCompactProps) {
-  const displayImage = bannerImage || profileImage;
+  // Priority: mainPhotoUrl (from establishment_photos) > bannerImage > profileImage
+  const displayImage = mainPhotoUrl || bannerImage || profileImage;
   
   // Format location as "Bairro · Cidade – UF"
   const locationText = formatLocation(neighborhood, city, state);

@@ -12,6 +12,7 @@ import { LocationFilter } from "@/components/LocationFilterModal";
 import { sortEstablishments, sortProducts, matchesCategory } from "@/lib/sortingUtils";
 import { areNeighborhoodsEquivalent, matchesNormalizedNeighborhood } from "@/lib/locationUtils";
 import { isOpenNow } from "@/lib/scheduleUtils";
+import { useMainPhotosMap } from "@/hooks/useEstablishmentPhotos";
 
 import { useUserLocation } from "@/contexts/LocationContext";
 import { useSearchParams } from "react-router-dom";
@@ -306,6 +307,10 @@ export default function Home() {
   const showProductResults = searchMode === "products" && searchTerm && filteredProducts.length > 0;
   const showEstablishments = !showProductResults || !searchTerm;
 
+  // Fetch main photos for displayed establishments
+  const displayedEstIds = useMemo(() => filteredEstablishments.map(e => e.id), [filteredEstablishments]);
+  const { data: mainPhotosMap = {} } = useMainPhotosMap(displayedEstIds);
+
   // Reset page when filters change
   useEffect(() => {
     setCurrentPage(1);
@@ -545,7 +550,8 @@ export default function Home() {
                         name={est.name} 
                         category={est.category} 
                         profileImage={est.profile_image} 
-                        bannerImage={est.banner_image} 
+                        bannerImage={est.banner_image}
+                        mainPhotoUrl={mainPhotosMap[est.id]}
                         isPaid={est.is_paid}
                         neighborhood={est.neighborhood}
                         city={est.city}

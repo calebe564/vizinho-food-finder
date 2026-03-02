@@ -13,6 +13,7 @@ import { MapPin, Store, Loader2 } from "lucide-react";
 import { isOpenNow } from "@/lib/scheduleUtils";
 import { areNeighborhoodsEquivalent, matchesNormalizedNeighborhood } from "@/lib/locationUtils";
 import { matchesCategory } from "@/lib/sortingUtils";
+import { useMainPhotosMap } from "@/hooks/useEstablishmentPhotos";
 
 type EstablishmentCategory = Database["public"]["Enums"]["establishment_category"];
 
@@ -72,6 +73,10 @@ export default function AllEstablishments() {
     },
     staleTime: 0, // Always refetch to ensure sync
   });
+
+  // Fetch main photos for listed establishments
+  const estIds = useMemo(() => establishments.map(e => e.id), [establishments]);
+  const { data: mainPhotosMap = {} } = useMainPhotosMap(estIds);
 
   const { data: products = [] } = useQuery({
     queryKey: ["products-search"],
@@ -229,6 +234,7 @@ export default function AllEstablishments() {
                       category={establishment.category}
                       profileImage={establishment.profile_image}
                       bannerImage={establishment.banner_image}
+                      mainPhotoUrl={mainPhotosMap[establishment.id]}
                       isPaid={establishment.is_paid}
                       neighborhood={establishment.neighborhood}
                       city={establishment.city}

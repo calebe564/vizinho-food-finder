@@ -10,8 +10,9 @@ import { Heart, Store, Package, Loader2 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useEffect } from "react";
+import { useEffect, useMemo } from "react";
 import { isOpenNow } from "@/lib/scheduleUtils";
+import { useMainPhotosMap } from "@/hooks/useEstablishmentPhotos";
 
 interface Establishment {
   id: string;
@@ -80,6 +81,10 @@ export default function Favorites() {
     enabled: favorites.length > 0 && isInitialized,
     staleTime: 0, // Always refetch
   });
+
+  // Fetch main photos
+  const estIds = useMemo(() => establishments.map(e => e.id), [establishments]);
+  const { data: mainPhotosMap = {} } = useMainPhotosMap(estIds);
 
   const { data: products = [], isLoading: productsLoading } = useQuery({
     queryKey: ["favorites-products", productFavorites],
@@ -249,6 +254,7 @@ export default function Favorites() {
                             category={establishment.category}
                             profileImage={establishment.profile_image}
                             bannerImage={establishment.banner_image}
+                            mainPhotoUrl={mainPhotosMap[establishment.id]}
                             isPaid={establishment.is_paid}
                             neighborhood={establishment.neighborhood}
                             city={establishment.city}

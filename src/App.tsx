@@ -13,6 +13,13 @@ import { lazy, Suspense } from "react";
 import { ProtectedRoute } from "./components/ProtectedRoute";
 // AI Chat button removed - now integrated into Header menu
 import { ErrorBoundary } from "./components/ErrorBoundary";
+import { useRealtimeInvalidation } from "./hooks/useRealtimeInvalidation";
+
+// Component to mount realtime listeners inside QueryClientProvider
+function RealtimeSync() {
+  useRealtimeInvalidation();
+  return null;
+}
 
 // Lazy loading para melhor performance
 const Home = lazy(() => import("./pages/Home"));
@@ -63,6 +70,7 @@ function App() {
                 <TooltipProvider>
                   <Toaster />
                   <Sonner />
+                  <RealtimeSync />
                   <BrowserRouter>
                     <LocationProvider>
                       {/* AI Chat Button moved to Header menu */}
