@@ -89,6 +89,7 @@ export function HighlightRequestSection({ establishmentId }: HighlightRequestSec
     if (!file) return;
 
     setImageError(null);
+    // Always keep only the LAST selected file
     setSelectedFile(null);
     setPreviewUrl(null);
 
@@ -138,9 +139,20 @@ export function HighlightRequestSection({ establishmentId }: HighlightRequestSec
     return urlData?.publicUrl || null;
   };
 
+  // Get the active/pending highlight (only one allowed per establishment)
+  const activeHighlight = requests.find(r => r.status === 'approved' && r.expires_at && new Date(r.expires_at) > new Date());
+  const pendingHighlight = requests.find(r => r.status === 'pending');
+  const currentHighlight = activeHighlight || pendingHighlight;
+
   const handleSubmit = async () => {
     if (!selectedFile || !user) {
       toast.error('Selecione uma imagem antes de enviar.');
+      return;
+    }
+
+    // Prevent duplicate: if there's already a pending/approved highlight, block
+    if (currentHighlight) {
+      toast.error('Já existe um destaque ativo ou pendente. Use "Substituir Banner" para alterar.');
       return;
     }
 
@@ -175,7 +187,11 @@ export function HighlightRequestSection({ establishmentId }: HighlightRequestSec
 
       if (insertError) {
         console.error('Insert error:', insertError);
-        toast.error('Erro ao enviar solicitação.');
+        if (insertError.message?.includes('idx_highlight_unique_establishment')) {
+          toast.error('Já existe uma solicitação de destaque para esta empresa.');
+        } else {
+          toast.error('Erro ao enviar solicitação.');
+        }
         return;
       }
 
@@ -191,7 +207,7 @@ export function HighlightRequestSection({ establishmentId }: HighlightRequestSec
   };
 
   const handleReplace = async () => {
-    if (!selectedFile || !user || !activeHighlight) return;
+    if (!selectedFile || !user || !currentHighlight) return;
 
     setReplacing(true);
     try {
@@ -201,7 +217,7 @@ export function HighlightRequestSection({ establishmentId }: HighlightRequestSec
         return;
       }
 
-      // Update existing highlight: new image, status back to pending
+      // Update the SAME record: new image, status back to pending
       const { error } = await supabase
         .from('highlight_requests')
         .update({
@@ -212,7 +228,7 @@ export function HighlightRequestSection({ establishmentId }: HighlightRequestSec
           starts_at: null,
           expires_at: null,
         })
-        .eq('id', activeHighlight.id);
+        .eq('id', currentHighlight.id);
 
       if (error) {
         console.error('Replace error:', error);
@@ -220,7 +236,7 @@ export function HighlightRequestSection({ establishmentId }: HighlightRequestSec
         return;
       }
 
-      // Remove destaque from establishment while pending
+      // Remove destaque flag while pending
       await supabase
         .from('establishments')
         .update({ is_destaque: false })
@@ -238,14 +254,15 @@ export function HighlightRequestSection({ establishmentId }: HighlightRequestSec
   };
 
   const handleDelete = async () => {
-    if (!activeHighlight || !user) return;
+    if (!currentHighlight || !user) return;
 
     setDeleting(true);
     try {
+      // REAL DELETE - not just marking inactive
       const { error } = await supabase
         .from('highlight_requests')
         .delete()
-        .eq('id', activeHighlight.id);
+        .eq('id', currentHighlight.id);
 
       if (error) {
         console.error('Delete error:', error);
@@ -253,14 +270,15 @@ export function HighlightRequestSection({ establishmentId }: HighlightRequestSec
         return;
       }
 
-      // Remove destaque from establishment
+      // Remove destaque flag from establishment
       await supabase
         .from('establishments')
         .update({ is_destaque: false })
         .eq('id', establishmentId);
 
       toast.success('Destaque excluído com sucesso!');
-      fetchRequests();
+      // Update local state immediately
+      setRequests((prev) => prev.filter((r) => r.id !== currentHighlight.id));
     } catch (error) {
       console.error('Error deleting:', error);
       toast.error('Erro inesperado.');
@@ -276,9 +294,6 @@ export function HighlightRequestSection({ establishmentId }: HighlightRequestSec
     const input = document.getElementById('highlight-upload') as HTMLInputElement;
     if (input) input.value = '';
   };
-
-  const hasPending = requests.some(r => r.status === 'pending');
-  const activeHighlight = requests.find(r => r.status === 'approved' && r.expires_at && new Date(r.expires_at) > new Date());
 
   const getStatusBadge = (status: string, expiresAt: string | null) => {
     if (status === 'approved' && expiresAt && new Date(expiresAt) < new Date()) {
@@ -319,23 +334,31 @@ export function HighlightRequestSection({ establishmentId }: HighlightRequestSec
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          {activeHighlight ? (
+          {currentHighlight ? (
             <div className="space-y-4">
-              <div className="bg-green-500/5 border border-green-200 rounded-xl p-4">
-                <p className="text-sm font-medium text-green-700 mb-2">✅ Destaque ativo</p>
-                <p className="text-xs text-muted-foreground">
-                  Expira em: {new Date(activeHighlight.expires_at!).toLocaleDateString('pt-BR')}
+              <div className={`border rounded-xl p-4 ${
+                currentHighlight.status === 'approved' 
+                  ? 'bg-green-500/5 border-green-200' 
+                  : 'bg-amber-500/5 border-amber-200'
+              }`}>
+                <p className="text-sm font-medium mb-1">
+                  {currentHighlight.status === 'approved' ? '✅ Destaque ativo' : '⏳ Aguardando aprovação'}
                 </p>
+                {currentHighlight.expires_at && currentHighlight.status === 'approved' && (
+                  <p className="text-xs text-muted-foreground">
+                    Expira em: {new Date(currentHighlight.expires_at).toLocaleDateString('pt-BR')}
+                  </p>
+                )}
               </div>
               <div className="rounded-xl overflow-hidden border">
-                <img src={activeHighlight.image_url} alt="Destaque ativo" className="w-full h-auto" />
+                <img src={currentHighlight.image_url} alt="Banner do destaque" className="w-full h-auto" />
               </div>
 
               {/* Management buttons */}
               <div className="space-y-3">
                 <p className="text-sm font-medium text-foreground">Gerenciar Destaque</p>
                 
-                {/* Replace banner */}
+                {/* Replace banner - direct upload, no extra confirmation */}
                 <div className="space-y-2">
                   <input
                     type="file"
@@ -365,7 +388,7 @@ export function HighlightRequestSection({ establishmentId }: HighlightRequestSec
                       <div className="rounded-xl overflow-hidden border">
                         <img src={previewUrl} alt="Preview" className="w-full h-auto" />
                       </div>
-                      <p className="text-xs text-amber-600">⚠️ A substituição voltará o status para "pendente de aprovação".</p>
+                      <p className="text-xs text-amber-600">⚠️ O status voltará para "pendente de aprovação".</p>
                       <Button onClick={handleReplace} disabled={replacing} className="w-full">
                         {replacing ? (
                           <><Loader2 className="h-4 w-4 mr-2 animate-spin" />Substituindo...</>
@@ -404,13 +427,6 @@ export function HighlightRequestSection({ establishmentId }: HighlightRequestSec
                   </AlertDialogContent>
                 </AlertDialog>
               </div>
-            </div>
-          ) : hasPending ? (
-            <div className="bg-amber-500/5 border border-amber-200 rounded-xl p-4">
-              <p className="text-sm font-medium text-amber-700">⏳ Solicitação em análise</p>
-              <p className="text-xs text-muted-foreground mt-1">
-                Sua solicitação será analisada em até 30 minutos.
-              </p>
             </div>
           ) : (
             <div className="space-y-4">
@@ -478,9 +494,6 @@ export function HighlightRequestSection({ establishmentId }: HighlightRequestSec
                   <p className="text-xs text-muted-foreground">
                     {new Date(req.created_at).toLocaleDateString('pt-BR')}
                   </p>
-                  {req.admin_notes && (
-                    <p className="text-xs text-muted-foreground mt-0.5 truncate">{req.admin_notes}</p>
-                  )}
                 </div>
                 {getStatusBadge(req.status, req.expires_at)}
               </div>
