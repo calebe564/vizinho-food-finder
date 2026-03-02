@@ -29,7 +29,8 @@ import {
   ImagePlus,
   Settings,
   User,
-  Star
+  Star,
+  CheckCircle2
 } from 'lucide-react';
 import {
   Dialog,
@@ -44,6 +45,7 @@ import { BusinessNotesSheet } from '@/components/business/BusinessNotesSheet';
 import { ProfileCompletionCard } from '@/components/business/ProfileCompletionCard';
 import { InviteAdminDialog } from '@/components/business/InviteAdminDialog';
 import { HighlightRequestSection } from '@/components/business/HighlightRequestSection';
+import { useEstablishmentPhotos, useAddPhotos, useSetMainPhoto, useDeletePhoto } from '@/hooks/useEstablishmentPhotos';
 
 interface EstablishmentData {
   id: string;
@@ -69,10 +71,15 @@ export default function MyEstablishment() {
   const [establishmentData, setEstablishmentData] = useState<EstablishmentData | null>(null);
   const [loading, setLoading] = useState(true);
   const [uploadingLogo, setUploadingLogo] = useState(false);
-  const [uploadingPhotos, setUploadingPhotos] = useState(false);
-  const [deletingPhoto, setDeletingPhoto] = useState<string | null>(null);
   const [photoDialogOpen, setPhotoDialogOpen] = useState(false);
   const [selectedPhoto, setSelectedPhoto] = useState<string | null>(null);
+
+  // Photo management hooks (from establishment_photos table)
+  const estId = establishmentData?.isFromRequest ? undefined : establishmentData?.id;
+  const { data: photos = [], isLoading: photosLoading } = useEstablishmentPhotos(estId);
+  const addPhotosMutation = useAddPhotos(estId || '');
+  const setMainPhotoMutation = useSetMainPhoto(estId || '');
+  const deletePhotoMutation = useDeletePhoto(estId || '');
   
   // Dialog states
   const [editDialogOpen, setEditDialogOpen] = useState(false);
@@ -207,87 +214,10 @@ export default function MyEstablishment() {
 
   const handlePhotosUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
-    if (!files || files.length === 0 || !establishmentData) return;
-
-    setUploadingPhotos(true);
-    try {
-      const newUrls: string[] = [];
-
-      for (const file of Array.from(files)) {
-        const fileExt = file.name.split('.').pop();
-        const fileName = `photos/${crypto.randomUUID()}.${fileExt}`;
-        
-        const { error: uploadError } = await supabase.storage
-          .from('establishment-images')
-          .upload(fileName, file);
-
-        if (uploadError) throw uploadError;
-
-        const { data: { publicUrl } } = supabase.storage
-          .from('establishment-images')
-          .getPublicUrl(fileName);
-
-        newUrls.push(publicUrl);
-      }
-
-      const updatedImages = [...establishmentData.images, ...newUrls];
-
-      // Atualizar no banco
-      if (establishmentData.isFromRequest) {
-        const { error } = await supabase
-          .from('establishment_requests')
-          .update({ images: updatedImages })
-          .eq('id', establishmentData.id);
-        if (error) throw error;
-      } else {
-        const { error } = await supabase
-          .from('establishments')
-          .update({ images: updatedImages })
-          .eq('id', establishmentData.id);
-        if (error) throw error;
-      }
-
-      setEstablishmentData(prev => prev ? { ...prev, images: updatedImages } : null);
-      toast.success(`${newUrls.length} foto(s) adicionada(s) com sucesso!`);
-    } catch (error) {
-      console.error('Error uploading photos:', error);
-      toast.error('Erro ao fazer upload das fotos');
-    } finally {
-      setUploadingPhotos(false);
-    }
+    if (!files || files.length === 0 || !estId) return;
+    addPhotosMutation.mutate(Array.from(files));
   };
 
-  const handleDeletePhoto = async (photoUrl: string) => {
-    if (!establishmentData) return;
-
-    setDeletingPhoto(photoUrl);
-    try {
-      const updatedImages = establishmentData.images.filter(img => img !== photoUrl);
-
-      // Atualizar no banco
-      if (establishmentData.isFromRequest) {
-        const { error } = await supabase
-          .from('establishment_requests')
-          .update({ images: updatedImages })
-          .eq('id', establishmentData.id);
-        if (error) throw error;
-      } else {
-        const { error } = await supabase
-          .from('establishments')
-          .update({ images: updatedImages })
-          .eq('id', establishmentData.id);
-        if (error) throw error;
-      }
-
-      setEstablishmentData(prev => prev ? { ...prev, images: updatedImages } : null);
-      toast.success('Foto removida com sucesso!');
-    } catch (error) {
-      console.error('Error deleting photo:', error);
-      toast.error('Erro ao remover foto');
-    } finally {
-      setDeletingPhoto(null);
-    }
-  };
 
   const handleDeleteProduct = async (index: number) => {
     if (!establishmentData) return;
@@ -533,7 +463,7 @@ export default function MyEstablishment() {
   const hasLogo = !!establishmentData.profile_image;
   const hasDescription = !!establishmentData.description && establishmentData.description.length > 10;
   const hasCategory = !!establishmentData.category;
-  const hasPhotos = establishmentData.images.length > 0;
+  const hasPhotos = photos.length > 0;
   const hasSchedule = !!establishmentData.schedule;
   const hasProducts = products.length > 0;
   
@@ -635,7 +565,7 @@ export default function MyEstablishment() {
                 <TabsTrigger value="photos" className="text-xs md:text-sm">
                   <Image className="h-4 w-4 md:mr-2" />
                   <span className="hidden md:inline">Fotos</span>
-                  <Badge variant="secondary" className="ml-1 text-xs">{establishmentData.images.length}</Badge>
+                  <Badge variant="secondary" className="ml-1 text-xs">{photos.length}</Badge>
                 </TabsTrigger>
                 <TabsTrigger value="settings" className="text-xs md:text-sm">
                   <Settings className="h-4 w-4 md:mr-2" />
@@ -800,12 +730,12 @@ export default function MyEstablishment() {
                           onChange={handlePhotosUpload}
                           className="hidden"
                           id="photos-upload"
-                          disabled={uploadingPhotos}
+                          disabled={addPhotosMutation.isPending}
                         />
                         <label htmlFor="photos-upload">
-                          <Button asChild size="sm" disabled={uploadingPhotos}>
+                          <Button asChild size="sm" disabled={addPhotosMutation.isPending}>
                             <span>
-                              {uploadingPhotos ? (
+                              {addPhotosMutation.isPending ? (
                                 <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                               ) : (
                                 <ImagePlus className="h-4 w-4 mr-2" />
@@ -817,11 +747,16 @@ export default function MyEstablishment() {
                       </div>
                     </CardTitle>
                     <CardDescription>
-                      💡 Empresas com mais fotos recebem mais visualizações.
+                      💡 Clique em "Definir Principal" para escolher a foto oficial da empresa.
                     </CardDescription>
                   </CardHeader>
                   <CardContent>
-                    {establishmentData.images.length === 0 ? (
+                    {!estId ? (
+                      <div className="text-center py-8">
+                        <Image className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                        <p className="text-muted-foreground">Sistema de fotos disponível após aprovação</p>
+                      </div>
+                    ) : photos.length === 0 ? (
                       <div className="text-center py-8">
                         <Image className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
                         <p className="text-muted-foreground">Nenhuma foto cadastrada</p>
@@ -829,28 +764,47 @@ export default function MyEstablishment() {
                       </div>
                     ) : (
                       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                        {establishmentData.images.map((image, index) => (
-                          <div key={index} className="relative group aspect-square rounded-xl overflow-hidden">
+                        {photos.map((photo) => (
+                          <div key={photo.id} className="relative group aspect-square rounded-xl overflow-hidden">
                             <img 
-                              src={image} 
-                              alt={`Foto ${index + 1}`}
-                              className="w-full h-full object-cover cursor-pointer hover:scale-105 transition-transform"
+                              src={photo.url} 
+                              alt="Foto do estabelecimento"
+                              className={`w-full h-full object-cover cursor-pointer hover:scale-105 transition-transform ${photo.is_main ? 'ring-2 ring-primary' : ''}`}
                               onClick={() => {
-                                setSelectedPhoto(image);
+                                setSelectedPhoto(photo.url);
                                 setPhotoDialogOpen(true);
                               }}
                             />
-                            <button
-                              onClick={() => handleDeletePhoto(image)}
-                              disabled={deletingPhoto === image}
-                              className="absolute top-2 right-2 p-1.5 bg-destructive text-destructive-foreground rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
-                            >
-                              {deletingPhoto === image ? (
-                                <Loader2 className="h-4 w-4 animate-spin" />
-                              ) : (
-                                <Trash2 className="h-4 w-4" />
+                            {/* Main badge */}
+                            {photo.is_main && (
+                              <div className="absolute top-2 left-2 px-2 py-1 bg-primary text-primary-foreground text-[10px] font-semibold rounded-full flex items-center gap-1">
+                                <CheckCircle2 className="h-3 w-3" />
+                                Principal
+                              </div>
+                            )}
+                            {/* Actions overlay */}
+                            <div className="absolute inset-x-0 bottom-0 p-2 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end justify-between">
+                              {!photo.is_main && (
+                                <Button
+                                  size="sm"
+                                  variant="secondary"
+                                  className="h-7 text-[10px] px-2"
+                                  onClick={(e) => { e.stopPropagation(); setMainPhotoMutation.mutate(photo.id); }}
+                                  disabled={setMainPhotoMutation.isPending}
+                                >
+                                  Definir Principal
+                                </Button>
                               )}
-                            </button>
+                              <Button
+                                size="icon"
+                                variant="destructive"
+                                className="h-7 w-7 ml-auto"
+                                onClick={(e) => { e.stopPropagation(); deletePhotoMutation.mutate(photo.id); }}
+                                disabled={deletePhotoMutation.isPending}
+                              >
+                                <Trash2 className="h-3.5 w-3.5" />
+                              </Button>
+                            </div>
                           </div>
                         ))}
                       </div>

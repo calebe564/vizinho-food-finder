@@ -324,6 +324,41 @@ export type Database = {
           },
         ]
       }
+      establishment_photos: {
+        Row: {
+          created_at: string
+          establishment_id: string
+          id: string
+          is_main: boolean
+          updated_at: string
+          url: string
+        }
+        Insert: {
+          created_at?: string
+          establishment_id: string
+          id?: string
+          is_main?: boolean
+          updated_at?: string
+          url: string
+        }
+        Update: {
+          created_at?: string
+          establishment_id?: string
+          id?: string
+          is_main?: boolean
+          updated_at?: string
+          url?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "establishment_photos_establishment_id_fkey"
+            columns: ["establishment_id"]
+            isOneToOne: false
+            referencedRelation: "establishments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       establishment_requests: {
         Row: {
           address: string
