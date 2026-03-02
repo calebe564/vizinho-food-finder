@@ -217,11 +217,6 @@ export default function AllEstablishments() {
           ) : (
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
               {sortedEstablishments.map((establishment, index) => {
-                const estProducts = getEstablishmentProducts(establishment.id);
-                const minPrice = estProducts.length > 0 
-                  ? Math.min(...estProducts.map(p => p.price))
-                  : null;
-                
                 return (
                   <div 
                     key={establishment.id}
@@ -238,8 +233,6 @@ export default function AllEstablishments() {
                       neighborhood={establishment.neighborhood}
                       city={establishment.city}
                       state={establishment.state}
-                      minPrice={minPrice}
-                      productNames={estProducts.slice(0, 2).map(p => p.name)}
                       schedule={establishment.schedule}
                       hasDelivery={establishment.has_delivery ?? false}
                     />

@@ -15,8 +15,6 @@ interface EstablishmentCardCompactProps {
   neighborhood?: string | null;
   city?: string;
   state?: string | null;
-  minPrice?: number | null;
-  productNames?: string[];
   schedule?: string;
   hasDelivery?: boolean;
 }
@@ -38,23 +36,6 @@ const categoryLabels: Record<string, string> = {
   espetinho: "Espetinho",
 };
 
-// Mapping categories to typical products
-const categoryProducts: Record<string, string[]> = {
-  restaurante: ["Almoço", "Jantar"],
-  lanchonete: ["Lanches", "Salgados"],
-  padaria: ["Pães", "Bolos"],
-  supermercado: ["Alimentos", "Bebidas"],
-  açougue: ["Carnes", "Frios"],
-  hortifruti: ["Frutas", "Verduras"],
-  pizzaria: ["Pizzas", "Massas"],
-  hamburgueria: ["Hambúrgueres", "Lanches"],
-  bar: ["Bebidas", "Petiscos"],
-  cafe: ["Cafés", "Doces"],
-  sorveteria: ["Sorvetes", "Açaí"],
-  acai: ["Açaí", "Sorvetes"],
-  espetinho: ["Espetinhos", "Churrascos"],
-  outro: ["Produtos", "Serviços"],
-};
 
 function formatLocation(neighborhood?: string | null, city?: string, state?: string | null): string {
   if (!neighborhood && !city) return "";
@@ -85,17 +66,10 @@ export function EstablishmentCardCompact({
   neighborhood,
   city,
   state,
-  minPrice,
-  productNames,
   schedule,
   hasDelivery,
 }: EstablishmentCardCompactProps) {
   const displayImage = bannerImage || profileImage;
-  
-  // Get products to display - use actual product names or category defaults
-  const displayProducts = productNames && productNames.length > 0 
-    ? productNames.slice(0, 2) 
-    : categoryProducts[category] || [categoryLabels[category] || category];
   
   // Format location as "Bairro · Cidade – UF"
   const locationText = formatLocation(neighborhood, city, state);
@@ -153,17 +127,10 @@ export function EstablishmentCardCompact({
             {name}
           </h3>
           
-          {/* Category/Products */}
+          {/* Category */}
           <p className="text-[10px] text-muted-foreground line-clamp-1 mb-1 md:text-xs lg:text-sm md:mb-1.5">
-            {displayProducts.join(" • ")}
+            {categoryLabels[category] || category}
           </p>
-          
-          {/* Price range */}
-          {minPrice !== null && minPrice !== undefined && (
-            <p className="text-[10px] font-medium text-primary mb-1 md:text-xs lg:text-sm md:mb-1.5">
-              A partir de R$ {minPrice.toFixed(2).replace(".", ",")}
-            </p>
-          )}
           
           {/* Location */}
           {locationText && (
