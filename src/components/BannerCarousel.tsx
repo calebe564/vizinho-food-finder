@@ -120,11 +120,8 @@ export function BannerCarousel() {
 
   if (carouselItems.length === 0) return null;
 
+  // NEVER duplicate items to fill space — only show actual distinct items
   const visibleItems = carouselItems.slice(currentIndex, currentIndex + actualItemsPerView);
-  if (visibleItems.length < actualItemsPerView && carouselItems.length > actualItemsPerView) {
-    const remaining = actualItemsPerView - visibleItems.length;
-    visibleItems.push(...carouselItems.slice(0, remaining));
-  }
 
   const gridColsClass =
     carouselItems.length === 1

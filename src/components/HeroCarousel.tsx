@@ -149,7 +149,7 @@ export function HeroCarousel() {
     setCarouselItems(sortByProximity(items));
   };
 
-  const itemsPerSlide = isMobile ? 1 : 2;
+  const itemsPerSlide = isMobile ? 1 : Math.min(2, carouselItems.length);
   const totalSlides = Math.max(1, Math.ceil(carouselItems.length / itemsPerSlide));
 
   const goToNext = useCallback(() => {
@@ -183,12 +183,16 @@ export function HeroCarousel() {
 
   if (carouselItems.length === 0) return null;
 
+  // Get items for current slide — NEVER duplicate
   const getCurrentSlideItems = () => {
     const startIdx = currentIndex * itemsPerSlide;
     const items: CarouselItem[] = [];
     for (let i = 0; i < itemsPerSlide; i++) {
-      const idx = (startIdx + i) % carouselItems.length;
-      if (carouselItems[idx]) items.push(carouselItems[idx]);
+      const idx = startIdx + i;
+      // Do NOT wrap around — only show actual distinct items
+      if (idx < carouselItems.length && carouselItems[idx]) {
+        items.push(carouselItems[idx]);
+      }
     }
     return items;
   };

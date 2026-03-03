@@ -799,7 +799,7 @@ export default function MyEstablishment() {
                                 size="icon"
                                 variant="destructive"
                                 className="h-7 w-7 ml-auto"
-                                onClick={(e) => { e.stopPropagation(); deletePhotoMutation.mutate(photo.id); }}
+                                onClick={(e) => { e.stopPropagation(); deletePhotoMutation.mutate({ photoId: photo.id, wasMain: photo.is_main }); }}
                                 disabled={deletePhotoMutation.isPending}
                               >
                                 <Trash2 className="h-3.5 w-3.5" />
