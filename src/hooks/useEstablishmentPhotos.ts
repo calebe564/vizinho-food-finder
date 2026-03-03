@@ -132,17 +132,33 @@ export function useSetMainPhoto(establishmentId: string) {
   });
 }
 
-// Delete photo
+// Delete photo — auto-promotes next photo to main if deleted was main
 export function useDeletePhoto(establishmentId: string) {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (photoId: string) => {
+    mutationFn: async ({ photoId, wasMain }: { photoId: string; wasMain: boolean }) => {
       const { error } = await supabase
         .from('establishment_photos')
         .delete()
         .eq('id', photoId);
       if (error) throw error;
+
+      // If deleted photo was main, promote the oldest remaining photo
+      if (wasMain) {
+        const { data: remaining } = await supabase
+          .from('establishment_photos')
+          .select('id')
+          .eq('establishment_id', establishmentId)
+          .order('created_at', { ascending: true })
+          .limit(1);
+        if (remaining && remaining.length > 0) {
+          await supabase
+            .from('establishment_photos')
+            .update({ is_main: true })
+            .eq('id', remaining[0].id);
+        }
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['establishment-photos', establishmentId] });
