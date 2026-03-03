@@ -95,7 +95,7 @@ export function HeroCarousel() {
       .gte("expires_at", new Date().toISOString())
       .order("created_at", { ascending: false });
 
-    console.log("[HeroCarousel] highlights query:", { count: highlights?.length, error, highlights });
+    
 
     if (error || !highlights || highlights.length === 0) {
       setCarouselItems([]);
@@ -118,7 +118,7 @@ export function HeroCarousel() {
       .eq("active", true)
       .in("id", estIds);
 
-    console.log("[HeroCarousel] establishments:", { count: establishments?.length, estIds });
+    
 
     if (!establishments) {
       setCarouselItems([]);
@@ -145,7 +145,7 @@ export function HeroCarousel() {
       })
       .filter(Boolean) as CarouselItem[];
 
-    console.log("[HeroCarousel] final items:", items.length, items.map(i => i.establishmentName));
+    
     setCarouselItems(sortByProximity(items));
   };
 

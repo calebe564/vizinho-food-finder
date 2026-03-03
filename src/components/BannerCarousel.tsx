@@ -63,17 +63,27 @@ export function BannerCarousel() {
     // Fetch approved highlight requests that haven't expired
     const { data: highlights, error } = await supabase
       .from("highlight_requests")
-      .select("id, establishment_id, image_url, expires_at")
+      .select("id, establishment_id, image_url, expires_at, created_at")
       .eq("status", "approved")
-      .gte("expires_at", new Date().toISOString());
+      .not("image_url", "is", null)
+      .gte("expires_at", new Date().toISOString())
+      .order("created_at", { ascending: false });
 
     if (error || !highlights || highlights.length === 0) {
       setCarouselItems([]);
       return;
     }
 
+    // DISTINCT ON establishment_id: keep only the most recent highlight per establishment
+    const seenEstablishments = new Set<string>();
+    const uniqueHighlights = highlights.filter((h) => {
+      if (seenEstablishments.has(h.establishment_id)) return false;
+      seenEstablishments.add(h.establishment_id);
+      return true;
+    });
+
     // Fetch establishment info for these highlights
-    const estIds = [...new Set(highlights.map((h) => h.establishment_id))];
+    const estIds = uniqueHighlights.map((h) => h.establishment_id);
     const { data: establishments } = await supabase
       .from("establishments")
       .select("id, name, category, profile_image")
@@ -87,7 +97,7 @@ export function BannerCarousel() {
 
     const estMap = new Map(establishments.map((e) => [e.id, e]));
 
-    const items: CarouselItem[] = highlights
+    const items: CarouselItem[] = uniqueHighlights
       .map((h) => {
         const est = estMap.get(h.establishment_id);
         if (!est) return null;

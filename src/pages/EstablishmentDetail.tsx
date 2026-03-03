@@ -14,13 +14,14 @@ import { useFavorites } from "@/hooks/useFavorites";
 import { shareContent, shareViaWhatsApp, copyToClipboard } from "@/lib/shareUtils";
 import { useAuth } from "@/contexts/AuthContext";
 import { useUserRole } from "@/hooks/useUserRole";
+import { useEstablishmentPhotos } from "@/hooks/useEstablishmentPhotos";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { useEffect } from "react";
+import { useEffect, useMemo } from "react";
 
 interface Establishment {
   id: string;
@@ -101,7 +102,7 @@ export default function EstablishmentDetail() {
         .from("establishments")
         .select("*")
         .eq("id", id)
-        .eq("active", true) // Só buscar estabelecimentos ativos
+        .eq("active", true)
         .maybeSingle();
 
       if (error) {
@@ -111,8 +112,8 @@ export default function EstablishmentDetail() {
       return data as Establishment | null;
     },
     enabled: !!id,
-    staleTime: 1000 * 60 * 5, // Cache for 5 minutes
-    retry: 1, // Limitar tentativas para não travar a UI
+    staleTime: 1000 * 60 * 5,
+    retry: 1,
   });
 
   // Fetch products with React Query
@@ -149,6 +150,21 @@ export default function EstablishmentDetail() {
     enabled: productIds.length > 0,
     staleTime: 1000 * 60 * 5,
   });
+
+  // Fetch photos from establishment_photos table (must be before early returns)
+  const { data: photoRecords = [] } = useEstablishmentPhotos(id);
+
+  // Merge: establishment_photos URLs first, then legacy JSONB images as fallback
+  const legacyImages = useMemo(() => {
+    if (!establishment) return [];
+    return Array.isArray(establishment.images) ? establishment.images as string[] : [];
+  }, [establishment]);
+
+  const allPhotos = useMemo(() => {
+    const photoUrls = photoRecords.map(p => p.url);
+    if (photoUrls.length > 0) return photoUrls;
+    return legacyImages;
+  }, [photoRecords, legacyImages]);
 
   // Increment page views (fire and forget)
   useEffect(() => {
@@ -245,7 +261,6 @@ export default function EstablishmentDetail() {
   const scheduleStatus = getScheduleStatus(establishment.schedule);
   const hasWhatsapp = establishment.whatsapp && establishment.whatsapp.trim() !== "";
   const hasSite = establishment.external_link && establishment.external_link.trim() !== "";
-  const images = Array.isArray(establishment.images) ? establishment.images as string[] : [];
 
   return (
     <div className="min-h-screen bg-background">
@@ -304,8 +319,8 @@ export default function EstablishmentDetail() {
 
       <main className="container mx-auto px-4 py-8">
         <div className="mb-8 relative">
-          {images.length > 0 ? (
-            <ImageGallery images={images} />
+          {allPhotos.length > 0 ? (
+            <ImageGallery images={allPhotos} />
           ) : establishment.banner_image || establishment.profile_image ? (
             <img
               src={establishment.banner_image || establishment.profile_image}
