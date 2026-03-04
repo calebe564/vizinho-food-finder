@@ -844,7 +844,7 @@ export default function ClaimEstablishment() {
                         </div>
                         <div className="space-y-2">
                           <Label htmlFor="searchCategory">Categoria</Label>
-                          <Select value={searchCategory} onValueChange={(val) => setSearchCategory(val === 'todas' ? '' : val)}>
+                          <Select value={searchCategory || 'todas'} onValueChange={(val) => setSearchCategory(val === 'todas' ? '' : val)}>
                             <SelectTrigger>
                               <SelectValue placeholder="Todas" />
                             </SelectTrigger>
