@@ -421,7 +421,7 @@ export default function ClaimEstablishment() {
         .insert({
           establishment_id: selectedEstablishment.id,
           user_id: user.id,
-          cnpj: documentType === 'cnpj' ? cleanDocument : null,
+          cnpj: documentType === 'cnpj' ? cleanDocument : cleanDocument,
           cpf_hash: documentType === 'cpf' ? cleanDocument : null,
           document_type: documentType,
           birth_date: documentType === 'cpf' && cpfFormData.dataNascimento ? cpfFormData.dataNascimento : null,
