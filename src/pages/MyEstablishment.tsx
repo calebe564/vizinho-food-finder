@@ -3,9 +3,11 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useUserRole } from '@/hooks/useUserRole';
 import { useEstablishmentRequest } from '@/hooks/useEstablishmentRequest';
+import { useActiveEstablishment } from '@/contexts/ActiveEstablishmentContext';
 import { supabase } from '@/integrations/supabase/client';
 import { Header } from '@/components/Header';
 import { Footer } from '@/components/Footer';
+import { EstablishmentSelector } from '@/components/EstablishmentSelector';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
@@ -30,7 +32,8 @@ import {
   Settings,
   User,
   Star,
-  CheckCircle2
+  CheckCircle2,
+  ArrowLeftRight
 } from 'lucide-react';
 import {
   Dialog,
@@ -67,6 +70,7 @@ export default function MyEstablishment() {
   const { user, isLoading: authLoading } = useAuth();
   const { role, isLoading: roleLoading } = useUserRole();
   const { request, hasPendingRequest, hasApprovedRequest, isLoading: requestLoading } = useEstablishmentRequest();
+  const { activeEstablishment, establishments, count: estCount, isLoading: estLoading } = useActiveEstablishment();
   
   const [establishmentData, setEstablishmentData] = useState<EstablishmentData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -91,18 +95,14 @@ export default function MyEstablishment() {
     if (!user) return;
     
     try {
-      // Primeiro tentar buscar de user_establishments -> establishments
-      const { data: userEstablishment } = await supabase
-        .from('user_establishments')
-        .select('establishment_id')
-        .eq('user_id', user.id)
-        .maybeSingle();
-
-      if (userEstablishment?.establishment_id) {
+      // Use active establishment from context if available
+      const targetEstId = activeEstablishment?.establishment_id;
+      
+      if (targetEstId) {
         const { data: estData } = await supabase
           .from('establishments')
           .select('*')
-          .eq('id', userEstablishment.establishment_id)
+          .eq('id', targetEstId)
           .maybeSingle();
 
         if (estData) {
@@ -122,6 +122,43 @@ export default function MyEstablishment() {
           });
           setLoading(false);
           return;
+        }
+      }
+
+      // Fallback: check user_establishments table directly
+      if (!targetEstId) {
+        const { data: userEstablishment } = await supabase
+          .from('user_establishments')
+          .select('establishment_id')
+          .eq('user_id', user.id)
+          .limit(1)
+          .maybeSingle();
+
+        if (userEstablishment?.establishment_id) {
+          const { data: estData } = await supabase
+            .from('establishments')
+            .select('*')
+            .eq('id', userEstablishment.establishment_id)
+            .maybeSingle();
+
+          if (estData) {
+            setEstablishmentData({
+              id: estData.id,
+              name: estData.name,
+              description: estData.description,
+              address: estData.address,
+              phone: estData.phone,
+              whatsapp: estData.whatsapp,
+              schedule: estData.schedule,
+              profile_image: estData.profile_image,
+              category: estData.category,
+              images: Array.isArray(estData.images) ? estData.images as string[] : [],
+              products_json: [],
+              isFromRequest: false
+            });
+            setLoading(false);
+            return;
+          }
         }
       }
 
@@ -164,9 +201,10 @@ export default function MyEstablishment() {
   };
 
   useEffect(() => {
-    if (!user || roleLoading || requestLoading) return;
+    if (!user || roleLoading || requestLoading || estLoading) return;
+    setLoading(true);
     fetchEstablishmentData();
-  }, [user, roleLoading, requestLoading]);
+  }, [user, roleLoading, requestLoading, estLoading, activeEstablishment?.establishment_id]);
 
   const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -470,15 +508,30 @@ export default function MyEstablishment() {
   const completedItems = [hasLogo, hasDescription, hasCategory, hasPhotos, hasSchedule, hasProducts].filter(Boolean).length;
   const profilePercentage = Math.round((completedItems / 6) * 100);
 
+  const pageTitle = estCount > 1 ? 'Empresas' : 'Minha Empresa';
+
   return (
     <>
       <Helmet>
-        <title>Minha Empresa - {establishmentData.name} | Comércio Vizinho</title>
+        <title>{pageTitle} - {establishmentData.name} | Comércio Vizinho</title>
       </Helmet>
       <div className="min-h-screen flex flex-col bg-background">
         <Header />
         <main className="flex-1 container px-4 py-6">
           <div className="max-w-4xl mx-auto space-y-4">
+
+            {/* Establishment Selector (when user has 2+ businesses) */}
+            {estCount > 1 && (
+              <Card className="border-0 shadow-elevated rounded-2xl">
+                <CardContent className="py-3 px-4 flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <ArrowLeftRight className="h-4 w-4 text-muted-foreground" />
+                    <span className="text-sm font-medium">Empresa Atual:</span>
+                  </div>
+                  <EstablishmentSelector />
+                </CardContent>
+              </Card>
+            )}
             
             {/* 1. Status da Empresa */}
             <EstablishmentStatusCard 

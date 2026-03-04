@@ -10,6 +10,7 @@ import { useFavorites } from "@/hooks/useFavorites";
 import { useAuth } from "@/contexts/AuthContext";
 import { useUserRole } from "@/hooks/useUserRole";
 import { useEstablishmentRequest } from "@/hooks/useEstablishmentRequest";
+import { useActiveEstablishment } from "@/contexts/ActiveEstablishmentContext";
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
 import { useUnreadConversations } from "@/hooks/useUnreadConversations";
 import { AIChatSheet } from "./AIChatSheet";
@@ -21,11 +22,13 @@ export function Header() {
   const { user, profile, signOut, isAdmin } = useAuth();
   const { isEmpresario, isAdmin: isAdminRole, isLoading: roleLoading } = useUserRole();
   const { hasApprovedRequest, isLoading: requestLoading } = useEstablishmentRequest();
+  const { count: establishmentCount, isLoading: estLoading } = useActiveEstablishment();
   const navigate = useNavigate();
   const hasFavorites = totalFavorites > 0;
   
-  // Show "Minha Empresa" only for business owners, NOT for admins
-  const showMyEstablishment = user && (isEmpresario || hasApprovedRequest) && !isAdminRole && !roleLoading && !requestLoading;
+  // Show business menu for business owners with at least one establishment or approved request
+  const showMyEstablishment = user && (isEmpresario || hasApprovedRequest || establishmentCount > 0) && !isAdminRole && !roleLoading && !requestLoading;
+  const businessMenuLabel = establishmentCount > 1 ? "Empresas" : "Minha Empresa";
   
   // Hide claim button for admins - admins cannot claim businesses
   const showClaimButton = user && !isAdminRole && !roleLoading;
@@ -117,7 +120,7 @@ export function Header() {
                 <DropdownMenuItem asChild>
                   <Link to="/minha-empresa" className="flex items-center gap-2 cursor-pointer">
                     <Briefcase className="h-4 w-4" />
-                    Minha Empresa
+                    {businessMenuLabel}
                   </Link>
                 </DropdownMenuItem>
               ) : (
@@ -281,7 +284,7 @@ export function Header() {
                     className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-secondary transition-colors"
                   >
                     <Briefcase className="h-5 w-5 text-muted-foreground" />
-                    <span className="font-medium">Minha Empresa</span>
+                    <span className="font-medium">{businessMenuLabel}</span>
                   </Link>
                 ) : (
                   <Link

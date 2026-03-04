@@ -166,19 +166,15 @@ export default function AdminClaims() {
           if (linkError) throw linkError;
         }
 
-        // Update user role to empresario
-        const { data: existingRole } = await supabase
+        // Ensure user has empresario role (add if not exists, don't overwrite other roles)
+        const { data: hasEmpresarioRole } = await supabase
           .from("user_roles")
           .select("id")
           .eq("user_id", selectedClaim.user_id)
-          .single();
+          .eq("role", "empresario")
+          .maybeSingle();
 
-        if (existingRole) {
-          await supabase
-            .from("user_roles")
-            .update({ role: "empresario" })
-            .eq("user_id", selectedClaim.user_id);
-        } else {
+        if (!hasEmpresarioRole) {
           await supabase.from("user_roles").insert({
             user_id: selectedClaim.user_id,
             role: "empresario",
