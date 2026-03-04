@@ -417,32 +417,53 @@ export default function ClaimEstablishment() {
 
   // Step 5: Submit claim
   const handleSubmitClaim = async () => {
-    if (!selectedEstablishment || !user) return;
+    console.log("=== DEBUG REIVINDICAÇÃO - SUBMIT ===");
+    console.log("selectedEstablishment:", JSON.stringify(selectedEstablishment));
+    console.log("user_id:", user?.id);
+    console.log("document:", document);
+    console.log("documentType:", documentType);
+    console.log("requesterData:", JSON.stringify(requesterData));
+    console.log("cpfFormData:", JSON.stringify(cpfFormData));
+
+    if (!selectedEstablishment || !user) {
+      console.error("ERRO: selectedEstablishment ou user é null", { selectedEstablishment, user: user?.id });
+      setError('Dados incompletos. Volte e tente novamente.');
+      return;
+    }
 
     setSubmitting(true);
     setError('');
 
     try {
       const cleanDocument = document.replace(/\D/g, '');
+      
+      const insertData = {
+        establishment_id: selectedEstablishment.id,
+        user_id: user.id,
+        cnpj: cleanDocument,
+        cpf_hash: documentType === 'cpf' ? cleanDocument : null,
+        document_type: documentType,
+        birth_date: documentType === 'cpf' && cpfFormData.dataNascimento ? cpfFormData.dataNascimento : null,
+        status: 'pending',
+        requester_name: requesterData.nome,
+        requester_whatsapp: requesterData.whatsapp,
+        requester_email: requesterData.email,
+        requester_role: requesterData.cargo,
+      };
+
+      console.log("INSERT DATA:", JSON.stringify(insertData));
+
       const { error: claimError } = await supabase
         .from('establishment_claims')
-        .insert({
-          establishment_id: selectedEstablishment.id,
-          user_id: user.id,
-          cnpj: documentType === 'cnpj' ? cleanDocument : cleanDocument,
-          cpf_hash: documentType === 'cpf' ? cleanDocument : null,
-          document_type: documentType,
-          birth_date: documentType === 'cpf' && cpfFormData.dataNascimento ? cpfFormData.dataNascimento : null,
-          status: 'pending',
-          // Private requester data
-          requester_name: requesterData.nome,
-          requester_whatsapp: requesterData.whatsapp,
-          requester_email: requesterData.email,
-          requester_role: requesterData.cargo,
-        });
+        .insert(insertData);
 
-      if (claimError) throw claimError;
+      if (claimError) {
+        console.error("ERRO SUPABASE:", JSON.stringify(claimError));
+        setError(`Erro ao enviar: ${claimError.message} (code: ${claimError.code}, details: ${claimError.details})`);
+        return;
+      }
 
+      console.log("Reivindicação enviada com sucesso!");
       toast.success('Reivindicação enviada com sucesso! Aguarde a análise do administrador.');
       navigate('/minha-empresa');
     } catch (err: any) {
