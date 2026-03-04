@@ -482,9 +482,14 @@ export default function ClaimEstablishment() {
     }
   };
 
-  // Auth check
+  // Auth check - use useEffect to avoid calling navigate during render
+  useEffect(() => {
+    if (!user) {
+      navigate('/auth', { state: { from: '/reivindicar-empresa' } });
+    }
+  }, [user, navigate]);
+
   if (!user) {
-    navigate('/auth', { state: { from: '/reivindicar-empresa' } });
     return null;
   }
 
