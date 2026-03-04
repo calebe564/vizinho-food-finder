@@ -8,6 +8,7 @@ import { ThemeProvider } from "@/contexts/ThemeContext";
 import { LocationProvider } from "@/contexts/LocationContext";
 import { AdminProvider } from "@/contexts/AdminContext";
 import { AuthProvider } from "@/contexts/AuthContext";
+import { ActiveEstablishmentProvider } from "@/contexts/ActiveEstablishmentContext";
 import { HelmetProvider } from "react-helmet-async";
 import { lazy, Suspense } from "react";
 import { ProtectedRoute } from "./components/ProtectedRoute";
@@ -67,41 +68,43 @@ function App() {
           <ThemeProvider>
             <AuthProvider>
               <AdminProvider>
-                <TooltipProvider>
-                  <Toaster />
-                  <Sonner />
-                  <RealtimeSync />
-                  <BrowserRouter>
-                    <LocationProvider>
-                      {/* AI Chat Button moved to Header menu */}
-                      <ErrorBoundary>
-                        <Suspense fallback={<PageLoader />}>
-                          <Routes>
-                            <Route path="/" element={<Home />} />
-                            <Route path="/auth" element={<Auth />} />
-                            <Route path="/estabelecimento/:id" element={<EstablishmentDetail />} />
-                            <Route path="/produto/:id" element={<ProductDetail />} />
-                            <Route path="/categorias" element={<Categories />} />
-                            <Route path="/estabelecimentos" element={<AllEstablishments />} />
-                            <Route path="/favoritos" element={<Favorites />} />
-                            <Route path="/minha-empresa" element={<MyEstablishment />} />
-                            <Route path="/reivindicar-empresa" element={<ClaimEstablishment />} />
-                            <Route path="/suporte" element={<UserConversations />} />
-                            <Route path="/suporte/:id" element={<UserChat />} />
-                            <Route path="/cadastrar" element={<PublicEstablishmentForm />} />
-                            <Route path="/informacoes" element={<Information />} />
-                            <Route path="/sobre" element={<About />} />
-                            <Route path="/termos-de-uso" element={<TermsOfUse />} />
-                            <Route path="/politica-de-privacidade" element={<PrivacyPolicy />} />
-                            <Route path="/admin/login" element={<AdminLogin />} />
-                            <Route path="/admin/dashboard/*" element={<ProtectedRoute><AdminDashboard /></ProtectedRoute>} />
-                            <Route path="*" element={<NotFound />} />
-                          </Routes>
-                        </Suspense>
-                      </ErrorBoundary>
-                    </LocationProvider>
-                  </BrowserRouter>
-                </TooltipProvider>
+                <ActiveEstablishmentProvider>
+                  <TooltipProvider>
+                    <Toaster />
+                    <Sonner />
+                    <RealtimeSync />
+                    <BrowserRouter>
+                      <LocationProvider>
+                        {/* AI Chat Button moved to Header menu */}
+                        <ErrorBoundary>
+                          <Suspense fallback={<PageLoader />}>
+                            <Routes>
+                              <Route path="/" element={<Home />} />
+                              <Route path="/auth" element={<Auth />} />
+                              <Route path="/estabelecimento/:id" element={<EstablishmentDetail />} />
+                              <Route path="/produto/:id" element={<ProductDetail />} />
+                              <Route path="/categorias" element={<Categories />} />
+                              <Route path="/estabelecimentos" element={<AllEstablishments />} />
+                              <Route path="/favoritos" element={<Favorites />} />
+                              <Route path="/minha-empresa" element={<MyEstablishment />} />
+                              <Route path="/reivindicar-empresa" element={<ClaimEstablishment />} />
+                              <Route path="/suporte" element={<UserConversations />} />
+                              <Route path="/suporte/:id" element={<UserChat />} />
+                              <Route path="/cadastrar" element={<PublicEstablishmentForm />} />
+                              <Route path="/informacoes" element={<Information />} />
+                              <Route path="/sobre" element={<About />} />
+                              <Route path="/termos-de-uso" element={<TermsOfUse />} />
+                              <Route path="/politica-de-privacidade" element={<PrivacyPolicy />} />
+                              <Route path="/admin/login" element={<AdminLogin />} />
+                              <Route path="/admin/dashboard/*" element={<ProtectedRoute><AdminDashboard /></ProtectedRoute>} />
+                              <Route path="*" element={<NotFound />} />
+                            </Routes>
+                          </Suspense>
+                        </ErrorBoundary>
+                      </LocationProvider>
+                    </BrowserRouter>
+                  </TooltipProvider>
+                </ActiveEstablishmentProvider>
               </AdminProvider>
             </AuthProvider>
           </ThemeProvider>
