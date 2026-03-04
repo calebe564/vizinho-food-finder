@@ -421,7 +421,7 @@ export default function ClaimEstablishment() {
         .insert({
           establishment_id: selectedEstablishment.id,
           user_id: user.id,
-          cnpj: documentType === 'cnpj' ? cleanDocument : null,
+          cnpj: documentType === 'cnpj' ? cleanDocument : cleanDocument,
           cpf_hash: documentType === 'cpf' ? cleanDocument : null,
           document_type: documentType,
           birth_date: documentType === 'cpf' && cpfFormData.dataNascimento ? cpfFormData.dataNascimento : null,
@@ -437,9 +437,10 @@ export default function ClaimEstablishment() {
 
       toast.success('Reivindicação enviada com sucesso! Aguarde a análise do administrador.');
       navigate('/minha-empresa');
-    } catch (err) {
-      console.error('Error submitting claim:', err);
-      setError('Erro ao enviar reivindicação. Tente novamente.');
+    } catch (err: any) {
+      console.error('Erro real ao enviar reivindicação:', err);
+      const msg = err?.message || err?.details || 'Erro desconhecido';
+      setError(`Erro ao enviar reivindicação: ${msg}`);
     } finally {
       setSubmitting(false);
     }
@@ -843,12 +844,12 @@ export default function ClaimEstablishment() {
                         </div>
                         <div className="space-y-2">
                           <Label htmlFor="searchCategory">Categoria</Label>
-                          <Select value={searchCategory} onValueChange={setSearchCategory}>
+                          <Select value={searchCategory || 'todas'} onValueChange={(val) => setSearchCategory(val === 'todas' ? '' : val)}>
                             <SelectTrigger>
                               <SelectValue placeholder="Todas" />
                             </SelectTrigger>
                             <SelectContent>
-                              <SelectItem value="">Todas</SelectItem>
+                              <SelectItem value="todas">Todas</SelectItem>
                               <SelectItem value="restaurante">Restaurante</SelectItem>
                               <SelectItem value="lanchonete">Lanchonete</SelectItem>
                               <SelectItem value="hamburgueria">Hamburgueria</SelectItem>
