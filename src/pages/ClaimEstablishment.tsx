@@ -306,6 +306,13 @@ export default function ClaimEstablishment() {
 
   // Step 3: Validate requester data
   const handleRequesterAdvance = () => {
+    console.log("=== DEBUG REIVINDICAÇÃO - ETAPA 3 → 4 ===");
+    console.log("requesterData:", JSON.stringify(requesterData));
+    console.log("documentData:", JSON.stringify(documentData));
+    console.log("document:", document);
+    console.log("documentType:", documentType);
+    console.log("user_id:", user?.id);
+
     if (!requesterData.nome.trim()) {
       setError('Nome completo é obrigatório.');
       return;
@@ -324,6 +331,7 @@ export default function ClaimEstablishment() {
     }
     
     setError('');
+    console.log("Avançando para etapa 4...");
     setCurrentStep(4);
   };
 
