@@ -437,9 +437,10 @@ export default function ClaimEstablishment() {
 
       toast.success('Reivindicação enviada com sucesso! Aguarde a análise do administrador.');
       navigate('/minha-empresa');
-    } catch (err) {
-      console.error('Error submitting claim:', err);
-      setError('Erro ao enviar reivindicação. Tente novamente.');
+    } catch (err: any) {
+      console.error('Erro real ao enviar reivindicação:', err);
+      const msg = err?.message || err?.details || 'Erro desconhecido';
+      setError(`Erro ao enviar reivindicação: ${msg}`);
     } finally {
       setSubmitting(false);
     }
