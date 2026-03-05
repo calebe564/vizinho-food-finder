@@ -331,14 +331,12 @@ export function ProductFormDialog({
                       control={form.control}
                       name={`variations.${index}.price`}
                       render={({ field }) => (
-                        <FormItem className="w-24">
+                        <FormItem className="w-28">
                           <FormControl>
-                            <Input
-                              type="number"
-                              step="0.01"
-                              placeholder="R$"
-                              {...field}
-                              onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
+                            <CurrencyInput
+                              value={field.value}
+                              onChange={field.onChange}
+                              placeholder="0,00"
                             />
                           </FormControl>
                           <FormMessage />
