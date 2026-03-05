@@ -158,11 +158,11 @@ export default function ProductDetail() {
     const phoneWithCode = cleanPhone.startsWith("55") ? cleanPhone : `55${cleanPhone}`;
     
     const priceText = hasVariations 
-      ? `a partir de ${formatPrice(variations[0].price)}`
+      ? formatPrice(variations[0].price)
       : formatPrice(product?.price || 0, product?.unit);
     
     const message = encodeURIComponent(
-      `Olá! Vi o produto "${product?.name}" (${priceText}) da ${establishment?.name} no Comércio Vizinho e gostaria de mais informações.`
+      `Olá! Encontrei seu produto no Comércio Vizinho.\n\nProduto: ${product?.name}\nPreço: ${priceText}\n\nGostaria de fazer um pedido.`
     );
     
     return `https://wa.me/${phoneWithCode}?text=${message}`;
