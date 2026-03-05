@@ -717,8 +717,8 @@ export default function MyEstablishment() {
                                   {product.variations.length} variações
                                 </p>
                               ) : (
-                                <p className="text-primary font-semibold">
-                                  R$ {product.price.toFixed(2).replace('.', ',')}
+                              <p className="text-primary font-semibold">
+                                  {product.price.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
                                 </p>
                               )}
                             </div>

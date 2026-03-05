@@ -1,10 +1,11 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useForm, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { Loader2, Plus, Trash2, Upload } from 'lucide-react';
+import { CurrencyInput } from '@/components/CurrencyInput';
 import {
   Dialog,
   DialogContent,
@@ -286,12 +287,10 @@ export function ProductFormDialog({
                   <FormItem>
                     <FormLabel>Preço</FormLabel>
                     <FormControl>
-                      <Input
-                        type="number"
-                        step="0.01"
+                      <CurrencyInput
+                        value={field.value}
+                        onChange={field.onChange}
                         placeholder="0,00"
-                        {...field}
-                        onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
                       />
                     </FormControl>
                     <FormMessage />
@@ -332,14 +331,12 @@ export function ProductFormDialog({
                       control={form.control}
                       name={`variations.${index}.price`}
                       render={({ field }) => (
-                        <FormItem className="w-24">
+                        <FormItem className="w-28">
                           <FormControl>
-                            <Input
-                              type="number"
-                              step="0.01"
-                              placeholder="R$"
-                              {...field}
-                              onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
+                            <CurrencyInput
+                              value={field.value}
+                              onChange={field.onChange}
+                              placeholder="0,00"
                             />
                           </FormControl>
                           <FormMessage />
