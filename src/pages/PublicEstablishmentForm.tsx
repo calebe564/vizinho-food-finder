@@ -394,6 +394,12 @@ export default function PublicEstablishmentForm() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    // Block if user already has an establishment
+    if (isBlocked && !isAdmMaster && !isAdmin) {
+      setShowBlockDialog(true);
+      return;
+    }
     
     // Check if document is required (only for regular users)
     const documentRequired = !isAdmMaster && !isAdmin;
