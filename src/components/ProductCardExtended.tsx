@@ -41,7 +41,7 @@ function formatWhatsAppUrl(phone: string, productName: string, price: string, es
   const cleaned = phone.replace(/\D/g, "");
   const number = cleaned.startsWith("55") ? cleaned : `55${cleaned}`;
   const msg = encodeURIComponent(
-    `Olá! Vi o produto "${productName}" (${price}) da ${establishmentName} no Comércio Vizinho e gostaria de saber mais.`
+    `Olá, vim do Comércio Vizinho e tenho interesse no produto: ${productName} - ${price}. Poderia me dar mais informações?`
   );
   return `https://wa.me/${number}?text=${msg}`;
 }
