@@ -100,43 +100,6 @@ export default function PublicEstablishmentForm() {
     categoria: '',
   });
 
-  // Show auth dialog if user is not logged in
-  if (!authLoading && !user) {
-    return (
-      <div className="min-h-screen flex flex-col bg-background">
-        <Header />
-        <main className="flex-1 container px-4 py-8 flex items-center justify-center">
-          <Card className="max-w-md w-full border-0 shadow-elevated rounded-3xl">
-            <CardHeader className="text-center">
-              <div className="flex items-center justify-center mb-4">
-                <div className="p-4 rounded-2xl bg-primary/10">
-                  <Building2 className="h-10 w-10 text-primary" />
-                </div>
-              </div>
-              <CardTitle className="text-2xl font-bold">Login Necessário</CardTitle>
-              <CardDescription className="text-base">
-                Você precisa estar logado para cadastrar uma empresa.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="flex flex-col gap-3">
-              <Button onClick={() => navigate('/auth', { state: { from: '/cadastrar' } })} className="w-full">
-                Criar conta ou Entrar
-              </Button>
-              <Button variant="outline" onClick={() => navigate('/')} className="w-full">
-                Voltar para Início
-              </Button>
-            </CardContent>
-          </Card>
-        </main>
-        <Footer />
-        <AuthRequiredDialog 
-          open={showAuthDialog} 
-          onOpenChange={setShowAuthDialog}
-          redirectPath="/cadastrar"
-        />
-      </div>
-    );
-  }
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
   const [images, setImages] = useState<File[]>([]);
   const [imagePreviews, setImagePreviews] = useState<string[]>([]);
@@ -178,6 +141,44 @@ export default function PublicEstablishmentForm() {
     { id: crypto.randomUUID(), name: "", price: "", hasVariations: false, variations: [], image: null, imagePreview: null }
   ]);
   const [termsAccepted, setTermsAccepted] = useState(false);
+
+  // Show auth dialog if user is not logged in
+  if (!authLoading && !user) {
+    return (
+      <div className="min-h-screen flex flex-col bg-background">
+        <Header />
+        <main className="flex-1 container px-4 py-8 flex items-center justify-center">
+          <Card className="max-w-md w-full border-0 shadow-elevated rounded-3xl">
+            <CardHeader className="text-center">
+              <div className="flex items-center justify-center mb-4">
+                <div className="p-4 rounded-2xl bg-primary/10">
+                  <Building2 className="h-10 w-10 text-primary" />
+                </div>
+              </div>
+              <CardTitle className="text-2xl font-bold">Login Necessário</CardTitle>
+              <CardDescription className="text-base">
+                Você precisa estar logado para cadastrar uma empresa.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="flex flex-col gap-3">
+              <Button onClick={() => navigate('/auth', { state: { from: '/cadastrar' } })} className="w-full">
+                Criar conta ou Entrar
+              </Button>
+              <Button variant="outline" onClick={() => navigate('/')} className="w-full">
+                Voltar para Início
+              </Button>
+            </CardContent>
+          </Card>
+        </main>
+        <Footer />
+        <AuthRequiredDialog 
+          open={showAuthDialog} 
+          onOpenChange={setShowAuthDialog}
+          redirectPath="/cadastrar"
+        />
+      </div>
+    );
+  }
 
   // CEP Lookup via ViaCEP
   const handleCepBlur = async () => {
