@@ -84,6 +84,8 @@ export default function PublicEstablishmentForm() {
   const navigate = useNavigate();
   const { user, isLoading: authLoading } = useAuth();
   const { isAdmMaster, isAdmin, isLoading: roleLoading } = useUserRole();
+  const { isBlocked, blockReason, isLoading: ownershipLoading } = useOwnershipCheck();
+  const [showBlockDialog, setShowBlockDialog] = useState(false);
   const [showAuthDialog, setShowAuthDialog] = useState(false);
   const [loading, setLoading] = useState(false);
   const [loadingCep, setLoadingCep] = useState(false);

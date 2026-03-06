@@ -99,6 +99,8 @@ export default function ClaimEstablishment() {
   const navigate = useNavigate();
   const { user, profile } = useAuth();
   const { role, isLoading: roleLoading, isAdmin } = useUserRole();
+  const { isBlocked, blockReason, isLoading: ownershipLoading } = useOwnershipCheck();
+  const [showBlockDialog, setShowBlockDialog] = useState(false);
   
   // Step state
   const [currentStep, setCurrentStep] = useState(1);
