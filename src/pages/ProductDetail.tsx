@@ -361,7 +361,14 @@ export default function ProductDetail() {
                     </a>
                   </Button>
                 ) : (
-                  <Button size="lg" variant="outline" disabled className="opacity-50">
+                  <Button 
+                    size="lg" 
+                    variant="outline" 
+                    disabled 
+                    className="opacity-50"
+                    title="Este estabelecimento ainda não cadastrou um WhatsApp."
+                    onClick={() => toast.info("Este estabelecimento ainda não cadastrou um WhatsApp.")}
+                  >
                     <MessageCircle className="w-5 h-5 mr-2" />
                     Sem WhatsApp
                   </Button>
