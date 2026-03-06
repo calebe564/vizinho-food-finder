@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -20,6 +20,8 @@ import { AuthRequiredDialog } from "@/components/AuthRequiredDialog";
 import { CadastroAIHelper } from "@/components/CadastroAIHelper";
 import { DocumentInput, type DocumentLookupResult, type CPFFormData } from "@/components/DocumentInput";
 import { validateDocument, validateAge, type DocumentType } from "@/lib/validationUtils";
+import { useOwnershipCheck } from "@/hooks/useOwnershipCheck";
+import { OwnershipBlockDialog } from "@/components/OwnershipBlockDialog";
 
 type EstablishmentCategory = Database["public"]["Enums"]["establishment_category"];
 

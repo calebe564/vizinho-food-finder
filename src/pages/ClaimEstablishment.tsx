@@ -32,6 +32,8 @@ import { validateDocument, validateAge, type DocumentType } from '@/lib/validati
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { useOwnershipCheck } from '@/hooks/useOwnershipCheck';
+import { OwnershipBlockDialog } from '@/components/OwnershipBlockDialog';
 
 // Step indicator component
 interface StepIndicatorProps {
