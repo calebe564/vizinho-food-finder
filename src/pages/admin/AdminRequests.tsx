@@ -265,6 +265,8 @@ export default function AdminRequests() {
       setSelectedRequest(null);
       setShowRejectDialog(false);
       setRejectReason("");
+      // Update local list immediately
+      setRequests(prev => prev.map(r => r.id === request.id ? { ...r, status: 'rejected' } : r));
     } catch (error: any) {
       console.error("Error rejecting request:", error);
       toast.error("Erro ao rejeitar solicitação");
