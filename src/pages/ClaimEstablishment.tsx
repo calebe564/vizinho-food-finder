@@ -1046,6 +1046,11 @@ export default function ClaimEstablishment() {
           </div>
         </main>
         <Footer />
+        <OwnershipBlockDialog 
+          open={showBlockDialog} 
+          onOpenChange={setShowBlockDialog} 
+          message={blockReason || ''} 
+        />
       </div>
     </>
   );
