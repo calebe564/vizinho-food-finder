@@ -32,6 +32,8 @@ import { validateDocument, validateAge, type DocumentType } from '@/lib/validati
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { useOwnershipCheck } from '@/hooks/useOwnershipCheck';
+import { OwnershipBlockDialog } from '@/components/OwnershipBlockDialog';
 
 // Step indicator component
 interface StepIndicatorProps {
@@ -97,6 +99,8 @@ export default function ClaimEstablishment() {
   const navigate = useNavigate();
   const { user, profile } = useAuth();
   const { role, isLoading: roleLoading, isAdmin } = useUserRole();
+  const { isBlocked, blockReason, isLoading: ownershipLoading } = useOwnershipCheck();
+  const [showBlockDialog, setShowBlockDialog] = useState(false);
   
   // Step state
   const [currentStep, setCurrentStep] = useState(1);
@@ -167,6 +171,13 @@ export default function ClaimEstablishment() {
       navigate('/admin/dashboard');
     }
   }, [roleLoading, isAdmin, navigate]);
+
+  // Block users who already have an establishment
+  useEffect(() => {
+    if (!ownershipLoading && isBlocked) {
+      setShowBlockDialog(true);
+    }
+  }, [ownershipLoading, isBlocked]);
 
   // Step 1: Validate document and fetch data from API (for CNPJ)
   const handleDocumentAdvance = async () => {
@@ -417,13 +428,11 @@ export default function ClaimEstablishment() {
 
   // Step 5: Submit claim
   const handleSubmitClaim = async () => {
-    console.log("=== DEBUG REIVINDICAÇÃO - SUBMIT ===");
-    console.log("selectedEstablishment:", JSON.stringify(selectedEstablishment));
-    console.log("user_id:", user?.id);
-    console.log("document:", document);
-    console.log("documentType:", documentType);
-    console.log("requesterData:", JSON.stringify(requesterData));
-    console.log("cpfFormData:", JSON.stringify(cpfFormData));
+    // Re-check ownership before submitting
+    if (isBlocked) {
+      setShowBlockDialog(true);
+      return;
+    }
 
     if (!selectedEstablishment || !user) {
       console.error("ERRO: selectedEstablishment ou user é null", { selectedEstablishment, user: user?.id });
@@ -1035,6 +1044,11 @@ export default function ClaimEstablishment() {
           </div>
         </main>
         <Footer />
+        <OwnershipBlockDialog 
+          open={showBlockDialog} 
+          onOpenChange={setShowBlockDialog} 
+          message={blockReason || ''} 
+        />
       </div>
     </>
   );

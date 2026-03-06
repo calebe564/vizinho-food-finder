@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -20,6 +20,8 @@ import { AuthRequiredDialog } from "@/components/AuthRequiredDialog";
 import { CadastroAIHelper } from "@/components/CadastroAIHelper";
 import { DocumentInput, type DocumentLookupResult, type CPFFormData } from "@/components/DocumentInput";
 import { validateDocument, validateAge, type DocumentType } from "@/lib/validationUtils";
+import { useOwnershipCheck } from "@/hooks/useOwnershipCheck";
+import { OwnershipBlockDialog } from "@/components/OwnershipBlockDialog";
 
 type EstablishmentCategory = Database["public"]["Enums"]["establishment_category"];
 
@@ -82,6 +84,8 @@ export default function PublicEstablishmentForm() {
   const navigate = useNavigate();
   const { user, isLoading: authLoading } = useAuth();
   const { isAdmMaster, isAdmin, isLoading: roleLoading } = useUserRole();
+  const { isBlocked, blockReason, isLoading: ownershipLoading } = useOwnershipCheck();
+  const [showBlockDialog, setShowBlockDialog] = useState(false);
   const [showAuthDialog, setShowAuthDialog] = useState(false);
   const [loading, setLoading] = useState(false);
   const [loadingCep, setLoadingCep] = useState(false);
@@ -96,43 +100,6 @@ export default function PublicEstablishmentForm() {
     categoria: '',
   });
 
-  // Show auth dialog if user is not logged in
-  if (!authLoading && !user) {
-    return (
-      <div className="min-h-screen flex flex-col bg-background">
-        <Header />
-        <main className="flex-1 container px-4 py-8 flex items-center justify-center">
-          <Card className="max-w-md w-full border-0 shadow-elevated rounded-3xl">
-            <CardHeader className="text-center">
-              <div className="flex items-center justify-center mb-4">
-                <div className="p-4 rounded-2xl bg-primary/10">
-                  <Building2 className="h-10 w-10 text-primary" />
-                </div>
-              </div>
-              <CardTitle className="text-2xl font-bold">Login Necessário</CardTitle>
-              <CardDescription className="text-base">
-                Você precisa estar logado para cadastrar uma empresa.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="flex flex-col gap-3">
-              <Button onClick={() => navigate('/auth', { state: { from: '/cadastrar' } })} className="w-full">
-                Criar conta ou Entrar
-              </Button>
-              <Button variant="outline" onClick={() => navigate('/')} className="w-full">
-                Voltar para Início
-              </Button>
-            </CardContent>
-          </Card>
-        </main>
-        <Footer />
-        <AuthRequiredDialog 
-          open={showAuthDialog} 
-          onOpenChange={setShowAuthDialog}
-          redirectPath="/cadastrar"
-        />
-      </div>
-    );
-  }
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
   const [images, setImages] = useState<File[]>([]);
   const [imagePreviews, setImagePreviews] = useState<string[]>([]);
@@ -174,6 +141,44 @@ export default function PublicEstablishmentForm() {
     { id: crypto.randomUUID(), name: "", price: "", hasVariations: false, variations: [], image: null, imagePreview: null }
   ]);
   const [termsAccepted, setTermsAccepted] = useState(false);
+
+  // Show auth dialog if user is not logged in
+  if (!authLoading && !user) {
+    return (
+      <div className="min-h-screen flex flex-col bg-background">
+        <Header />
+        <main className="flex-1 container px-4 py-8 flex items-center justify-center">
+          <Card className="max-w-md w-full border-0 shadow-elevated rounded-3xl">
+            <CardHeader className="text-center">
+              <div className="flex items-center justify-center mb-4">
+                <div className="p-4 rounded-2xl bg-primary/10">
+                  <Building2 className="h-10 w-10 text-primary" />
+                </div>
+              </div>
+              <CardTitle className="text-2xl font-bold">Login Necessário</CardTitle>
+              <CardDescription className="text-base">
+                Você precisa estar logado para cadastrar uma empresa.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="flex flex-col gap-3">
+              <Button onClick={() => navigate('/auth', { state: { from: '/cadastrar' } })} className="w-full">
+                Criar conta ou Entrar
+              </Button>
+              <Button variant="outline" onClick={() => navigate('/')} className="w-full">
+                Voltar para Início
+              </Button>
+            </CardContent>
+          </Card>
+        </main>
+        <Footer />
+        <AuthRequiredDialog 
+          open={showAuthDialog} 
+          onOpenChange={setShowAuthDialog}
+          redirectPath="/cadastrar"
+        />
+      </div>
+    );
+  }
 
   // CEP Lookup via ViaCEP
   const handleCepBlur = async () => {
@@ -390,6 +395,12 @@ export default function PublicEstablishmentForm() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    // Block if user already has an establishment
+    if (isBlocked && !isAdmMaster && !isAdmin) {
+      setShowBlockDialog(true);
+      return;
+    }
     
     // Check if document is required (only for regular users)
     const documentRequired = !isAdmMaster && !isAdmin;
@@ -1306,6 +1317,11 @@ export default function PublicEstablishmentForm() {
       </main>
 
       <Footer />
+      <OwnershipBlockDialog 
+        open={showBlockDialog} 
+        onOpenChange={setShowBlockDialog} 
+        message={blockReason || ''} 
+      />
     </div>
   );
 }
