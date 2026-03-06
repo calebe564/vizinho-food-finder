@@ -428,13 +428,11 @@ export default function ClaimEstablishment() {
 
   // Step 5: Submit claim
   const handleSubmitClaim = async () => {
-    console.log("=== DEBUG REIVINDICAÇÃO - SUBMIT ===");
-    console.log("selectedEstablishment:", JSON.stringify(selectedEstablishment));
-    console.log("user_id:", user?.id);
-    console.log("document:", document);
-    console.log("documentType:", documentType);
-    console.log("requesterData:", JSON.stringify(requesterData));
-    console.log("cpfFormData:", JSON.stringify(cpfFormData));
+    // Re-check ownership before submitting
+    if (isBlocked) {
+      setShowBlockDialog(true);
+      return;
+    }
 
     if (!selectedEstablishment || !user) {
       console.error("ERRO: selectedEstablishment ou user é null", { selectedEstablishment, user: user?.id });

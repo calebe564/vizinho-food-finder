@@ -236,6 +236,8 @@ export default function AdminRequests() {
       toast.success("Empresa aprovada e cadastrada com sucesso!");
       setSelectedRequest(null);
       setNotes("");
+      // Remove from local list immediately
+      setRequests(prev => prev.map(r => r.id === request.id ? { ...r, status: 'approved' } : r));
     } catch (error: any) {
       console.error("Error approving request:", error);
       toast.error("Erro ao aprovar solicitação");
