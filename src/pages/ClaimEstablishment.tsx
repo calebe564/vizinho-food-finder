@@ -172,6 +172,13 @@ export default function ClaimEstablishment() {
     }
   }, [roleLoading, isAdmin, navigate]);
 
+  // Block users who already have an establishment
+  useEffect(() => {
+    if (!ownershipLoading && isBlocked) {
+      setShowBlockDialog(true);
+    }
+  }, [ownershipLoading, isBlocked]);
+
   // Step 1: Validate document and fetch data from API (for CNPJ)
   const handleDocumentAdvance = async () => {
     const cleanDocument = document.replace(/\D/g, '');
