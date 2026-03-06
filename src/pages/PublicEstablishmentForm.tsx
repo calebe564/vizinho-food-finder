@@ -1316,6 +1316,11 @@ export default function PublicEstablishmentForm() {
       </main>
 
       <Footer />
+      <OwnershipBlockDialog 
+        open={showBlockDialog} 
+        onOpenChange={setShowBlockDialog} 
+        message={blockReason || ''} 
+      />
     </div>
   );
 }
