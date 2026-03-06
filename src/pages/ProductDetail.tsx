@@ -150,11 +150,13 @@ export default function ProductDetail() {
   };
 
   // WhatsApp link with pre-filled message
-  const getWhatsAppLink = () => {
+  const getWhatsAppLink = (): string | null => {
     const phone = establishment?.whatsapp || establishment?.phone;
-    if (!phone) return null;
+    if (!phone || phone.trim() === "") return null;
     
     const cleanPhone = phone.replace(/\D/g, "");
+    if (cleanPhone.length < 10) return null; // número inválido
+    
     const phoneWithCode = cleanPhone.startsWith("55") ? cleanPhone : `55${cleanPhone}`;
     
     const priceText = hasVariations 
@@ -162,7 +164,7 @@ export default function ProductDetail() {
       : formatPrice(product?.price || 0, product?.unit);
     
     const message = encodeURIComponent(
-      `Olá! Encontrei seu produto no Comércio Vizinho.\n\nProduto: ${product?.name}\nPreço: ${priceText}\n\nGostaria de fazer um pedido.`
+      `Olá, vim do Comércio Vizinho e tenho interesse no produto: ${product?.name} - ${priceText}. Poderia me dar mais informações?`
     );
     
     return `https://wa.me/${phoneWithCode}?text=${message}`;
