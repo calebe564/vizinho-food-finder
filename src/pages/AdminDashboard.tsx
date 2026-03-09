@@ -250,6 +250,7 @@ export default function AdminDashboard() {
             <Route path="destaques" element={<AdminHighlights />} />
             <Route path="usuarios" element={<AdminUsers />} />
             <Route path="duplicadas" element={<AdminDuplicates />} />
+            <Route path="avaliacoes" element={<AdminReviews />} />
           </Routes>
         </main>
       </div>
