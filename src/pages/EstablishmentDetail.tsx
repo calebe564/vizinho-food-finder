@@ -8,6 +8,8 @@ import { Badge } from "@/components/ui/badge";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { ImageGallery } from "@/components/ImageGallery";
 import { ProductCard } from "@/components/ProductCard";
+import { ReviewSection } from "@/components/ReviewSection";
+import { RatingBadge } from "@/components/StarRating";
 import { getScheduleStatus } from "@/lib/scheduleUtils";
 import { toast } from "sonner";
 import { useFavorites } from "@/hooks/useFavorites";
