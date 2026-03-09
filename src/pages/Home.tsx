@@ -292,16 +292,17 @@ export default function Home() {
       return (matchesName || matchesCat) && matchesCategoryFilter;
     });
     
-    return filtered
+    const sorted = filtered
       .map((est) => ({
         ...est,
         isOpen: isOpenNow(est.schedule),
       }))
       .sort((a, b) => {
+        // Open establishments always first
         if (a.isOpen && !b.isOpen) return -1;
         if (!a.isOpen && b.isOpen) return 1;
-        if (a.is_paid !== b.is_paid) return a.is_paid ? -1 : 1;
         
+        // Proximity grouping
         if (sortBy === "proximity" && selectedLocation) {
           const aMatch = matchesNormalizedNeighborhood(a.neighborhood_normalized, selectedLocation.neighborhood) ||
                          areNeighborhoodsEquivalent(a.neighborhood || '', selectedLocation.neighborhood);
@@ -315,7 +316,18 @@ export default function Home() {
         
         return a.name.localeCompare(b.name, 'pt-BR');
       });
-  }, [establishments, searchTerm, searchMode, category, sortBy, selectedLocation, locationFilter]);
+
+    // Apply weighted probabilistic ranking within open/closed groups
+    if (sortBy === "proximity" && planWeights.length > 0) {
+      return applyWeightedRanking(
+        sorted.map(s => ({ ...s, plan: s.plan || 'gratuito' })),
+        planWeights,
+        (item) => item.isOpen ? 'open' : 'closed'
+      );
+    }
+
+    return sorted;
+  }, [establishments, searchTerm, searchMode, category, sortBy, selectedLocation, locationFilter, planWeights]);
 
   const showProductResults = searchMode === "products" && searchTerm && filteredProducts.length > 0;
   const showEstablishments = !showProductResults || !searchTerm;
