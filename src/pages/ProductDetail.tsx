@@ -305,13 +305,36 @@ export default function ProductDetail() {
               <div>
                 <div className="flex items-start justify-between gap-4">
                   <h1 className="text-3xl font-bold">{product.name}</h1>
-                  {isFav && (
-                    <Badge className="bg-red-500 text-white">
-                      <Heart className="h-3 w-3 mr-1 fill-white" />
-                      Favorito
-                    </Badge>
-                  )}
+                  <div className="flex gap-2">
+                    {product.is_promotion && (
+                      <Badge className="bg-red-600 text-white animate-pulse">
+                        <Flame className="h-3 w-3 mr-1" />
+                        PROMOÇÃO
+                      </Badge>
+                    )}
+                    {isFav && (
+                      <Badge className="bg-red-500 text-white">
+                        <Heart className="h-3 w-3 mr-1 fill-white" />
+                        Favorito
+                      </Badge>
+                    )}
+                  </div>
                 </div>
+
+                {/* Promotion banner */}
+                {product.is_promotion && product.promotion_description && (
+                  <div className="mt-3 p-4 bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-800 rounded-xl">
+                    <p className="font-bold text-red-600 dark:text-red-400 text-lg">
+                      🔥 {product.promotion_description}
+                    </p>
+                    {product.promotion_expiration && (
+                      <p className="text-sm text-red-500/80 mt-1">
+                        Válido até {new Date(product.promotion_expiration).toLocaleDateString('pt-BR')}
+                      </p>
+                    )}
+                  </div>
+                )}
+
                 {product.description && (
                   <p className="text-muted-foreground mt-3 text-lg">
                     {product.description}
