@@ -48,6 +48,8 @@ interface ProductWithEstablishment {
   description: string | null;
   image: string | null;
   unit: string | null;
+  is_promotion: boolean;
+  promotion_description: string | null;
   establishment_id: string;
   establishment_schedule: string;
   establishment_name: string;
