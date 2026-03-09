@@ -160,6 +160,8 @@ export default function Home() {
             description: p.description,
             image: p.image,
             unit: p.unit || null,
+            is_promotion: p.is_promotion || false,
+            promotion_description: p.promotion_description || null,
             establishment_id: p.establishment_id,
             establishment_schedule: p.establishments?.schedule || "",
             establishment_name: p.establishments?.name || "",
