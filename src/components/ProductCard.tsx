@@ -2,7 +2,7 @@ import { Link } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Heart, ImageIcon } from "lucide-react";
+import { Heart, ImageIcon, Flame } from "lucide-react";
 import { useFavorites } from "@/hooks/useFavorites";
 import { useUserRole } from "@/hooks/useUserRole";
 import { toast } from "sonner";
@@ -19,6 +19,8 @@ interface ProductCardProps {
   variationCount?: number;
   minPrice?: number;
   maxPrice?: number;
+  isPromotion?: boolean;
+  promotionDescription?: string | null;
 }
 
 export function ProductCard({
@@ -33,6 +35,8 @@ export function ProductCard({
   variationCount = 0,
   minPrice,
   maxPrice,
+  isPromotion,
+  promotionDescription,
 }: ProductCardProps) {
   const { isProductFavorite, toggleProductFavorite } = useFavorites();
   const { isAdmin } = useUserRole();
@@ -75,6 +79,16 @@ export function ProductCard({
             </div>
           )}
 
+          {/* Promotion badge */}
+          {isPromotion && (
+            <div className="absolute top-3 left-3 z-10">
+              <Badge className="bg-red-600 text-white shadow-lg animate-pulse">
+                <Flame className="h-3 w-3 mr-1" />
+                PROMOÇÃO
+              </Badge>
+            </div>
+          )}
+
           {/* Favorite button - hidden for admins */}
           {!isAdmin && (
             <Button
@@ -88,7 +102,7 @@ export function ProductCard({
           )}
 
           {/* Favorite indicator - hidden for admins */}
-          {isFav && !isAdmin && (
+          {isFav && !isAdmin && !isPromotion && (
             <div className="absolute top-3 left-3">
               <Badge className="bg-red-500 text-white shadow-lg">
                 <Heart className="h-3 w-3 mr-1 fill-white" />
@@ -100,6 +114,13 @@ export function ProductCard({
 
         <CardContent className="p-4">
           <h3 className="font-bold line-clamp-2 mb-2">{name}</h3>
+
+          {/* Promotion description */}
+          {isPromotion && promotionDescription && (
+            <p className="text-sm font-semibold text-red-600 dark:text-red-400 mb-2">
+              🔥 {promotionDescription}
+            </p>
+          )}
           
           {description && (
             <p className="text-sm text-muted-foreground line-clamp-2 mb-3">

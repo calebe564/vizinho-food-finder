@@ -1,7 +1,9 @@
 import { Link } from "react-router-dom";
-import { MapPin, Package, MessageCircle, Navigation, Phone, Clock } from "lucide-react";
+import { MapPin, Package, MessageCircle, Navigation, Phone, Clock, Flame } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { OpenClosedBadge, DeliveryBadge } from "@/components/StatusBadge";
+
+import { Badge } from "@/components/ui/badge";
 
 interface ProductCardExtendedProps {
   id: string;
@@ -10,6 +12,8 @@ interface ProductCardExtendedProps {
   description?: string | null;
   image?: string | null;
   unit?: string | null;
+  isPromotion?: boolean;
+  promotionDescription?: string | null;
   establishment: {
     id: string;
     name: string;
@@ -63,6 +67,8 @@ export function ProductCardExtended({
   description,
   image,
   unit,
+  isPromotion,
+  promotionDescription,
   establishment,
 }: ProductCardExtendedProps) {
   const formatPrice = (value: number) => {
@@ -128,6 +134,12 @@ export function ProductCardExtended({
           {/* Status badges — top row */}
           <div className="absolute top-1.5 left-1.5 right-1.5 md:top-2.5 md:left-2.5 md:right-2.5 flex justify-between items-start gap-1">
             <div className="flex flex-wrap gap-1 md:gap-1.5">
+              {isPromotion && (
+                <Badge className="bg-red-600 text-white text-[9px] md:text-[10px] px-1.5 py-0.5 animate-pulse">
+                  <Flame className="h-2.5 w-2.5 mr-0.5" />
+                  PROMOÇÃO
+                </Badge>
+              )}
               <OpenClosedBadge schedule={establishment?.schedule} size="sm" />
               <DeliveryBadge hasDelivery={establishment?.hasDelivery} size="sm" />
             </div>
@@ -145,6 +157,13 @@ export function ProductCardExtended({
           <p className="text-xs font-bold text-primary mb-0.5 md:text-sm md:mb-1">
             {priceText}
           </p>
+
+          {/* Promotion description */}
+          {isPromotion && promotionDescription && (
+            <p className="text-[9px] md:text-[10px] font-semibold text-red-600 dark:text-red-400 mb-0.5">
+              🔥 {promotionDescription}
+            </p>
+          )}
 
           {/* Description */}
           {description && (

@@ -831,8 +831,11 @@ export type Database = {
           id: string
           image: string | null
           images: Json | null
+          is_promotion: boolean
           name: string
           price: number
+          promotion_description: string | null
+          promotion_expiration: string | null
           unit: string | null
         }
         Insert: {
@@ -842,8 +845,11 @@ export type Database = {
           id?: string
           image?: string | null
           images?: Json | null
+          is_promotion?: boolean
           name: string
           price: number
+          promotion_description?: string | null
+          promotion_expiration?: string | null
           unit?: string | null
         }
         Update: {
@@ -853,8 +859,11 @@ export type Database = {
           id?: string
           image?: string | null
           images?: Json | null
+          is_promotion?: boolean
           name?: string
           price?: number
+          promotion_description?: string | null
+          promotion_expiration?: string | null
           unit?: string | null
         }
         Relationships: [
@@ -1182,6 +1191,7 @@ export type Database = {
       }
       check_email_exists: { Args: { _email: string }; Returns: boolean }
       cleanup_admin_rate_limits: { Args: never; Returns: number }
+      cleanup_expired_promotions: { Args: never; Returns: number }
       create_admin_notification: {
         Args: {
           _descricao?: string

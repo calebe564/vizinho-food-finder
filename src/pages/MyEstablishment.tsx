@@ -48,6 +48,7 @@ import { BusinessNotesSheet } from '@/components/business/BusinessNotesSheet';
 import { ProfileCompletionCard } from '@/components/business/ProfileCompletionCard';
 import { InviteAdminDialog } from '@/components/business/InviteAdminDialog';
 import { HighlightRequestSection } from '@/components/business/HighlightRequestSection';
+import { PromotionManagementSection } from '@/components/business/PromotionManagementSection';
 import { useEstablishmentPhotos, useAddPhotos, useSetMainPhoto, useDeletePhoto } from '@/hooks/useEstablishmentPhotos';
 import { ReviewSection } from '@/components/ReviewSection';
 
@@ -782,14 +783,17 @@ export default function MyEstablishment() {
                   <Card className="border-0 shadow-elevated rounded-2xl">
                     <CardContent className="py-8 text-center">
                       <Star className="h-10 w-10 text-muted-foreground mx-auto mb-3" />
-                      <p className="text-muted-foreground font-medium">Destaque disponível após aprovação</p>
+                      <p className="text-muted-foreground font-medium">Funções disponíveis após aprovação</p>
                       <p className="text-sm text-muted-foreground mt-1">
-                        Quando sua empresa for aprovada e vinculada, você poderá solicitar destaque.
+                        Quando sua empresa for aprovada e vinculada, você poderá usar as funções.
                       </p>
                     </CardContent>
                   </Card>
                 ) : (
-                  <HighlightRequestSection establishmentId={establishmentData.id} />
+                  <div className="space-y-4">
+                    <HighlightRequestSection establishmentId={establishmentData.id} />
+                    <PromotionManagementSection establishmentId={establishmentData.id} />
+                  </div>
                 )}
               </TabsContent>
 
