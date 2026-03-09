@@ -42,6 +42,7 @@ const MyEstablishment = lazy(() => import("./pages/MyEstablishment"));
 const ClaimEstablishment = lazy(() => import("./pages/ClaimEstablishment"));
 const UserConversations = lazy(() => import("./pages/UserConversations"));
 const UserChat = lazy(() => import("./pages/UserChat"));
+const Plans = lazy(() => import("./pages/Plans"));
 
 // Loading component
 const PageLoader = () => (
