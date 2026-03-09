@@ -756,6 +756,22 @@ export default function MyEstablishment() {
                 </Card>
               </TabsContent>
 
+              {/* Avaliações */}
+              <TabsContent value="reviews">
+                {!establishmentData.isFromRequest ? (
+                  <ReviewSection 
+                    establishmentId={establishmentData.id}
+                  />
+                ) : (
+                  <Card className="border-0 shadow-elevated rounded-2xl">
+                    <CardContent className="py-8 text-center">
+                      <Star className="h-10 w-10 text-muted-foreground mx-auto mb-3" />
+                      <p className="text-muted-foreground font-medium">Avaliações disponíveis após aprovação</p>
+                    </CardContent>
+                  </Card>
+                )}
+              </TabsContent>
+
               {/* Funções */}
               <TabsContent value="functions">
                 {establishmentData.isFromRequest ? (
