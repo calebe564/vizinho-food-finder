@@ -19,6 +19,7 @@ import AdminUsers from "./admin/AdminUsers";
 import AdminClaims from "./admin/AdminClaims";
 import AdminHighlights from "./admin/AdminHighlights";
 import AdminDuplicates from "./admin/AdminDuplicates";
+import AdminReviews from "./admin/AdminReviews";
 
 const roleLabels = {
   adm_master: 'ADM Master',
