@@ -791,6 +791,39 @@ export type Database = {
         }
         Relationships: []
       }
+      plan_configurations: {
+        Row: {
+          created_at: string
+          display_label: string
+          id: string
+          max_products: number
+          plan_name: string
+          promotion_boost: number
+          updated_at: string
+          visibility_weight: number
+        }
+        Insert: {
+          created_at?: string
+          display_label: string
+          id?: string
+          max_products?: number
+          plan_name: string
+          promotion_boost?: number
+          updated_at?: string
+          visibility_weight?: number
+        }
+        Update: {
+          created_at?: string
+          display_label?: string
+          id?: string
+          max_products?: number
+          plan_name?: string
+          promotion_boost?: number
+          updated_at?: string
+          visibility_weight?: number
+        }
+        Relationships: []
+      }
       product_variations: {
         Row: {
           created_at: string | null
