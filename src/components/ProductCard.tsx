@@ -19,6 +19,8 @@ interface ProductCardProps {
   variationCount?: number;
   minPrice?: number;
   maxPrice?: number;
+  isPromotion?: boolean;
+  promotionDescription?: string | null;
 }
 
 export function ProductCard({
