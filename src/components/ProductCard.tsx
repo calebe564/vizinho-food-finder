@@ -79,6 +79,16 @@ export function ProductCard({
             </div>
           )}
 
+          {/* Promotion badge */}
+          {isPromotion && (
+            <div className="absolute top-3 left-3 z-10">
+              <Badge className="bg-red-600 text-white shadow-lg animate-pulse">
+                <Flame className="h-3 w-3 mr-1" />
+                PROMOÇÃO
+              </Badge>
+            </div>
+          )}
+
           {/* Favorite button - hidden for admins */}
           {!isAdmin && (
             <Button
@@ -92,7 +102,7 @@ export function ProductCard({
           )}
 
           {/* Favorite indicator - hidden for admins */}
-          {isFav && !isAdmin && (
+          {isFav && !isAdmin && !isPromotion && (
             <div className="absolute top-3 left-3">
               <Badge className="bg-red-500 text-white shadow-lg">
                 <Heart className="h-3 w-3 mr-1 fill-white" />
