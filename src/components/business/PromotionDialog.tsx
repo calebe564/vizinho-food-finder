@@ -51,15 +51,25 @@ export function PromotionDialog({
   const { data: products = [], isLoading } = useQuery({
     queryKey: ['establishment-products-for-promo', establishmentId],
     queryFn: async () => {
+      // Only fetch products that exist and belong to this establishment
       const { data, error } = await supabase
         .from('products')
         .select('id, name, price, image, images, is_promotion, promotion_description, promotion_expiration')
         .eq('establishment_id', establishmentId)
         .order('name');
       if (error) throw error;
-      return (data || []) as Product[];
+      
+      // Filter out products with expired promotions client-side for display accuracy
+      return (data || []).map(p => {
+        if (p.is_promotion && p.promotion_expiration && new Date(p.promotion_expiration) < new Date()) {
+          return { ...p, is_promotion: false, promotion_description: null, promotion_expiration: null };
+        }
+        return p;
+      }) as Product[];
     },
     enabled: open && !!establishmentId,
+    // Refetch when dialog opens to ensure fresh data
+    refetchOnMount: 'always',
   });
 
   useEffect(() => {
@@ -91,6 +101,23 @@ export function PromotionDialog({
 
     setSaving(true);
     try {
+      // Validate: check if product still exists and belongs to this establishment
+      const { data: productCheck, error: checkError } = await supabase
+        .from('products')
+        .select('id, establishment_id')
+        .eq('id', selectedProduct.id)
+        .eq('establishment_id', establishmentId)
+        .maybeSingle();
+
+      if (checkError) throw checkError;
+
+      if (!productCheck) {
+        toast.error('Este produto não existe mais ou foi removido.');
+        onOpenChange(false);
+        onSuccess(); // Refresh lists
+        return;
+      }
+
       const updateData: Record<string, unknown> = {
         is_promotion: true,
         promotion_description: description.trim(),
@@ -100,7 +127,8 @@ export function PromotionDialog({
       const { error } = await supabase
         .from('products')
         .update(updateData)
-        .eq('id', selectedProduct.id);
+        .eq('id', selectedProduct.id)
+        .eq('establishment_id', establishmentId);
 
       if (error) throw error;
 

@@ -118,7 +118,7 @@ export default function EstablishmentDetail() {
     retry: 1,
   });
 
-  // Fetch products with React Query
+  // Fetch products with React Query — filter expired promotions client-side
   const { data: products = [] } = useQuery({
     queryKey: ["products", id],
     queryFn: async () => {
@@ -128,7 +128,13 @@ export default function EstablishmentDetail() {
         .eq("establishment_id", id);
 
       if (error) throw error;
-      return (data || []) as Product[];
+      // Clear expired promotion data client-side (DB trigger handles it on write)
+      return (data || []).map((p: any) => {
+        if (p.is_promotion && p.promotion_expiration && new Date(p.promotion_expiration) < new Date()) {
+          return { ...p, is_promotion: false, promotion_description: null, promotion_expiration: null };
+        }
+        return p;
+      }) as Product[];
     },
     enabled: !!id,
     staleTime: 1000 * 60 * 5,

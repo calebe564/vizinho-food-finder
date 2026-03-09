@@ -43,6 +43,9 @@ export function PromotionManagementSection({ establishmentId }: PromotionManagem
   const { data: promotions = [], isLoading } = useQuery({
     queryKey: ['promotions', establishmentId],
     queryFn: async () => {
+      // First, run cleanup of expired promotions
+      await supabase.rpc('cleanup_expired_promotions');
+      
       const { data, error } = await supabase
         .from('products')
         .select('id, name, price, image, images, is_promotion, promotion_description, promotion_expiration')
