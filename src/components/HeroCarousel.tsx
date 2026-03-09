@@ -124,11 +124,9 @@ export function HeroCarousel() {
     const estIds = uniqueHighlights.map((h) => h.establishment_id);
     const { data: establishments } = await supabase
       .from("establishments")
-      .select("id, name, category, profile_image, latitude, longitude")
+      .select("id, name, category, profile_image, latitude, longitude, plan")
       .eq("active", true)
       .in("id", estIds);
-
-    
 
     if (!establishments) {
       setCarouselItems([]);
@@ -143,6 +141,7 @@ export function HeroCarousel() {
         if (!est) return null;
         return {
           highlightId: h.id,
+          id: h.id,
           establishmentId: est.id,
           establishmentName: est.name,
           category: est.category,
@@ -151,12 +150,18 @@ export function HeroCarousel() {
           latitude: Number(est.latitude) || 0,
           longitude: Number(est.longitude) || 0,
           approvedAt: h.reviewed_at,
+          plan: est.plan || 'gratuito',
         };
       })
       .filter(Boolean) as CarouselItem[];
 
+    // Sort by proximity first, then apply weighted ranking
+    const proximitySorted = sortByProximity(items);
+    const weighted = planWeights.length > 0
+      ? applyWeightedRanking(proximitySorted, planWeights)
+      : proximitySorted;
     
-    setCarouselItems(sortByProximity(items));
+    setCarouselItems(weighted);
   };
 
   const itemsPerSlide = isMobile ? 1 : Math.min(2, carouselItems.length);
