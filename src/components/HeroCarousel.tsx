@@ -4,17 +4,21 @@ import { Link } from "react-router-dom";
 import { Star, ChevronLeft, ChevronRight, Store } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useUserLocation } from "@/contexts/LocationContext";
+import { applyWeightedRanking, type PlanWeight } from "@/lib/weightedRanking";
+import { usePlanConfigs } from "@/hooks/usePlanConfig";
 
 interface CarouselItem {
   highlightId: string;
+  id: string; // needed for WeightedItem
   establishmentId: string;
   establishmentName: string;
   category: string;
-  bannerImage: string; // from highlight_requests.image_url
-  profileImage: string | null; // from establishments.profile_image (logo)
+  bannerImage: string;
+  profileImage: string | null;
   latitude: number;
   longitude: number;
   approvedAt: string | null;
+  plan: string;
 }
 
 const categoryLabels: Record<string, string> = {
@@ -56,6 +60,12 @@ export function HeroCarousel() {
   const [isTransitioning, setIsTransitioning] = useState(false);
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
   const { coordinates } = useUserLocation();
+  const { data: planConfigs } = usePlanConfigs();
+  const planWeights: PlanWeight[] = (planConfigs || []).map(c => ({
+    plan_name: c.plan_name,
+    visibility_weight: c.visibility_weight,
+    promotion_boost: c.promotion_boost,
+  }));
 
   useEffect(() => {
     fetchApprovedHighlights();
@@ -114,11 +124,9 @@ export function HeroCarousel() {
     const estIds = uniqueHighlights.map((h) => h.establishment_id);
     const { data: establishments } = await supabase
       .from("establishments")
-      .select("id, name, category, profile_image, latitude, longitude")
+      .select("id, name, category, profile_image, latitude, longitude, plan")
       .eq("active", true)
       .in("id", estIds);
-
-    
 
     if (!establishments) {
       setCarouselItems([]);
@@ -133,6 +141,7 @@ export function HeroCarousel() {
         if (!est) return null;
         return {
           highlightId: h.id,
+          id: h.id,
           establishmentId: est.id,
           establishmentName: est.name,
           category: est.category,
@@ -141,12 +150,18 @@ export function HeroCarousel() {
           latitude: Number(est.latitude) || 0,
           longitude: Number(est.longitude) || 0,
           approvedAt: h.reviewed_at,
+          plan: est.plan || 'gratuito',
         };
       })
       .filter(Boolean) as CarouselItem[];
 
+    // Sort by proximity first, then apply weighted ranking
+    const proximitySorted = sortByProximity(items);
+    const weighted = planWeights.length > 0
+      ? applyWeightedRanking(proximitySorted, planWeights)
+      : proximitySorted;
     
-    setCarouselItems(sortByProximity(items));
+    setCarouselItems(weighted);
   };
 
   const itemsPerSlide = isMobile ? 1 : Math.min(2, carouselItems.length);

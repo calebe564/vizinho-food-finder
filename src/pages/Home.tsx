@@ -1,4 +1,6 @@
 import { useState, useEffect, useMemo, useCallback } from "react";
+import { applyWeightedRanking, type PlanWeight } from "@/lib/weightedRanking";
+import { usePlanConfigs } from "@/hooks/usePlanConfig";
 import { supabase } from "@/integrations/supabase/client";
 import { HeroCarousel } from "@/components/HeroCarousel";
 import { SearchBar } from "@/components/SearchBar";
@@ -38,7 +40,9 @@ interface Establishment {
   banner_image: string | null;
   images: unknown;
   is_paid: boolean;
+  is_destaque: boolean;
   has_delivery: boolean | null;
+  plan: string;
 }
 
 interface ProductWithEstablishment {
@@ -126,6 +130,16 @@ export default function Home() {
   const [locationFilter, setLocationFilter] = useState<LocationFilter | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   
+  const { data: planConfigs } = usePlanConfigs();
+  const planWeights: PlanWeight[] = useMemo(() => {
+    if (!planConfigs) return [];
+    return planConfigs.map(c => ({
+      plan_name: c.plan_name,
+      visibility_weight: c.visibility_weight,
+      promotion_boost: c.promotion_boost,
+    }));
+  }, [planConfigs]);
+
   const { locationDetails, hasPermission } = useUserLocation();
 
   useEffect(() => {
@@ -278,16 +292,17 @@ export default function Home() {
       return (matchesName || matchesCat) && matchesCategoryFilter;
     });
     
-    return filtered
+    const sorted = filtered
       .map((est) => ({
         ...est,
         isOpen: isOpenNow(est.schedule),
       }))
       .sort((a, b) => {
+        // Open establishments always first
         if (a.isOpen && !b.isOpen) return -1;
         if (!a.isOpen && b.isOpen) return 1;
-        if (a.is_paid !== b.is_paid) return a.is_paid ? -1 : 1;
         
+        // Proximity grouping
         if (sortBy === "proximity" && selectedLocation) {
           const aMatch = matchesNormalizedNeighborhood(a.neighborhood_normalized, selectedLocation.neighborhood) ||
                          areNeighborhoodsEquivalent(a.neighborhood || '', selectedLocation.neighborhood);
@@ -301,7 +316,18 @@ export default function Home() {
         
         return a.name.localeCompare(b.name, 'pt-BR');
       });
-  }, [establishments, searchTerm, searchMode, category, sortBy, selectedLocation, locationFilter]);
+
+    // Apply weighted probabilistic ranking within open/closed groups
+    if (sortBy === "proximity" && planWeights.length > 0) {
+      return applyWeightedRanking(
+        sorted.map(s => ({ ...s, plan: s.plan || 'gratuito' })),
+        planWeights,
+        (item) => item.isOpen ? 'open' : 'closed'
+      );
+    }
+
+    return sorted;
+  }, [establishments, searchTerm, searchMode, category, sortBy, selectedLocation, locationFilter, planWeights]);
 
   const showProductResults = searchMode === "products" && searchTerm && filteredProducts.length > 0;
   const showEstablishments = !showProductResults || !searchTerm;
