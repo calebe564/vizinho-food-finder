@@ -462,6 +462,8 @@ export default function Home() {
                       description={product.description}
                       image={product.image}
                       unit={product.unit}
+                      isPromotion={product.is_promotion}
+                      promotionDescription={product.promotion_description}
                       establishment={{
                         id: product.establishment_id,
                         name: product.establishment_name,
