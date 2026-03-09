@@ -49,6 +49,7 @@ import { ProfileCompletionCard } from '@/components/business/ProfileCompletionCa
 import { InviteAdminDialog } from '@/components/business/InviteAdminDialog';
 import { HighlightRequestSection } from '@/components/business/HighlightRequestSection';
 import { useEstablishmentPhotos, useAddPhotos, useSetMainPhoto, useDeletePhoto } from '@/hooks/useEstablishmentPhotos';
+import { ReviewSection } from '@/components/ReviewSection';
 
 interface EstablishmentData {
   id: string;
