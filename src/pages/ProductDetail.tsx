@@ -11,7 +11,7 @@ import { toast } from "sonner";
 import { 
   ArrowLeft, Heart, Store, ImageIcon, Loader2, 
   MessageCircle, Navigation, Clock, Phone, MapPin,
-  Truck, ShieldCheck, ShieldAlert
+  Truck, ShieldCheck, ShieldAlert, Flame
 } from "lucide-react";
 import { Helmet } from "react-helmet-async";
 import { useState } from "react";
