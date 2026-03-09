@@ -26,6 +26,9 @@ interface Product {
   images: string[] | null;
   unit: string | null;
   establishment_id: string;
+  is_promotion: boolean;
+  promotion_description: string | null;
+  promotion_expiration: string | null;
 }
 
 interface ProductVariation {
