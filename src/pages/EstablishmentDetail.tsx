@@ -20,7 +20,8 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 
 interface Establishment {
   id: string;
@@ -423,10 +424,20 @@ export default function EstablishmentDetail() {
           >
             <Navigation className="h-4 w-4 text-primary mt-0.5 flex-shrink-0" />
             <div className="min-w-0">
-              <p className="text-[11px] text-muted-foreground">Localização</p>
-              <p className="text-xs font-medium text-foreground line-clamp-1">
-                {establishment.google_maps_link ? "Ver no Maps" : establishment.address}
+              <p className="text-[11px] text-muted-foreground">Endereço</p>
+              <p className="text-xs font-medium text-foreground leading-snug">
+                {establishment.address}
+                {establishment.neighborhood ? `, ${establishment.neighborhood}` : ""}
+                {establishment.city ? ` - ${establishment.city}` : ""}
               </p>
+              {establishment.google_maps_link && (
+                <button
+                  onClick={(e) => { e.stopPropagation(); window.open(establishment.google_maps_link!, '_blank'); }}
+                  className="text-[11px] text-primary hover:underline mt-0.5"
+                >
+                  Ver no Maps →
+                </button>
+              )}
             </div>
           </div>
         </div>
@@ -466,60 +477,70 @@ export default function EstablishmentDetail() {
           </div>
         )}
 
-        {/* ===== PHOTO GALLERY (small thumbnails) ===== */}
-        {allPhotos.length > 1 && (
-          <div className="mb-6">
-            <h2 className="text-lg font-semibold text-foreground mb-3">Fotos</h2>
-            <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
-              {allPhotos.map((photo, idx) => (
-                <div key={idx} className="w-24 h-24 md:w-28 md:h-28 flex-shrink-0 rounded-xl overflow-hidden bg-muted">
-                  <img
-                    src={photo}
-                    alt={`Foto ${idx + 1}`}
-                    className="w-full h-full object-cover"
-                    loading="lazy"
-                  />
+        {/* ===== TABS: FOTOS / PRODUTOS ===== */}
+        {(allPhotos.length > 1 || products.length > 0) && (
+          <Tabs defaultValue={products.length > 0 ? "produtos" : "fotos"} className="mb-6">
+            <TabsList className="w-full">
+              {allPhotos.length > 1 && (
+                <TabsTrigger value="fotos" className="flex-1 gap-1.5">
+                  📷 Fotos ({allPhotos.length})
+                </TabsTrigger>
+              )}
+              {products.length > 0 && (
+                <TabsTrigger value="produtos" className="flex-1 gap-1.5">
+                  🛒 Produtos ({products.length})
+                </TabsTrigger>
+              )}
+            </TabsList>
+
+            {allPhotos.length > 1 && (
+              <TabsContent value="fotos">
+                <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
+                  {allPhotos.map((photo, idx) => (
+                    <div key={idx} className="w-24 h-24 md:w-28 md:h-28 flex-shrink-0 rounded-xl overflow-hidden bg-muted">
+                      <img
+                        src={photo}
+                        alt={`Foto ${idx + 1}`}
+                        className="w-full h-full object-cover"
+                        loading="lazy"
+                      />
+                    </div>
+                  ))}
                 </div>
-              ))}
-            </div>
-          </div>
-        )}
+              </TabsContent>
+            )}
 
-        {/* ===== PRODUCTS ===== */}
-        {products.length > 0 && (
-          <div className="mb-6">
-            <div className="flex items-center justify-between mb-3">
-              <h2 className="text-lg font-semibold text-foreground">
-                Produtos ({products.length})
-              </h2>
-            </div>
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
-              {products.map((product) => {
-                const productVariations = variations.filter(v => v.product_id === product.id);
-                const hasVariations = productVariations.length > 0;
-                const prices = productVariations.map(v => v.price);
+            {products.length > 0 && (
+              <TabsContent value="produtos">
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+                  {products.map((product) => {
+                    const productVariations = variations.filter(v => v.product_id === product.id);
+                    const hasVariations = productVariations.length > 0;
+                    const prices = productVariations.map(v => v.price);
 
-                return (
-                  <ProductCard
-                    key={product.id}
-                    id={product.id}
-                    name={product.name}
-                    description={product.description}
-                    price={product.price}
-                    image={product.image}
-                    images={product.images as string[] | null}
-                    unit={product.unit}
-                    hasVariations={hasVariations}
-                    variationCount={productVariations.length}
-                    minPrice={hasVariations ? Math.min(...prices) : undefined}
-                    maxPrice={hasVariations ? Math.max(...prices) : undefined}
-                    isPromotion={(product as any).is_promotion}
-                    promotionDescription={(product as any).promotion_description}
-                  />
-                );
-              })}
-            </div>
-          </div>
+                    return (
+                      <ProductCard
+                        key={product.id}
+                        id={product.id}
+                        name={product.name}
+                        description={product.description}
+                        price={product.price}
+                        image={product.image}
+                        images={product.images as string[] | null}
+                        unit={product.unit}
+                        hasVariations={hasVariations}
+                        variationCount={productVariations.length}
+                        minPrice={hasVariations ? Math.min(...prices) : undefined}
+                        maxPrice={hasVariations ? Math.max(...prices) : undefined}
+                        isPromotion={(product as any).is_promotion}
+                        promotionDescription={(product as any).promotion_description}
+                      />
+                    );
+                  })}
+                </div>
+              </TabsContent>
+            )}
+          </Tabs>
         )}
 
         {/* ===== REVIEWS ===== */}
