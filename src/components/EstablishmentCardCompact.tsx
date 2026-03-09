@@ -19,6 +19,8 @@ interface EstablishmentCardCompactProps {
   state?: string | null;
   schedule?: string;
   hasDelivery?: boolean;
+  ratingAverage?: number;
+  ratingCount?: number;
 }
 
 const categoryLabels: Record<string, string> = {
