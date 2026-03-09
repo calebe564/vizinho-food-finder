@@ -3,6 +3,7 @@ import { MapPin, Star, Store } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { OpenClosedBadge, DeliveryBadge } from "@/components/StatusBadge";
+import { RatingBadge } from "@/components/StarRating";
 
 interface EstablishmentCardCompactProps {
   id: string;
