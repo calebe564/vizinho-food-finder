@@ -40,7 +40,6 @@ export function Header() {
   
   const navLinks = [
     { to: "/", label: "Início" },
-    { to: "/categorias", label: "Categorias" },
     { to: "/estabelecimentos", label: "Empresas" },
   ];
   
