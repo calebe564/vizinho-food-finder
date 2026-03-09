@@ -1,4 +1,6 @@
 import { useState, useEffect, useMemo, useCallback } from "react";
+import { applyWeightedRanking, type PlanWeight } from "@/lib/weightedRanking";
+import { usePlanConfigs } from "@/hooks/usePlanConfig";
 import { supabase } from "@/integrations/supabase/client";
 import { HeroCarousel } from "@/components/HeroCarousel";
 import { SearchBar } from "@/components/SearchBar";
