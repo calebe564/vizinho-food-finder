@@ -518,6 +518,13 @@ export default function MyEstablishment() {
 
   const pageTitle = estCount > 1 ? 'Empresas' : 'Minha Empresa';
 
+  const categoryLabels: Record<string, string> = {
+    restaurante: "Restaurante", lanchonete: "Lanchonete", padaria: "Padaria",
+    supermercado: "Supermercado", açougue: "Açougue", hortifruti: "Hortifruti",
+    pizzaria: "Pizzaria", hamburgueria: "Hamburgueria", bar: "Bar",
+    cafe: "Café", outro: "Outro", sorveteria: "Sorveteria", acai: "Açaí", espetinho: "Espetinho",
+  };
+
   return (
     <>
       <Helmet>
@@ -526,11 +533,11 @@ export default function MyEstablishment() {
       <div className="min-h-screen flex flex-col bg-background">
         <Header />
         <main className="flex-1 container px-4 py-6">
-          <div className="max-w-4xl mx-auto space-y-4">
+          <div className="max-w-4xl mx-auto space-y-5">
 
             {/* Establishment Selector (when user has 2+ businesses) */}
             {estCount > 1 && (
-              <Card className="border-0 shadow-elevated rounded-2xl">
+              <Card className="border border-border rounded-2xl bg-card">
                 <CardContent className="py-3 px-4 flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <ArrowLeftRight className="h-4 w-4 text-muted-foreground" />
@@ -541,61 +548,76 @@ export default function MyEstablishment() {
               </Card>
             )}
             
-            {/* 1. Status da Empresa */}
+            {/* ===== PREMIUM HERO HEADER ===== */}
+            <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-primary via-primary/90 to-primary/70 p-6 md:p-8">
+              {/* Decorative elements */}
+              <div className="absolute top-0 right-0 w-64 h-64 bg-primary-foreground/5 rounded-full -translate-y-1/2 translate-x-1/3" />
+              <div className="absolute bottom-0 left-0 w-32 h-32 bg-primary-foreground/5 rounded-full translate-y-1/2 -translate-x-1/4" />
+              
+              <div className="relative flex items-center gap-5">
+                {/* Clickable Logo */}
+                <div className="relative group flex-shrink-0">
+                  <div className="w-20 h-20 md:w-24 md:h-24 rounded-2xl overflow-hidden ring-4 ring-primary-foreground/20 shadow-lg">
+                    {establishmentData.profile_image ? (
+                      <img 
+                        src={establishmentData.profile_image} 
+                        alt={establishmentData.name}
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <div className="w-full h-full bg-primary-foreground/10 flex items-center justify-center">
+                        <Store className="h-10 w-10 md:h-12 md:w-12 text-primary-foreground/60" />
+                      </div>
+                    )}
+                  </div>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleLogoUpload}
+                    className="hidden"
+                    id="logo-upload"
+                    disabled={uploadingLogo}
+                  />
+                  <label
+                    htmlFor="logo-upload"
+                    className="absolute inset-0 flex items-center justify-center bg-black/40 rounded-2xl opacity-0 group-hover:opacity-100 transition-all cursor-pointer backdrop-blur-sm"
+                  >
+                    {uploadingLogo ? (
+                      <Loader2 className="h-6 w-6 text-white animate-spin" />
+                    ) : (
+                      <div className="flex flex-col items-center gap-1">
+                        <Camera className="h-5 w-5 text-white" />
+                        <span className="text-[10px] text-white font-medium">Trocar</span>
+                      </div>
+                    )}
+                  </label>
+                </div>
+
+                <div className="flex-1 min-w-0">
+                  <h1 className="text-xl md:text-2xl font-bold text-primary-foreground truncate">
+                    {establishmentData.name}
+                  </h1>
+                  <div className="flex items-center gap-2 mt-1.5 flex-wrap">
+                    <Badge className="bg-primary-foreground/20 text-primary-foreground border-0 text-xs">
+                      {categoryLabels[establishmentData.category] || establishmentData.category}
+                    </Badge>
+                    <Badge className="bg-green-500/90 text-white border-0 text-xs">
+                      ● Ativo
+                    </Badge>
+                  </div>
+                  <p className="text-primary-foreground/60 text-xs mt-2 hidden md:block">
+                    Clique na logo para alterar a imagem
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Status + Profile Completion */}
             <EstablishmentStatusCard 
               isActive={true}
               profileComplete={profilePercentage}
             />
 
-            {/* Header da empresa */}
-            <Card className="border-0 shadow-elevated rounded-2xl overflow-hidden">
-              <div className="bg-gradient-to-r from-primary/10 to-primary/5 p-5">
-                <div className="flex items-center gap-4">
-                  {/* Logo com upload */}
-                  <div className="relative group">
-                    {establishmentData.profile_image ? (
-                      <img 
-                        src={establishmentData.profile_image} 
-                        alt={establishmentData.name}
-                        className="w-20 h-20 rounded-2xl object-cover"
-                      />
-                    ) : (
-                      <div className="w-20 h-20 rounded-2xl bg-primary/10 flex items-center justify-center">
-                        <Store className="h-10 w-10 text-primary" />
-                      </div>
-                    )}
-                    <input
-                      type="file"
-                      accept="image/*"
-                      onChange={handleLogoUpload}
-                      className="hidden"
-                      id="logo-upload"
-                      disabled={uploadingLogo}
-                    />
-                    <label
-                      htmlFor="logo-upload"
-                      className="absolute inset-0 flex items-center justify-center bg-black/50 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
-                    >
-                      {uploadingLogo ? (
-                        <Loader2 className="h-6 w-6 text-white animate-spin" />
-                      ) : (
-                        <Camera className="h-6 w-6 text-white" />
-                      )}
-                    </label>
-                  </div>
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-1">
-                      <h1 className="text-xl md:text-2xl font-bold">{establishmentData.name}</h1>
-                      <Badge variant="default" className="bg-green-500">Aprovado</Badge>
-                    </div>
-                    <p className="text-muted-foreground capitalize">{establishmentData.category}</p>
-                    <p className="text-xs text-muted-foreground mt-1">Clique na logo para alterar</p>
-                  </div>
-                </div>
-              </div>
-            </Card>
-
-            {/* 7. Indicador de Perfil + Orientações */}
             <ProfileCompletionCard
               hasLogo={hasLogo}
               hasDescription={hasDescription}
@@ -605,46 +627,45 @@ export default function MyEstablishment() {
               hasProducts={hasProducts}
             />
 
-            {/* 6. Ferramentas do Empresário */}
-            <BusinessNotesSheet establishmentId={establishmentData.id} />
-
+            {/* ===== MAIN TABS ===== */}
             <Tabs defaultValue="info" className="space-y-4">
-              <TabsList className="grid w-full grid-cols-6">
-                <TabsTrigger value="info" className="text-xs md:text-sm">
-                  <Building2 className="h-4 w-4 md:mr-2" />
+              <TabsList className="grid w-full grid-cols-6 h-12 rounded-2xl bg-muted/80 p-1">
+                <TabsTrigger value="info" className="rounded-xl text-xs md:text-sm data-[state=active]:shadow-md gap-1.5">
+                  <Building2 className="h-4 w-4" />
                   <span className="hidden md:inline">Info</span>
                 </TabsTrigger>
-                <TabsTrigger value="products" className="text-xs md:text-sm">
-                  <Package className="h-4 w-4 md:mr-2" />
+                <TabsTrigger value="products" className="rounded-xl text-xs md:text-sm data-[state=active]:shadow-md gap-1.5">
+                  <Package className="h-4 w-4" />
                   <span className="hidden md:inline">Produtos</span>
-                  <Badge variant="secondary" className="ml-1 text-xs">{products.length}</Badge>
                 </TabsTrigger>
-                <TabsTrigger value="reviews" className="text-xs md:text-sm">
-                  <Star className="h-4 w-4 md:mr-2" />
+                <TabsTrigger value="reviews" className="rounded-xl text-xs md:text-sm data-[state=active]:shadow-md gap-1.5">
+                  <Star className="h-4 w-4" />
                   <span className="hidden md:inline">Avaliações</span>
                 </TabsTrigger>
-                <TabsTrigger value="functions" className="text-xs md:text-sm">
-                  <Star className="h-4 w-4 md:mr-2" />
+                <TabsTrigger value="functions" className="rounded-xl text-xs md:text-sm data-[state=active]:shadow-md gap-1.5">
+                  <Sparkles className="h-4 w-4" />
                   <span className="hidden md:inline">Funções</span>
                 </TabsTrigger>
-                <TabsTrigger value="photos" className="text-xs md:text-sm">
-                  <Image className="h-4 w-4 md:mr-2" />
+                <TabsTrigger value="photos" className="rounded-xl text-xs md:text-sm data-[state=active]:shadow-md gap-1.5">
+                  <Image className="h-4 w-4" />
                   <span className="hidden md:inline">Fotos</span>
-                  <Badge variant="secondary" className="ml-1 text-xs">{photos.length}</Badge>
                 </TabsTrigger>
-                <TabsTrigger value="settings" className="text-xs md:text-sm">
-                  <Settings className="h-4 w-4 md:mr-2" />
+                <TabsTrigger value="settings" className="rounded-xl text-xs md:text-sm data-[state=active]:shadow-md gap-1.5">
+                  <Settings className="h-4 w-4" />
                   <span className="hidden md:inline">Config</span>
                 </TabsTrigger>
               </TabsList>
 
-              {/* 2. Informações da Empresa */}
+              {/* ===== TAB: INFORMAÇÕES ===== */}
               <TabsContent value="info">
-                <Card className="border-0 shadow-elevated rounded-2xl">
+                <Card className="border border-border rounded-2xl">
                   <CardHeader>
                     <CardTitle className="flex items-center justify-between">
-                      Informações da Empresa
-                      <Button variant="outline" size="sm" onClick={() => setEditDialogOpen(true)}>
+                      <span className="flex items-center gap-2">
+                        <Building2 className="h-5 w-5 text-primary" />
+                        Informações da Empresa
+                      </span>
+                      <Button variant="outline" size="sm" className="rounded-xl" onClick={() => setEditDialogOpen(true)}>
                         <Edit className="h-4 w-4 mr-2" />
                         Editar
                       </Button>
@@ -652,84 +673,101 @@ export default function MyEstablishment() {
                   </CardHeader>
                   <CardContent className="space-y-4">
                     <div className="grid gap-4 md:grid-cols-2">
-                      <div className="space-y-2">
-                        <Label className="text-muted-foreground text-sm">Endereço</Label>
-                        <div className="flex items-start gap-2">
-                          <MapPin className="h-4 w-4 mt-0.5 text-primary" />
-                          <p className="text-sm">{establishmentData.address}</p>
+                      <div className="p-3 rounded-xl bg-muted/50 space-y-1">
+                        <div className="flex items-center gap-2 text-muted-foreground">
+                          <MapPin className="h-3.5 w-3.5" />
+                          <span className="text-xs font-medium uppercase tracking-wider">Endereço</span>
                         </div>
+                        <p className="text-sm font-medium">{establishmentData.address}</p>
                       </div>
-                      <div className="space-y-2">
-                        <Label className="text-muted-foreground text-sm">Telefone</Label>
-                        <div className="flex items-center gap-2">
-                          <Phone className="h-4 w-4 text-primary" />
-                          <p className="text-sm">{establishmentData.phone}</p>
+                      <div className="p-3 rounded-xl bg-muted/50 space-y-1">
+                        <div className="flex items-center gap-2 text-muted-foreground">
+                          <Phone className="h-3.5 w-3.5" />
+                          <span className="text-xs font-medium uppercase tracking-wider">Telefone</span>
                         </div>
+                        <p className="text-sm font-medium">{establishmentData.phone}</p>
                       </div>
-                      <div className="space-y-2">
-                        <Label className="text-muted-foreground text-sm">Horário</Label>
-                        <div className="flex items-center gap-2">
-                          <Clock className="h-4 w-4 text-primary" />
-                          <p className="text-sm">{establishmentData.schedule || 'Não informado'}</p>
+                      <div className="p-3 rounded-xl bg-muted/50 space-y-1">
+                        <div className="flex items-center gap-2 text-muted-foreground">
+                          <Clock className="h-3.5 w-3.5" />
+                          <span className="text-xs font-medium uppercase tracking-wider">Horário</span>
                         </div>
+                        <p className="text-sm font-medium">{establishmentData.schedule || 'Não informado'}</p>
                       </div>
+                      {establishmentData.whatsapp && (
+                        <div className="p-3 rounded-xl bg-muted/50 space-y-1">
+                          <div className="flex items-center gap-2 text-muted-foreground">
+                            <Phone className="h-3.5 w-3.5" />
+                            <span className="text-xs font-medium uppercase tracking-wider">WhatsApp</span>
+                          </div>
+                          <p className="text-sm font-medium">{establishmentData.whatsapp}</p>
+                        </div>
+                      )}
                     </div>
                     {establishmentData.description && (
-                      <div className="space-y-2">
-                        <Label className="text-muted-foreground text-sm">Descrição</Label>
-                        <p className="text-sm">{establishmentData.description}</p>
+                      <div className="p-3 rounded-xl bg-muted/50 space-y-1">
+                        <span className="text-xs font-medium uppercase tracking-wider text-muted-foreground">Descrição</span>
+                        <p className="text-sm leading-relaxed">{establishmentData.description}</p>
                       </div>
                     )}
                   </CardContent>
                 </Card>
               </TabsContent>
 
-              {/* 3. Produtos */}
+              {/* ===== TAB: PRODUTOS ===== */}
               <TabsContent value="products">
-                <Card className="border-0 shadow-elevated rounded-2xl">
+                <Card className="border border-border rounded-2xl">
                   <CardHeader>
                     <CardTitle className="flex items-center justify-between">
-                      Produtos
-                      <Button size="sm" onClick={() => {
+                      <span className="flex items-center gap-2">
+                        <Package className="h-5 w-5 text-primary" />
+                        Produtos
+                        {products.length > 0 && (
+                          <Badge variant="secondary" className="text-xs">{products.length}</Badge>
+                        )}
+                      </span>
+                      <Button size="sm" className="rounded-xl" onClick={() => {
                         setEditingProduct(null);
                         setEditingProductIndex(undefined);
                         setProductDialogOpen(true);
                       }}>
                         <Package className="h-4 w-4 mr-2" />
-                        Adicionar Produto
+                        Adicionar
                       </Button>
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
                     {products.length === 0 ? (
-                      <div className="text-center py-8">
-                        <Package className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                        <p className="text-muted-foreground">Nenhum produto cadastrado</p>
-                        <p className="text-sm text-muted-foreground mt-1">Clique em "Adicionar Produto" para começar</p>
+                      <div className="text-center py-12">
+                        <div className="w-16 h-16 rounded-2xl bg-muted flex items-center justify-center mx-auto mb-4">
+                          <Package className="h-8 w-8 text-muted-foreground" />
+                        </div>
+                        <p className="font-medium text-foreground">Nenhum produto cadastrado</p>
+                        <p className="text-sm text-muted-foreground mt-1">Adicione seus produtos para atrair clientes</p>
                       </div>
                     ) : (
                       <div className="grid gap-3 md:grid-cols-2">
                         {products.map((product, index) => (
-                          <div key={index} className="flex items-center gap-3 p-3 bg-muted rounded-xl">
+                          <div key={index} className="flex items-center gap-3 p-3 bg-muted/50 rounded-xl border border-border hover:border-primary/30 transition-colors">
                             {product.image ? (
                               <img 
                                 src={product.image} 
                                 alt={product.name}
-                                className="w-16 h-16 rounded-lg object-cover"
+                                className="w-14 h-14 rounded-xl object-cover"
                               />
                             ) : (
-                              <div className="w-16 h-16 rounded-lg bg-background flex items-center justify-center">
+                              <div className="w-14 h-14 rounded-xl bg-background flex items-center justify-center border border-border">
                                 <Image className="h-6 w-6 text-muted-foreground" />
                               </div>
                             )}
                             <div className="flex-1 min-w-0">
-                              <p className="font-medium truncate">{product.name}</p>
+                              <p className="font-semibold text-sm truncate">{product.name}</p>
                               {product.hasVariations && product.variations ? (
-                                <p className="text-primary text-sm">
+                                <p className="text-primary text-xs font-medium">
                                   {product.variations.length} variações
                                 </p>
                               ) : (
-                              <p className="text-primary font-semibold">
+                                <p className="text-primary font-bold text-sm">
                                   {product.price.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
                                 </p>
                               )}
@@ -738,22 +776,22 @@ export default function MyEstablishment() {
                               <Button 
                                 variant="ghost" 
                                 size="icon"
-                                className="h-8 w-8"
+                                className="h-8 w-8 rounded-lg"
                                 onClick={() => {
                                   setEditingProduct(product);
                                   setEditingProductIndex(index);
                                   setProductDialogOpen(true);
                                 }}
                               >
-                                <Edit className="h-4 w-4" />
+                                <Edit className="h-3.5 w-3.5" />
                               </Button>
                               <Button 
                                 variant="ghost" 
                                 size="icon"
-                                className="h-8 w-8 text-destructive"
+                                className="h-8 w-8 rounded-lg text-destructive hover:text-destructive"
                                 onClick={() => handleDeleteProduct(index)}
                               >
-                                <Trash2 className="h-4 w-4" />
+                                <Trash2 className="h-3.5 w-3.5" />
                               </Button>
                             </div>
                           </div>
@@ -764,7 +802,7 @@ export default function MyEstablishment() {
                 </Card>
               </TabsContent>
 
-              {/* Avaliações */}
+              {/* ===== TAB: AVALIAÇÕES ===== */}
               <TabsContent value="reviews">
                 {!establishmentData.isFromRequest ? (
                   <ReviewSection 
@@ -774,41 +812,112 @@ export default function MyEstablishment() {
                     isOwnerView={true}
                   />
                 ) : (
-                  <Card className="border-0 shadow-elevated rounded-2xl">
-                    <CardContent className="py-8 text-center">
-                      <Star className="h-10 w-10 text-muted-foreground mx-auto mb-3" />
-                      <p className="text-muted-foreground font-medium">Avaliações disponíveis após aprovação</p>
+                  <Card className="border border-border rounded-2xl">
+                    <CardContent className="py-12 text-center">
+                      <div className="w-16 h-16 rounded-2xl bg-muted flex items-center justify-center mx-auto mb-4">
+                        <Star className="h-8 w-8 text-muted-foreground" />
+                      </div>
+                      <p className="font-medium">Avaliações disponíveis após aprovação</p>
+                      <p className="text-sm text-muted-foreground mt-1">Seus clientes poderão avaliar sua empresa</p>
                     </CardContent>
                   </Card>
                 )}
               </TabsContent>
 
-              {/* Funções */}
+              {/* ===== TAB: FUNÇÕES ===== */}
               <TabsContent value="functions">
                 {establishmentData.isFromRequest ? (
-                  <Card className="border-0 shadow-elevated rounded-2xl">
-                    <CardContent className="py-8 text-center">
-                      <Star className="h-10 w-10 text-muted-foreground mx-auto mb-3" />
-                      <p className="text-muted-foreground font-medium">Funções disponíveis após aprovação</p>
+                  <Card className="border border-border rounded-2xl">
+                    <CardContent className="py-12 text-center">
+                      <div className="w-16 h-16 rounded-2xl bg-muted flex items-center justify-center mx-auto mb-4">
+                        <Sparkles className="h-8 w-8 text-muted-foreground" />
+                      </div>
+                      <p className="font-medium">Funções disponíveis após aprovação</p>
                       <p className="text-sm text-muted-foreground mt-1">
-                        Quando sua empresa for aprovada e vinculada, você poderá usar as funções.
+                        Quando sua empresa for aprovada, você poderá usar todas as funções.
                       </p>
                     </CardContent>
                   </Card>
                 ) : (
                   <div className="space-y-4">
-                    <HighlightRequestSection establishmentId={establishmentData.id} />
-                    <PromotionManagementSection establishmentId={establishmentData.id} />
+                    {/* Function Cards Grid */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {/* Promoções */}
+                      <Card className="border border-border rounded-2xl hover:border-primary/30 transition-colors group">
+                        <CardContent className="p-5">
+                          <div className="flex items-start gap-4">
+                            <div className="w-12 h-12 rounded-xl bg-orange-500/10 flex items-center justify-center flex-shrink-0 group-hover:scale-105 transition-transform">
+                              <Megaphone className="h-6 w-6 text-orange-500" />
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <h3 className="font-semibold text-foreground">Criar Promoção</h3>
+                              <p className="text-xs text-muted-foreground mt-0.5 leading-relaxed">
+                                Crie promoções para atrair mais clientes e aumentar sua visibilidade nos resultados.
+                              </p>
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
+
+                      {/* Destaques */}
+                      <Card className="border border-border rounded-2xl hover:border-primary/30 transition-colors group">
+                        <CardContent className="p-5">
+                          <div className="flex items-start gap-4">
+                            <div className="w-12 h-12 rounded-xl bg-amber-500/10 flex items-center justify-center flex-shrink-0 group-hover:scale-105 transition-transform">
+                              <Crown className="h-6 w-6 text-amber-500" />
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <h3 className="font-semibold text-foreground">Solicitar Destaque</h3>
+                              <p className="text-xs text-muted-foreground mt-0.5 leading-relaxed">
+                                Apareça no slider principal da página inicial e ganhe mais visibilidade.
+                              </p>
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
+
+                      {/* Estatísticas */}
+                      <Card className="border border-border rounded-2xl hover:border-primary/30 transition-colors group">
+                        <CardContent className="p-5">
+                          <div className="flex items-start gap-4">
+                            <div className="w-12 h-12 rounded-xl bg-blue-500/10 flex items-center justify-center flex-shrink-0 group-hover:scale-105 transition-transform">
+                              <BarChart3 className="h-6 w-6 text-blue-500" />
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <h3 className="font-semibold text-foreground">Estatísticas</h3>
+                              <p className="text-xs text-muted-foreground mt-0.5 leading-relaxed">
+                                Acompanhe visualizações, cliques e desempenho da sua empresa.
+                              </p>
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
+
+                      {/* Notas Internas */}
+                      <BusinessNotesSheet establishmentId={establishmentData.id} />
+                    </div>
+
+                    {/* Expanded sections */}
+                    <div className="space-y-4">
+                      <HighlightRequestSection establishmentId={establishmentData.id} />
+                      <PromotionManagementSection establishmentId={establishmentData.id} />
+                    </div>
                   </div>
                 )}
               </TabsContent>
 
-              {/* 4. Fotos */}
+              {/* ===== TAB: FOTOS ===== */}
               <TabsContent value="photos">
-                <Card className="border-0 shadow-elevated rounded-2xl">
+                <Card className="border border-border rounded-2xl">
                   <CardHeader>
                     <CardTitle className="flex items-center justify-between">
-                      Fotos do Estabelecimento
+                      <span className="flex items-center gap-2">
+                        <Image className="h-5 w-5 text-primary" />
+                        Fotos do Estabelecimento
+                        {photos.length > 0 && (
+                          <Badge variant="secondary" className="text-xs">{photos.length}</Badge>
+                        )}
+                      </span>
                       <div className="flex gap-2">
                         <input
                           type="file"
@@ -820,14 +929,14 @@ export default function MyEstablishment() {
                           disabled={addPhotosMutation.isPending}
                         />
                         <label htmlFor="photos-upload">
-                          <Button asChild size="sm" disabled={addPhotosMutation.isPending}>
+                          <Button asChild size="sm" className="rounded-xl" disabled={addPhotosMutation.isPending}>
                             <span>
                               {addPhotosMutation.isPending ? (
                                 <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                               ) : (
                                 <ImagePlus className="h-4 w-4 mr-2" />
                               )}
-                              Adicionar Fotos
+                              Adicionar
                             </span>
                           </Button>
                         </label>
@@ -839,20 +948,24 @@ export default function MyEstablishment() {
                   </CardHeader>
                   <CardContent>
                     {!estId ? (
-                      <div className="text-center py-8">
-                        <Image className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                        <p className="text-muted-foreground">Sistema de fotos disponível após aprovação</p>
+                      <div className="text-center py-12">
+                        <div className="w-16 h-16 rounded-2xl bg-muted flex items-center justify-center mx-auto mb-4">
+                          <Image className="h-8 w-8 text-muted-foreground" />
+                        </div>
+                        <p className="font-medium">Sistema de fotos disponível após aprovação</p>
                       </div>
                     ) : photos.length === 0 ? (
-                      <div className="text-center py-8">
-                        <Image className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                        <p className="text-muted-foreground">Nenhuma foto cadastrada</p>
-                        <p className="text-sm text-muted-foreground mt-1">Clique em "Adicionar Fotos" para começar</p>
+                      <div className="text-center py-12">
+                        <div className="w-16 h-16 rounded-2xl bg-muted flex items-center justify-center mx-auto mb-4">
+                          <Image className="h-8 w-8 text-muted-foreground" />
+                        </div>
+                        <p className="font-medium">Nenhuma foto cadastrada</p>
+                        <p className="text-sm text-muted-foreground mt-1">Fotos de qualidade aumentam o interesse dos clientes</p>
                       </div>
                     ) : (
                       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
                         {photos.map((photo) => (
-                          <div key={photo.id} className="relative group aspect-square rounded-xl overflow-hidden">
+                          <div key={photo.id} className="relative group aspect-square rounded-xl overflow-hidden border border-border">
                             <img 
                               src={photo.url} 
                               alt="Foto do estabelecimento"
@@ -862,20 +975,18 @@ export default function MyEstablishment() {
                                 setPhotoDialogOpen(true);
                               }}
                             />
-                            {/* Main badge */}
                             {photo.is_main && (
                               <div className="absolute top-2 left-2 px-2 py-1 bg-primary text-primary-foreground text-[10px] font-semibold rounded-full flex items-center gap-1">
                                 <CheckCircle2 className="h-3 w-3" />
                                 Principal
                               </div>
                             )}
-                            {/* Actions overlay */}
                             <div className="absolute inset-x-0 bottom-0 p-2 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end justify-between">
                               {!photo.is_main && (
                                 <Button
                                   size="sm"
                                   variant="secondary"
-                                  className="h-7 text-[10px] px-2"
+                                  className="h-7 text-[10px] px-2 rounded-lg"
                                   onClick={(e) => { e.stopPropagation(); setMainPhotoMutation.mutate(photo.id); }}
                                   disabled={setMainPhotoMutation.isPending}
                                 >
@@ -885,7 +996,7 @@ export default function MyEstablishment() {
                               <Button
                                 size="icon"
                                 variant="destructive"
-                                className="h-7 w-7 ml-auto"
+                                className="h-7 w-7 ml-auto rounded-lg"
                                 onClick={(e) => { e.stopPropagation(); deletePhotoMutation.mutate({ photoId: photo.id, wasMain: photo.is_main }); }}
                                 disabled={deletePhotoMutation.isPending}
                               >
@@ -900,12 +1011,12 @@ export default function MyEstablishment() {
                 </Card>
               </TabsContent>
 
-              {/* 5. Configurações do Perfil do Empresário */}
+              {/* ===== TAB: CONFIGURAÇÕES ===== */}
               <TabsContent value="settings">
-                <Card className="border-0 shadow-elevated rounded-2xl">
+                <Card className="border border-border rounded-2xl">
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2">
-                      <User className="h-5 w-5" />
+                      <User className="h-5 w-5 text-primary" />
                       Perfil do Empresário
                     </CardTitle>
                     <CardDescription>
@@ -914,16 +1025,16 @@ export default function MyEstablishment() {
                   </CardHeader>
                   <CardContent className="space-y-4">
                     <div className="grid gap-4 md:grid-cols-2">
-                      <div className="space-y-2">
-                        <Label className="text-muted-foreground text-sm">Email</Label>
-                        <p className="text-sm">{user?.email}</p>
+                      <div className="p-3 rounded-xl bg-muted/50 space-y-1">
+                        <span className="text-xs font-medium uppercase tracking-wider text-muted-foreground">Email</span>
+                        <p className="text-sm font-medium">{user?.email}</p>
                       </div>
-                      <div className="space-y-2">
-                        <Label className="text-muted-foreground text-sm">Tipo de conta</Label>
-                        <Badge variant="outline">Empresário</Badge>
+                      <div className="p-3 rounded-xl bg-muted/50 space-y-1">
+                        <span className="text-xs font-medium uppercase tracking-wider text-muted-foreground">Tipo de conta</span>
+                        <Badge variant="outline" className="mt-1">Empresário</Badge>
                       </div>
                     </div>
-                    <div className="pt-4 border-t">
+                    <div className="pt-4 border-t border-border">
                       <p className="text-xs text-muted-foreground">
                         Para alterar informações de acesso, entre em contato com o suporte.
                       </p>
