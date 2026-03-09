@@ -158,6 +158,13 @@ export function ProductCardExtended({
             {priceText}
           </p>
 
+          {/* Promotion description */}
+          {isPromotion && promotionDescription && (
+            <p className="text-[9px] md:text-[10px] font-semibold text-red-600 dark:text-red-400 mb-0.5">
+              🔥 {promotionDescription}
+            </p>
+          )}
+
           {/* Description */}
           {description && (
             <p className="text-[9px] md:text-[10px] text-muted-foreground line-clamp-1 mb-0.5">
