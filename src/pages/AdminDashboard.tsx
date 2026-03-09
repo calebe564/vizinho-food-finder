@@ -207,6 +207,18 @@ export default function AdminDashboard() {
                 </Button>
               </Link>
             )}
+
+            {canApproveEstablishments && (
+              <Link to="/admin/dashboard/duplicadas">
+                <Button 
+                  variant={isActive("/admin/dashboard/duplicadas") ? "default" : "ghost"} 
+                  className="w-full justify-start"
+                >
+                  <Copy className="mr-2 h-4 w-4" />
+                  Duplicadas
+                </Button>
+              </Link>
+            )}
           </nav>
         </aside>
 

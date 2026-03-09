@@ -88,6 +88,8 @@ export default function PublicEstablishmentForm() {
   const [showBlockDialog, setShowBlockDialog] = useState(false);
   const [showAuthDialog, setShowAuthDialog] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [duplicateFound, setDuplicateFound] = useState<{ id: string; name: string; address: string } | null>(null);
+  const [showDuplicateWarning, setShowDuplicateWarning] = useState(false);
   const [loadingCep, setLoadingCep] = useState(false);
   const [document, setDocument] = useState("");
   const [documentType, setDocumentType] = useState<DocumentType>('unknown');
