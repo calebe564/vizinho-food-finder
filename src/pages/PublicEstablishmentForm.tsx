@@ -493,7 +493,39 @@ export default function PublicEstablishmentForm() {
       return;
     }
 
+    setLoading(true);
     try {
+      // --- Duplicate check by phone/WhatsApp ---
+      const whatsappForCheck = contactData.whatsapp.replace(/\D/g, "");
+      if (whatsappForCheck.length >= 10) {
+        const { data: existingByPhone } = await supabase
+          .from("establishments")
+          .select("id, name, address")
+          .or(`phone.ilike.%${whatsappForCheck}%,whatsapp.ilike.%${whatsappForCheck}%`)
+          .limit(1);
+
+        if (existingByPhone && existingByPhone.length > 0) {
+          setDuplicateFound(existingByPhone[0]);
+          setShowDuplicateWarning(true);
+          setLoading(false);
+          return;
+        }
+      }
+
+      // Also check pending requests with same phone
+      const { data: existingReq } = await supabase
+        .from("establishment_requests")
+        .select("id")
+        .eq("status", "pending")
+        .or(`phone.ilike.%${whatsappForCheck}%,whatsapp.ilike.%${whatsappForCheck}%`)
+        .limit(1);
+
+      if (existingReq && existingReq.length > 0) {
+        toast.error("Já existe uma solicitação pendente com este telefone/WhatsApp.");
+        setLoading(false);
+        return;
+      }
+
       const fullAddress = `${addressData.logradouro}, ${addressData.numero}${addressData.complemento ? ` - ${addressData.complemento}` : ""}, ${addressData.bairro}, ${addressData.localidade} - ${addressData.uf}, CEP: ${addressData.cep}`;
 
       // Upload logo
