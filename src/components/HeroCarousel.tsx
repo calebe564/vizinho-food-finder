@@ -9,14 +9,16 @@ import { usePlanConfigs } from "@/hooks/usePlanConfig";
 
 interface CarouselItem {
   highlightId: string;
+  id: string; // needed for WeightedItem
   establishmentId: string;
   establishmentName: string;
   category: string;
-  bannerImage: string; // from highlight_requests.image_url
-  profileImage: string | null; // from establishments.profile_image (logo)
+  bannerImage: string;
+  profileImage: string | null;
   latitude: number;
   longitude: number;
   approvedAt: string | null;
+  plan: string;
 }
 
 const categoryLabels: Record<string, string> = {
