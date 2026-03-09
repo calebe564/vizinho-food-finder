@@ -15,6 +15,7 @@ export interface EstablishmentForSort {
   category_3?: string | null;
   is_paid?: boolean;
   is_destaque?: boolean;
+  plan?: string;
   name: string;
 }
 

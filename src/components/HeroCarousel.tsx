@@ -4,6 +4,8 @@ import { Link } from "react-router-dom";
 import { Star, ChevronLeft, ChevronRight, Store } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useUserLocation } from "@/contexts/LocationContext";
+import { applyWeightedRanking, type PlanWeight } from "@/lib/weightedRanking";
+import { usePlanConfigs } from "@/hooks/usePlanConfig";
 
 interface CarouselItem {
   highlightId: string;
