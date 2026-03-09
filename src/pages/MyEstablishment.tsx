@@ -762,6 +762,9 @@ export default function MyEstablishment() {
                 {!establishmentData.isFromRequest ? (
                   <ReviewSection 
                     establishmentId={establishmentData.id}
+                    ratingAverage={(activeEstablishment as any)?.rating_average || 0}
+                    ratingCount={(activeEstablishment as any)?.rating_count || 0}
+                    isOwnerView={true}
                   />
                 ) : (
                   <Card className="border-0 shadow-elevated rounded-2xl">
