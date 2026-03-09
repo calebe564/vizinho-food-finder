@@ -15,7 +15,6 @@ export interface WeightedItem {
   id: string;
   plan: string;
   is_promotion?: boolean;
-  [key: string]: unknown;
 }
 
 export interface PlanWeight {
