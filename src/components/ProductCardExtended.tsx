@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { MapPin, Package, MessageCircle, Navigation, Phone, Clock } from "lucide-react";
+import { MapPin, Package, MessageCircle, Navigation, Phone, Clock, Flame } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { OpenClosedBadge, DeliveryBadge } from "@/components/StatusBadge";
 
