@@ -114,6 +114,13 @@ export function ProductCard({
 
         <CardContent className="p-4">
           <h3 className="font-bold line-clamp-2 mb-2">{name}</h3>
+
+          {/* Promotion description */}
+          {isPromotion && promotionDescription && (
+            <p className="text-sm font-semibold text-red-600 dark:text-red-400 mb-2">
+              🔥 {promotionDescription}
+            </p>
+          )}
           
           {description && (
             <p className="text-sm text-muted-foreground line-clamp-2 mb-3">
