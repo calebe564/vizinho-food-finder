@@ -831,8 +831,11 @@ export type Database = {
           id: string
           image: string | null
           images: Json | null
+          is_promotion: boolean
           name: string
           price: number
+          promotion_description: string | null
+          promotion_expiration: string | null
           unit: string | null
         }
         Insert: {
@@ -842,8 +845,11 @@ export type Database = {
           id?: string
           image?: string | null
           images?: Json | null
+          is_promotion?: boolean
           name: string
           price: number
+          promotion_description?: string | null
+          promotion_expiration?: string | null
           unit?: string | null
         }
         Update: {
@@ -853,8 +859,11 @@ export type Database = {
           id?: string
           image?: string | null
           images?: Json | null
+          is_promotion?: boolean
           name?: string
           price?: number
+          promotion_description?: string | null
+          promotion_expiration?: string | null
           unit?: string | null
         }
         Relationships: [
