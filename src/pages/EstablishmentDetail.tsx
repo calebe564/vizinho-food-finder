@@ -8,6 +8,8 @@ import { Badge } from "@/components/ui/badge";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { ImageGallery } from "@/components/ImageGallery";
 import { ProductCard } from "@/components/ProductCard";
+import { ReviewSection } from "@/components/ReviewSection";
+import { RatingBadge } from "@/components/StarRating";
 import { getScheduleStatus } from "@/lib/scheduleUtils";
 import { toast } from "sonner";
 import { useFavorites } from "@/hooks/useFavorites";
@@ -354,6 +356,12 @@ export default function EstablishmentDetail() {
                 <div className="flex items-start justify-between mb-4">
                   <div className="flex-1">
                     <h1 className="text-3xl font-bold mb-2">{establishment.name}</h1>
+                    <div className="flex items-center gap-3 mb-2">
+                      <RatingBadge 
+                        average={(establishment as any).rating_average || 0} 
+                        count={(establishment as any).rating_count || 0} 
+                      />
+                    </div>
                     <div className="flex gap-2 flex-wrap">
                       <Badge variant="secondary">
                         <Tag className="h-3 w-3 mr-1" />
@@ -433,6 +441,13 @@ export default function EstablishmentDetail() {
                 </CardContent>
               </Card>
             )}
+
+            {/* Reviews Section */}
+            <ReviewSection 
+              establishmentId={id!} 
+              ratingAverage={(establishment as any).rating_average || 0}
+              ratingCount={(establishment as any).rating_count || 0}
+            />
           </div>
 
           <div className="space-y-4">

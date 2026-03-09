@@ -49,6 +49,7 @@ import { ProfileCompletionCard } from '@/components/business/ProfileCompletionCa
 import { InviteAdminDialog } from '@/components/business/InviteAdminDialog';
 import { HighlightRequestSection } from '@/components/business/HighlightRequestSection';
 import { useEstablishmentPhotos, useAddPhotos, useSetMainPhoto, useDeletePhoto } from '@/hooks/useEstablishmentPhotos';
+import { ReviewSection } from '@/components/ReviewSection';
 
 interface EstablishmentData {
   id: string;
@@ -601,7 +602,7 @@ export default function MyEstablishment() {
             <BusinessNotesSheet establishmentId={establishmentData.id} />
 
             <Tabs defaultValue="info" className="space-y-4">
-              <TabsList className="grid w-full grid-cols-5">
+              <TabsList className="grid w-full grid-cols-6">
                 <TabsTrigger value="info" className="text-xs md:text-sm">
                   <Building2 className="h-4 w-4 md:mr-2" />
                   <span className="hidden md:inline">Info</span>
@@ -610,6 +611,10 @@ export default function MyEstablishment() {
                   <Package className="h-4 w-4 md:mr-2" />
                   <span className="hidden md:inline">Produtos</span>
                   <Badge variant="secondary" className="ml-1 text-xs">{products.length}</Badge>
+                </TabsTrigger>
+                <TabsTrigger value="reviews" className="text-xs md:text-sm">
+                  <Star className="h-4 w-4 md:mr-2" />
+                  <span className="hidden md:inline">Avaliações</span>
                 </TabsTrigger>
                 <TabsTrigger value="functions" className="text-xs md:text-sm">
                   <Star className="h-4 w-4 md:mr-2" />
@@ -750,6 +755,22 @@ export default function MyEstablishment() {
                     )}
                   </CardContent>
                 </Card>
+              </TabsContent>
+
+              {/* Avaliações */}
+              <TabsContent value="reviews">
+                {!establishmentData.isFromRequest ? (
+                  <ReviewSection 
+                    establishmentId={establishmentData.id}
+                  />
+                ) : (
+                  <Card className="border-0 shadow-elevated rounded-2xl">
+                    <CardContent className="py-8 text-center">
+                      <Star className="h-10 w-10 text-muted-foreground mx-auto mb-3" />
+                      <p className="text-muted-foreground font-medium">Avaliações disponíveis após aprovação</p>
+                    </CardContent>
+                  </Card>
+                )}
               </TabsContent>
 
               {/* Funções */}

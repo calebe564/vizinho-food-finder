@@ -558,6 +558,8 @@ export type Database = {
           phone: string
           plan: string
           profile_image: string | null
+          rating_average: number | null
+          rating_count: number | null
           reference_point: string | null
           region: string | null
           schedule: string
@@ -595,6 +597,8 @@ export type Database = {
           phone: string
           plan?: string
           profile_image?: string | null
+          rating_average?: number | null
+          rating_count?: number | null
           reference_point?: string | null
           region?: string | null
           schedule: string
@@ -632,6 +636,8 @@ export type Database = {
           phone?: string
           plan?: string
           profile_image?: string | null
+          rating_average?: number | null
+          rating_count?: number | null
           reference_point?: string | null
           region?: string | null
           schedule?: string
@@ -923,6 +929,44 @@ export type Database = {
           success?: boolean | null
         }
         Relationships: []
+      }
+      reviews: {
+        Row: {
+          comment: string | null
+          created_at: string
+          establishment_id: string
+          id: string
+          rating: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          comment?: string | null
+          created_at?: string
+          establishment_id: string
+          id?: string
+          rating: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          comment?: string | null
+          created_at?: string
+          establishment_id?: string
+          id?: string
+          rating?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "reviews_establishment_id_fkey"
+            columns: ["establishment_id"]
+            isOneToOne: false
+            referencedRelation: "establishments"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       user_establishments: {
         Row: {

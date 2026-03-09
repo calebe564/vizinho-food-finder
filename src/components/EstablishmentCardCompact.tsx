@@ -3,6 +3,7 @@ import { MapPin, Star, Store } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { OpenClosedBadge, DeliveryBadge } from "@/components/StatusBadge";
+import { RatingBadge } from "@/components/StarRating";
 
 interface EstablishmentCardCompactProps {
   id: string;
@@ -18,6 +19,8 @@ interface EstablishmentCardCompactProps {
   state?: string | null;
   schedule?: string;
   hasDelivery?: boolean;
+  ratingAverage?: number;
+  ratingCount?: number;
 }
 
 const categoryLabels: Record<string, string> = {
@@ -70,6 +73,8 @@ export function EstablishmentCardCompact({
   state,
   schedule,
   hasDelivery,
+  ratingAverage,
+  ratingCount,
 }: EstablishmentCardCompactProps) {
   // Priority: mainPhotoUrl (from establishment_photos) > bannerImage > profileImage
   const displayImage = mainPhotoUrl || bannerImage || profileImage;
@@ -134,6 +139,13 @@ export function EstablishmentCardCompact({
           <p className="text-[10px] text-muted-foreground line-clamp-1 mb-1 md:text-xs lg:text-sm md:mb-1.5">
             {categoryLabels[category] || category}
           </p>
+
+          {/* Rating */}
+          {(ratingCount ?? 0) > 0 && (
+            <div className="mb-1 md:mb-1.5">
+              <RatingBadge average={ratingAverage ?? 0} count={ratingCount ?? 0} size="sm" />
+            </div>
+          )}
           
           {/* Location */}
           {locationText && (
