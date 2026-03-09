@@ -40,7 +40,9 @@ interface Establishment {
   banner_image: string | null;
   images: unknown;
   is_paid: boolean;
+  is_destaque: boolean;
   has_delivery: boolean | null;
+  plan: string;
 }
 
 interface ProductWithEstablishment {
