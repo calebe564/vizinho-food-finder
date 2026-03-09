@@ -236,6 +236,7 @@ export default function AdminDashboard() {
             <Route path="reivindicacoes" element={<AdminClaims />} />
             <Route path="destaques" element={<AdminHighlights />} />
             <Route path="usuarios" element={<AdminUsers />} />
+            <Route path="duplicadas" element={<AdminDuplicates />} />
           </Routes>
         </main>
       </div>
