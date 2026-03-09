@@ -424,10 +424,20 @@ export default function EstablishmentDetail() {
           >
             <Navigation className="h-4 w-4 text-primary mt-0.5 flex-shrink-0" />
             <div className="min-w-0">
-              <p className="text-[11px] text-muted-foreground">Localização</p>
-              <p className="text-xs font-medium text-foreground line-clamp-1">
-                {establishment.google_maps_link ? "Ver no Maps" : establishment.address}
+              <p className="text-[11px] text-muted-foreground">Endereço</p>
+              <p className="text-xs font-medium text-foreground leading-snug">
+                {establishment.address}
+                {establishment.neighborhood ? `, ${establishment.neighborhood}` : ""}
+                {establishment.city ? ` - ${establishment.city}` : ""}
               </p>
+              {establishment.google_maps_link && (
+                <button
+                  onClick={(e) => { e.stopPropagation(); window.open(establishment.google_maps_link!, '_blank'); }}
+                  className="text-[11px] text-primary hover:underline mt-0.5"
+                >
+                  Ver no Maps →
+                </button>
+              )}
             </div>
           </div>
         </div>
