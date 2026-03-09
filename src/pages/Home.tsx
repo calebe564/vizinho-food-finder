@@ -15,8 +15,8 @@ import { isOpenNow } from "@/lib/scheduleUtils";
 import { useMainPhotosMap } from "@/hooks/useEstablishmentPhotos";
 
 import { useUserLocation } from "@/contexts/LocationContext";
-import { useSearchParams } from "react-router-dom";
-import { Store, Loader2, Building2, Package, ChevronLeft, ChevronRight } from "lucide-react";
+import { Link, useSearchParams } from "react-router-dom";
+import { Store, Loader2, Building2, Package, ChevronLeft, ChevronRight, UtensilsCrossed, ShoppingCart, Croissant, MoreHorizontal, IceCream, Beef, Flame, Pizza, Beer, Coffee, Drumstick } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 interface Establishment {
@@ -91,9 +91,25 @@ interface LocationSelection {
   state: string;
 }
 
-// Função removida - agora usamos sortEstablishments de sortingUtils
-
 const ITEMS_PER_PAGE = 12;
+
+const quickCategories = [
+  { value: "todos", label: "Todos", icon: Store },
+  { value: "restaurante", label: "Restaurante", icon: UtensilsCrossed },
+  { value: "lanchonete", label: "Lanchonete", icon: UtensilsCrossed },
+  { value: "padaria", label: "Padaria", icon: Croissant },
+  { value: "supermercado", label: "Mercado", icon: ShoppingCart },
+  { value: "açougue", label: "Açougue", icon: Beef },
+  { value: "hortifruti", label: "Hortifruti", icon: ShoppingCart },
+  { value: "pizzaria", label: "Pizzaria", icon: Pizza },
+  { value: "hamburgueria", label: "Hamburgueria", icon: UtensilsCrossed },
+  { value: "bar", label: "Bar", icon: Beer },
+  { value: "cafe", label: "Café", icon: Coffee },
+  { value: "sorveteria", label: "Sorveteria", icon: IceCream },
+  { value: "acai", label: "Açaí", icon: IceCream },
+  { value: "espetinho", label: "Espetinho", icon: Drumstick },
+  { value: "outro", label: "Outro", icon: MoreHorizontal },
+];
 
 export default function Home() {
   const [searchParams] = useSearchParams();
@@ -112,7 +128,6 @@ export default function Home() {
   
   const { locationDetails, hasPermission } = useUserLocation();
 
-  // Update selectedLocation when locationFilter changes or from user's geolocation
   useEffect(() => {
     if (locationFilter) {
       setSelectedLocation({
@@ -140,7 +155,7 @@ export default function Home() {
         supabase.from("products").select("establishment_id, name, price"),
         supabase.from("advertisements").select("*").eq("active", true),
         supabase.from("products").select(`
-          id, name, price, description, image, unit, establishment_id,
+          id, name, price, description, image, unit, establishment_id, is_promotion, promotion_description,
           establishments!inner(id, name, category, profile_image, neighborhood, neighborhood_normalized, city, state, active, schedule, phone, whatsapp, has_delivery, address, google_maps_link)
         `).limit(500)
       ]);
@@ -149,7 +164,6 @@ export default function Home() {
       if (productsRes.data) setProducts(productsRes.data);
       if (adsRes.data) setAdvertisements(adsRes.data);
       
-      // Map products with establishment data
       if (productsDetailedRes.data) {
         const mappedProducts: ProductWithEstablishment[] = productsDetailedRes.data
           .filter((p: any) => p.establishments?.active)
@@ -189,18 +203,16 @@ export default function Home() {
   const getAdsByPosition = (position: string) => advertisements.filter(ad => ad.position === position);
   const getEstablishmentProducts = (establishmentId: string) => products.filter((p) => p.establishment_id === establishmentId);
 
-  // Filter products for product search mode - NOVA LÓGICA COM ORDENAÇÃO CORRETA
+  // Filter products for product search mode
   const filteredProducts = useMemo(() => {
     if (!searchTerm || searchMode !== "products") return [];
     
     const searchLower = searchTerm.toLowerCase();
     
-    // Filtrar por texto e categoria
     let filtered = allProductsWithEstablishment.filter((product) => {
       const matchesProduct = product.name.toLowerCase().includes(searchLower);
       const matchesCategoryFilter = category === "todos" || product.establishment_category === category;
       
-      // Aplicar filtro de localização se houver
       if (locationFilter) {
         const matchesLocation = matchesNormalizedNeighborhood(
           product.establishment_neighborhood_normalized,
@@ -215,18 +227,15 @@ export default function Home() {
       return matchesProduct && matchesCategoryFilter;
     });
     
-    // ORDENAR: Abertos primeiro, depois por proximidade
     return filtered
       .map(product => ({
         ...product,
         isEstablishmentOpen: isOpenNow(product.establishment_schedule),
       }))
       .sort((a, b) => {
-        // PRIORIDADE 1: Estabelecimentos abertos primeiro
         if (a.isEstablishmentOpen && !b.isEstablishmentOpen) return -1;
         if (!a.isEstablishmentOpen && b.isEstablishmentOpen) return 1;
         
-        // PRIORIDADE 2: Proximidade
         if (selectedLocation) {
           const aMatch = matchesNormalizedNeighborhood(a.establishment_neighborhood_normalized, selectedLocation.neighborhood) ||
                          areNeighborhoodsEquivalent(a.establishment_neighborhood || '', selectedLocation.neighborhood);
@@ -236,15 +245,11 @@ export default function Home() {
           if (!aMatch && bMatch) return 1;
         }
         
-        // PRIORIDADE 3: Nome
         return a.name.localeCompare(b.name, 'pt-BR');
       });
   }, [allProductsWithEstablishment, searchTerm, searchMode, category, selectedLocation, locationFilter]);
 
-  // Filter establishments - NOVA LÓGICA COM PRIORIDADES CORRETAS
-  // PRIORIDADE: 1. Localização filtrada → 2. Aberto/Fechado → 3. Categoria → 4. Proximidade
   const filteredEstablishments = useMemo(() => {
-    // PASSO 1: Aplicar filtro de localização PRIMEIRO
     let filtered = establishments;
     if (locationFilter) {
       filtered = establishments.filter(est => 
@@ -253,21 +258,17 @@ export default function Home() {
       );
     }
     
-    // PASSO 2: Aplicar filtro de busca e categoria
     filtered = filtered.filter((est) => {
       const searchLower = searchTerm.toLowerCase();
       
       if (!searchTerm) {
-        // Sem termo de busca - filtrar só por categoria (incluindo categorias secundárias)
         return matchesCategory(est, category);
       }
       
-      // Em modo produtos, não mostrar estabelecimentos
       if (searchMode === "products") {
         return false;
       }
       
-      // Buscar por nome ou categoria
       const matchesName = est.name.toLowerCase().includes(searchLower);
       const matchesCat = est.category.toLowerCase().includes(searchLower) ||
                          (est.category_2 && est.category_2.toLowerCase().includes(searchLower)) ||
@@ -277,21 +278,16 @@ export default function Home() {
       return (matchesName || matchesCat) && matchesCategoryFilter;
     });
     
-    // PASSO 3: Ordenar - Abertos primeiro, depois por proximidade/nome
     return filtered
       .map((est) => ({
         ...est,
         isOpen: isOpenNow(est.schedule),
       }))
       .sort((a, b) => {
-        // PRIORIDADE 1: Abertos sempre primeiro
         if (a.isOpen && !b.isOpen) return -1;
         if (!a.isOpen && b.isOpen) return 1;
-        
-        // PRIORIDADE 2: Pagos primeiro (dentro do mesmo status)
         if (a.is_paid !== b.is_paid) return a.is_paid ? -1 : 1;
         
-        // PRIORIDADE 3: Ordenação selecionada
         if (sortBy === "proximity" && selectedLocation) {
           const aMatch = matchesNormalizedNeighborhood(a.neighborhood_normalized, selectedLocation.neighborhood) ||
                          areNeighborhoodsEquivalent(a.neighborhood || '', selectedLocation.neighborhood);
@@ -307,20 +303,16 @@ export default function Home() {
       });
   }, [establishments, searchTerm, searchMode, category, sortBy, selectedLocation, locationFilter]);
 
-  // Check if we're in product search mode with results
   const showProductResults = searchMode === "products" && searchTerm && filteredProducts.length > 0;
   const showEstablishments = !showProductResults || !searchTerm;
 
-  // Fetch main photos for displayed establishments
   const displayedEstIds = useMemo(() => filteredEstablishments.map(e => e.id), [filteredEstablishments]);
   const { data: mainPhotosMap = {} } = useMainPhotosMap(displayedEstIds);
 
-  // Reset page when filters change
   useEffect(() => {
     setCurrentPage(1);
   }, [searchTerm, searchMode, category, sortBy]);
 
-  // Pagination calculations
   const itemsToPage = showProductResults ? filteredProducts : filteredEstablishments;
   const totalPages = Math.ceil(itemsToPage.length / ITEMS_PER_PAGE);
   const paginatedItems = useMemo(() => {
@@ -328,69 +320,103 @@ export default function Home() {
     return itemsToPage.slice(start, start + ITEMS_PER_PAGE);
   }, [itemsToPage, currentPage]);
 
-  return (
-    <div className="min-h-screen bg-background">
-      <Header />
-      <main className="container py-4 md:py-6 space-y-4 md:space-y-6">
-        <AdvertisementBanner advertisements={getAdsByPosition("top")} />
+  const renderPagination = () => {
+    if (totalPages <= 1) return null;
+    return (
+      <div className="flex items-center justify-center gap-2 mt-6 pb-2">
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+          disabled={currentPage === 1}
+          className="gap-1 rounded-full h-9"
+        >
+          <ChevronLeft className="h-4 w-4" />
+          <span className="hidden sm:inline">Anterior</span>
+        </Button>
         
-        {/* Hero Carousel */}
-        <div className="animate-fade-in">
-          <HeroCarousel />
-        </div>
-
-        {/* Search Bar with Toggle - Desktop: compact single row */}
-        <div className="animate-fade-in" style={{ animationDelay: "0.1s" }}>
-          {/* Mobile layout - stacked */}
-          <div className="md:hidden space-y-3">
-            <SearchBar value={searchTerm} onChange={setSearchTerm} />
+        <div className="flex items-center gap-1">
+          {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+            let pageNum: number;
+            if (totalPages <= 5) {
+              pageNum = i + 1;
+            } else if (currentPage <= 3) {
+              pageNum = i + 1;
+            } else if (currentPage >= totalPages - 2) {
+              pageNum = totalPages - 4 + i;
+            } else {
+              pageNum = currentPage - 2 + i;
+            }
             
-            {/* Search Mode Toggle */}
-            <div className="flex items-center justify-center gap-2">
+            return (
+              <Button
+                key={pageNum}
+                variant={currentPage === pageNum ? "default" : "outline"}
+                size="sm"
+                onClick={() => setCurrentPage(pageNum)}
+                className="w-9 h-9 p-0 rounded-full"
+              >
+                {pageNum}
+              </Button>
+            );
+          })}
+        </div>
+        
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+          disabled={currentPage === totalPages}
+          className="gap-1 rounded-full h-9"
+        >
+          <span className="hidden sm:inline">Próxima</span>
+          <ChevronRight className="h-4 w-4" />
+        </Button>
+      </div>
+    );
+  };
+
+  return (
+    <div className="min-h-screen bg-background flex flex-col">
+      <Header />
+      
+      {/* Search section - sticky below header on mobile, like iFood */}
+      <div className="sticky top-14 md:top-16 z-40 bg-background border-b border-border">
+        <div className="container px-3 md:px-4 py-2 md:py-3">
+          <div className="flex items-center gap-2 md:gap-3">
+            <div className="flex-1">
+              <SearchBar value={searchTerm} onChange={setSearchTerm} />
+            </div>
+            {/* Search mode toggle - compact pills */}
+            <div className="hidden md:flex items-center gap-1.5">
               <Button
                 variant={searchMode === "products" ? "default" : "outline"}
                 size="sm"
                 onClick={() => setSearchMode("products")}
-                className="rounded-full gap-2"
+                className="rounded-full gap-1.5 h-9 px-3 text-xs"
               >
-                <Package className="h-4 w-4" />
-                Buscar Produtos
+                <Package className="h-3.5 w-3.5" />
+                Produtos
               </Button>
               <Button
                 variant={searchMode === "companies" ? "default" : "outline"}
                 size="sm"
                 onClick={() => setSearchMode("companies")}
-                className="rounded-full gap-2"
+                className="rounded-full gap-1.5 h-9 px-3 text-xs"
               >
-                <Building2 className="h-4 w-4" />
-                Buscar Empresas
+                <Building2 className="h-3.5 w-3.5" />
+                Empresas
               </Button>
             </div>
-            
-            {/* Filters */}
-            <FilterSheet 
-              category={category} 
-              onCategoryChange={setCategory} 
-              sortBy={sortBy} 
-              onSortChange={setSortBy}
-              locationFilter={locationFilter}
-              onLocationChange={setLocationFilter}
-            />
           </div>
-
-          {/* Desktop layout - compact single row */}
-          <div className="hidden md:flex md:items-center md:gap-3 md:flex-wrap">
-            {/* Search bar - smaller */}
-            <div className="flex-1 min-w-[200px] max-w-md">
-              <SearchBar value={searchTerm} onChange={setSearchTerm} />
-            </div>
-            
-            {/* Search mode buttons */}
+          
+          {/* Mobile search mode toggle */}
+          <div className="flex md:hidden items-center justify-center gap-2 mt-2">
             <Button
               variant={searchMode === "products" ? "default" : "outline"}
               size="sm"
               onClick={() => setSearchMode("products")}
-              className="rounded-full gap-1.5 h-9 px-3 text-sm"
+              className="rounded-full gap-1.5 h-8 px-3 text-xs flex-1 max-w-[160px]"
             >
               <Package className="h-3.5 w-3.5" />
               Produtos
@@ -399,13 +425,66 @@ export default function Home() {
               variant={searchMode === "companies" ? "default" : "outline"}
               size="sm"
               onClick={() => setSearchMode("companies")}
-              className="rounded-full gap-1.5 h-9 px-3 text-sm"
+              className="rounded-full gap-1.5 h-8 px-3 text-xs flex-1 max-w-[160px]"
             >
               <Building2 className="h-3.5 w-3.5" />
               Empresas
             </Button>
-            
-            {/* Filter buttons inline */}
+          </div>
+        </div>
+      </div>
+
+      <main className="flex-1">
+        {/* Category quick scroll - iFood style */}
+        <div className="bg-background border-b border-border">
+          <div className="container px-0 md:px-4">
+            <div className="flex overflow-x-auto scrollbar-thin gap-0 py-2 md:py-3 px-3 md:px-0">
+              {quickCategories.map((cat) => {
+                const Icon = cat.icon;
+                const isActive = category === cat.value;
+                return (
+                  <button
+                    key={cat.value}
+                    onClick={() => setCategory(cat.value)}
+                    className={`flex flex-col items-center gap-1 min-w-[64px] md:min-w-[72px] px-2 py-1.5 rounded-xl transition-all flex-shrink-0 ${
+                      isActive
+                        ? "text-primary"
+                        : "text-muted-foreground hover:text-foreground"
+                    }`}
+                  >
+                    <div className={`w-10 h-10 md:w-12 md:h-12 rounded-full flex items-center justify-center transition-all ${
+                      isActive
+                        ? "bg-primary text-primary-foreground shadow-button"
+                        : "bg-secondary"
+                    }`}>
+                      <Icon className="h-5 w-5 md:h-6 md:w-6" />
+                    </div>
+                    <span className={`text-[10px] md:text-xs font-medium leading-tight text-center line-clamp-1 ${
+                      isActive ? "text-primary font-semibold" : ""
+                    }`}>
+                      {cat.label}
+                    </span>
+                    {isActive && (
+                      <div className="w-5 h-0.5 rounded-full bg-primary" />
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+
+        <div className="container px-3 md:px-4 py-3 md:py-4 space-y-4 md:space-y-5">
+          {/* Top ads */}
+          <AdvertisementBanner advertisements={getAdsByPosition("top")} />
+          
+          {/* Hero Carousel - highlights */}
+          <div className="animate-fade-in">
+            <HeroCarousel />
+          </div>
+
+          {/* Filter pills row */}
+          <div className="animate-fade-in" style={{ animationDelay: "0.1s" }}>
             <FilterSheet 
               category={category} 
               onCategoryChange={setCategory} 
@@ -415,141 +494,93 @@ export default function Home() {
               onLocationChange={setLocationFilter}
             />
           </div>
-        </div>
 
-        {/* Results Section */}
-        <div className="animate-fade-in" style={{ animationDelay: "0.2s" }}>
-          {/* Header */}
-          <div className="flex items-center gap-2 mb-4">
-            {showProductResults ? (
-              <>
-                <Package className="h-5 w-5 text-primary" />
-                <h2 className="text-lg md:text-xl font-bold text-foreground">
-                  {loading ? "Carregando..." : `${filteredProducts.length} ${filteredProducts.length === 1 ? 'produto' : 'produtos'}`}
-                </h2>
-              </>
-            ) : (
-              <>
-                <Store className="h-5 w-5 text-primary" />
-                <h2 className="text-lg md:text-xl font-bold text-foreground">
-                  {loading ? "Carregando..." : `${filteredEstablishments.length} ${filteredEstablishments.length === 1 ? 'empresa' : 'empresas'}`}
-                </h2>
-              </>
-            )}
-          </div>
-
-          {loading ? (
-            <div className="flex items-center justify-center py-16">
-              <Loader2 className="h-8 w-8 animate-spin text-accent" />
-            </div>
-          ) : showProductResults ? (
-            /* Product Results */
-            filteredProducts.length === 0 ? (
-              <div className="text-center py-16 bg-secondary rounded-2xl">
-                <Package className="h-14 w-14 mx-auto text-muted-foreground mb-3" />
-                <p className="text-lg font-medium text-muted-foreground">Nenhum produto encontrado</p>
-                <p className="text-sm text-muted-foreground mt-1">Tente buscar por outro termo</p>
-              </div>
-            ) : (
-              <>
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {(paginatedItems as ProductWithEstablishment[]).map((product) => (
-                    <ProductCardExtended
-                      key={product.id}
-                      id={product.id}
-                      name={product.name}
-                      price={product.price}
-                      description={product.description}
-                      image={product.image}
-                      unit={product.unit}
-                      isPromotion={product.is_promotion}
-                      promotionDescription={product.promotion_description}
-                      establishment={{
-                        id: product.establishment_id,
-                        name: product.establishment_name,
-                        category: product.establishment_category,
-                        profileImage: product.establishment_image,
-                        neighborhood: product.establishment_neighborhood,
-                        city: product.establishment_city,
-                        state: product.establishment_state,
-                        schedule: product.establishment_schedule,
-                        phone: product.establishment_phone || undefined,
-                        whatsapp: product.establishment_whatsapp || undefined,
-                        hasDelivery: product.establishment_has_delivery ?? false,
-                        address: product.establishment_address || undefined,
-                        googleMapsLink: product.establishment_google_maps_link,
-                      }}
-                    />
-                  ))}
-                </div>
-
-                {/* Pagination */}
-                {totalPages > 1 && (
-                  <div className="flex items-center justify-center gap-2 mt-6">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
-                      disabled={currentPage === 1}
-                      className="gap-1"
-                    >
-                      <ChevronLeft className="h-4 w-4" />
-                      <span className="hidden sm:inline">Anterior</span>
-                    </Button>
-                    
-                    <div className="flex items-center gap-1">
-                      {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-                        let pageNum: number;
-                        if (totalPages <= 5) {
-                          pageNum = i + 1;
-                        } else if (currentPage <= 3) {
-                          pageNum = i + 1;
-                        } else if (currentPage >= totalPages - 2) {
-                          pageNum = totalPages - 4 + i;
-                        } else {
-                          pageNum = currentPage - 2 + i;
-                        }
-                        
-                        return (
-                          <Button
-                            key={pageNum}
-                            variant={currentPage === pageNum ? "default" : "outline"}
-                            size="sm"
-                            onClick={() => setCurrentPage(pageNum)}
-                            className="w-9 h-9 p-0"
-                          >
-                            {pageNum}
-                          </Button>
-                        );
-                      })}
-                    </div>
-                    
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
-                      disabled={currentPage === totalPages}
-                      className="gap-1"
-                    >
-                      <span className="hidden sm:inline">Próxima</span>
-                      <ChevronRight className="h-4 w-4" />
-                    </Button>
-                  </div>
+          {/* Results Section */}
+          <div className="animate-fade-in" style={{ animationDelay: "0.15s" }}>
+            {/* Section header */}
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center gap-2">
+                {showProductResults ? (
+                  <>
+                    <Package className="h-5 w-5 text-primary" />
+                    <h2 className="text-base md:text-lg font-bold text-foreground">
+                      {loading ? "Carregando..." : `${filteredProducts.length} ${filteredProducts.length === 1 ? 'produto encontrado' : 'produtos encontrados'}`}
+                    </h2>
+                  </>
+                ) : (
+                  <>
+                    <Store className="h-5 w-5 text-primary" />
+                    <h2 className="text-base md:text-lg font-bold text-foreground">
+                      {loading ? "Carregando..." : `${filteredEstablishments.length} ${filteredEstablishments.length === 1 ? 'empresa' : 'empresas'}`}
+                    </h2>
+                  </>
                 )}
-              </>
-            )
-          ) : (
-            /* Establishment Results */
-            filteredEstablishments.length === 0 ? (
-              <div className="text-center py-16 bg-secondary rounded-2xl">
-                <Store className="h-14 w-14 mx-auto text-muted-foreground mb-3" />
-                <p className="text-lg font-medium text-muted-foreground">Nenhuma empresa encontrada</p>
-                <p className="text-sm text-muted-foreground mt-1">Tente ajustar os filtros</p>
               </div>
+              {!loading && filteredEstablishments.length > ITEMS_PER_PAGE && !showProductResults && (
+                <Link to="/estabelecimentos" className="text-xs md:text-sm font-medium text-primary hover:underline">
+                  Ver todos
+                </Link>
+              )}
+            </div>
+
+            {loading ? (
+              <div className="flex flex-col items-center justify-center py-20 gap-3">
+                <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                <p className="text-sm text-muted-foreground">Carregando...</p>
+              </div>
+            ) : showProductResults ? (
+              filteredProducts.length === 0 ? (
+                <div className="text-center py-16 bg-secondary/50 rounded-2xl">
+                  <Package className="h-12 w-12 mx-auto text-muted-foreground/50 mb-3" />
+                  <p className="text-base font-medium text-muted-foreground">Nenhum produto encontrado</p>
+                  <p className="text-sm text-muted-foreground/70 mt-1">Tente buscar por outro termo</p>
+                </div>
+              ) : (
+                <>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-2.5 md:gap-3">
+                    {(paginatedItems as ProductWithEstablishment[]).map((product) => (
+                      <ProductCardExtended
+                        key={product.id}
+                        id={product.id}
+                        name={product.name}
+                        price={product.price}
+                        description={product.description}
+                        image={product.image}
+                        unit={product.unit}
+                        isPromotion={product.is_promotion}
+                        promotionDescription={product.promotion_description}
+                        establishment={{
+                          id: product.establishment_id,
+                          name: product.establishment_name,
+                          category: product.establishment_category,
+                          profileImage: product.establishment_image,
+                          neighborhood: product.establishment_neighborhood,
+                          city: product.establishment_city,
+                          state: product.establishment_state,
+                          schedule: product.establishment_schedule,
+                          phone: product.establishment_phone || undefined,
+                          whatsapp: product.establishment_whatsapp || undefined,
+                          hasDelivery: product.establishment_has_delivery ?? false,
+                          address: product.establishment_address || undefined,
+                          googleMapsLink: product.establishment_google_maps_link,
+                        }}
+                      />
+                    ))}
+                  </div>
+                  {renderPagination()}
+                </>
+              )
             ) : (
-              <>
-                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 md:gap-4">
-                  {(paginatedItems as typeof filteredEstablishments).map((est) => (
+              filteredEstablishments.length === 0 ? (
+                <div className="text-center py-16 bg-secondary/50 rounded-2xl">
+                  <Store className="h-12 w-12 mx-auto text-muted-foreground/50 mb-3" />
+                  <p className="text-base font-medium text-muted-foreground">Nenhuma empresa encontrada</p>
+                  <p className="text-sm text-muted-foreground/70 mt-1">Tente ajustar os filtros</p>
+                </div>
+              ) : (
+                <>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-2.5 md:gap-3">
+                    {(paginatedItems as typeof filteredEstablishments).map((est) => (
                       <EstablishmentCardCompact 
                         key={est.id} 
                         id={est.id} 
@@ -567,67 +598,14 @@ export default function Home() {
                         ratingAverage={(est as any).rating_average ?? 0}
                         ratingCount={(est as any).rating_count ?? 0}
                       />
-                  ))}
-                </div>
-
-                {/* Pagination */}
-                {totalPages > 1 && (
-                  <div className="flex items-center justify-center gap-2 mt-6">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
-                      disabled={currentPage === 1}
-                      className="gap-1"
-                    >
-                      <ChevronLeft className="h-4 w-4" />
-                      <span className="hidden sm:inline">Anterior</span>
-                    </Button>
-                    
-                    <div className="flex items-center gap-1">
-                      {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-                        let pageNum: number;
-                        if (totalPages <= 5) {
-                          pageNum = i + 1;
-                        } else if (currentPage <= 3) {
-                          pageNum = i + 1;
-                        } else if (currentPage >= totalPages - 2) {
-                          pageNum = totalPages - 4 + i;
-                        } else {
-                          pageNum = currentPage - 2 + i;
-                        }
-                        
-                        return (
-                          <Button
-                            key={pageNum}
-                            variant={currentPage === pageNum ? "default" : "outline"}
-                            size="sm"
-                            onClick={() => setCurrentPage(pageNum)}
-                            className="w-9 h-9 p-0"
-                          >
-                            {pageNum}
-                          </Button>
-                        );
-                      })}
-                    </div>
-                    
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
-                      disabled={currentPage === totalPages}
-                      className="gap-1"
-                    >
-                      <span className="hidden sm:inline">Próxima</span>
-                      <ChevronRight className="h-4 w-4" />
-                    </Button>
+                    ))}
                   </div>
-                )}
-              </>
-            )
-          )}
+                  {renderPagination()}
+                </>
+              )
+            )}
+          </div>
         </div>
-        
       </main>
       <Footer />
     </div>

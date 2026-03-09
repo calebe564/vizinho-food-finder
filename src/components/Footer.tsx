@@ -1,75 +1,73 @@
 import { Link } from "react-router-dom";
 import { MessageCircle, Mail, MapPin } from "lucide-react";
-import logo from "@/assets/logo.png";
 
 export function Footer() {
   const currentYear = new Date().getFullYear();
 
   return (
-    <footer className="border-t bg-background">
-      <div className="container px-4 py-12">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
+    <footer className="border-t border-border bg-card mt-auto">
+      <div className="container px-3 md:px-4 py-8 md:py-10">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-6 md:gap-8">
           {/* Logo e Sobre */}
-          <div className="col-span-1 md:col-span-2">
-            <Link to="/" className="flex items-center gap-2 mb-4">
-              <img src={logo} alt="Comércio Vizinho" className="h-12 w-12 rounded-full object-cover" />
-              <span className="font-bold text-xl">Comércio Vizinho</span>
+          <div className="col-span-2">
+            <Link to="/" className="flex items-center gap-1.5 mb-3">
+              <MapPin className="h-5 w-5 text-primary" />
+              <span className="font-bold text-base">Comércio Vizinho</span>
             </Link>
-            <p className="text-sm text-muted-foreground mb-4">
+            <p className="text-xs md:text-sm text-muted-foreground mb-3 max-w-sm leading-relaxed">
               Conectando você aos melhores estabelecimentos do seu bairro. 
-              Descubra comércios locais, apoie a economia da sua região e 
-              encontre tudo o que precisa perto de você.
+              Descubra comércios locais e apoie a economia da sua região.
             </p>
-            <div className="flex gap-4">
+            <div className="flex gap-3">
               <a
                 href="https://wa.me/5531999999999"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-muted-foreground hover:text-primary transition-colors"
+                className="w-8 h-8 rounded-full bg-secondary flex items-center justify-center text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors"
               >
-                <MessageCircle className="h-5 w-5" />
+                <MessageCircle className="h-4 w-4" />
               </a>
               <a
                 href="mailto:contato@comerciovizinho.com"
-                className="text-muted-foreground hover:text-primary transition-colors"
+                className="w-8 h-8 rounded-full bg-secondary flex items-center justify-center text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors"
               >
-                <Mail className="h-5 w-5" />
+                <Mail className="h-4 w-4" />
               </a>
             </div>
           </div>
 
           {/* Links Rápidos */}
           <div>
-            <h3 className="font-semibold mb-4">Links Rápidos</h3>
+            <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-3">Links</h3>
             <ul className="space-y-2 text-sm">
               <li>
-                <Link to="/" className="text-muted-foreground hover:text-primary transition-colors">
+                <Link to="/" className="text-foreground/70 hover:text-primary transition-colors text-xs md:text-sm">
                   Início
                 </Link>
               </li>
               <li>
-                <Link to="/categorias" className="text-muted-foreground hover:text-primary transition-colors">
+                <Link to="/categorias" className="text-foreground/70 hover:text-primary transition-colors text-xs md:text-sm">
                   Categorias
                 </Link>
               </li>
               <li>
-                <Link to="/estabelecimentos" className="text-muted-foreground hover:text-primary transition-colors">
-                  Todas as Empresas
+                <Link to="/estabelecimentos" className="text-foreground/70 hover:text-primary transition-colors text-xs md:text-sm">
+                  Empresas
                 </Link>
               </li>
               <li>
-                <Link to="/sobre" className="text-muted-foreground hover:text-primary transition-colors">
+                <Link to="/sobre" className="text-foreground/70 hover:text-primary transition-colors text-xs md:text-sm">
                   Sobre
                 </Link>
               </li>
               <li>
-                <Link to="/termos-de-uso" className="text-muted-foreground hover:text-primary transition-colors">
-                  Termos e Responsabilidades
+                <Link to="/termos-de-uso" className="text-foreground/70 hover:text-primary transition-colors text-xs md:text-sm">
+                  Termos
                 </Link>
               </li>
               <li>
-                <Link to="/politica-de-privacidade" className="text-muted-foreground hover:text-primary transition-colors">
-                  Política de Privacidade
+                <Link to="/politica-de-privacidade" className="text-foreground/70 hover:text-primary transition-colors text-xs md:text-sm">
+                  Privacidade
                 </Link>
               </li>
             </ul>
@@ -77,11 +75,16 @@ export function Footer() {
 
           {/* Para Empresas */}
           <div>
-            <h3 className="font-semibold mb-4">Para Empresas</h3>
+            <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-3">Empresas</h3>
             <ul className="space-y-2 text-sm">
               <li>
-                <Link to="/cadastrar" className="text-muted-foreground hover:text-primary transition-colors">
-                  Cadastrar Empresa
+                <Link to="/cadastrar" className="text-foreground/70 hover:text-primary transition-colors text-xs md:text-sm">
+                  Cadastrar
+                </Link>
+              </li>
+              <li>
+                <Link to="/reivindicar-empresa" className="text-foreground/70 hover:text-primary transition-colors text-xs md:text-sm">
+                  Reivindicar
                 </Link>
               </li>
             </ul>
@@ -89,10 +92,9 @@ export function Footer() {
         </div>
 
         {/* Copyright */}
-        <div className="border-t mt-8 pt-8 text-center text-sm text-muted-foreground">
-          <p>© {currentYear} Comércio Vizinho. Todos os direitos reservados.</p>
-          <p className="mt-2">
-            Desenvolvido para fortalecer o comércio local e conectar comunidades.
+        <div className="border-t border-border mt-6 pt-6 text-center">
+          <p className="text-xs text-muted-foreground">
+            © {currentYear} Comércio Vizinho · Todos os direitos reservados
           </p>
         </div>
       </div>
