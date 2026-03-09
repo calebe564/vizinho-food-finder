@@ -331,6 +331,17 @@ export function Header() {
                     <span className="text-sm font-medium">Reivindicar Empresa</span>
                   </Link>
                 )}
+
+                {user && (
+                  <Link
+                    to="/planos"
+                    onClick={() => setIsOpen(false)}
+                    className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-secondary transition-colors"
+                  >
+                    <Crown className="h-4 w-4 text-muted-foreground" />
+                    <span className="text-sm font-medium">Meu Plano</span>
+                  </Link>
+                )}
                 
                 {/* AI Assistant - Mobile */}
                 <AIChatSheet trigger={
