@@ -362,6 +362,16 @@ export default function Home() {
           })}
         </div>
         
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+          disabled={currentPage === totalPages}
+          className="gap-1 rounded-full h-9"
+        >
+          <span className="hidden sm:inline">Próxima</span>
+          <ChevronRight className="h-4 w-4" />
+        </Button>
       </div>
     );
   };
