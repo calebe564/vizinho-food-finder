@@ -35,6 +35,8 @@ export function ProductCard({
   variationCount = 0,
   minPrice,
   maxPrice,
+  isPromotion,
+  promotionDescription,
 }: ProductCardProps) {
   const { isProductFavorite, toggleProductFavorite } = useFavorites();
   const { isAdmin } = useUserRole();
