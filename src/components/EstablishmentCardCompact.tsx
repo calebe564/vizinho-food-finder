@@ -139,6 +139,13 @@ export function EstablishmentCardCompact({
           <p className="text-[10px] text-muted-foreground line-clamp-1 mb-1 md:text-xs lg:text-sm md:mb-1.5">
             {categoryLabels[category] || category}
           </p>
+
+          {/* Rating */}
+          {(ratingCount ?? 0) > 0 && (
+            <div className="mb-1 md:mb-1.5">
+              <RatingBadge average={ratingAverage ?? 0} count={ratingCount ?? 0} size="sm" />
+            </div>
+          )}
           
           {/* Location */}
           {locationText && (
