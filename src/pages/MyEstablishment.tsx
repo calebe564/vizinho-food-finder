@@ -48,6 +48,7 @@ import { BusinessNotesSheet } from '@/components/business/BusinessNotesSheet';
 import { ProfileCompletionCard } from '@/components/business/ProfileCompletionCard';
 import { InviteAdminDialog } from '@/components/business/InviteAdminDialog';
 import { HighlightRequestSection } from '@/components/business/HighlightRequestSection';
+import { PromotionManagementSection } from '@/components/business/PromotionManagementSection';
 import { useEstablishmentPhotos, useAddPhotos, useSetMainPhoto, useDeletePhoto } from '@/hooks/useEstablishmentPhotos';
 import { ReviewSection } from '@/components/ReviewSection';
 
