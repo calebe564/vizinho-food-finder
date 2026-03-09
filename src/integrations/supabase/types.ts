@@ -1191,6 +1191,7 @@ export type Database = {
       }
       check_email_exists: { Args: { _email: string }; Returns: boolean }
       cleanup_admin_rate_limits: { Args: never; Returns: number }
+      cleanup_expired_promotions: { Args: never; Returns: number }
       create_admin_notification: {
         Args: {
           _descricao?: string
