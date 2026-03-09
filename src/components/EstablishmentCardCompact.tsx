@@ -73,6 +73,8 @@ export function EstablishmentCardCompact({
   state,
   schedule,
   hasDelivery,
+  ratingAverage,
+  ratingCount,
 }: EstablishmentCardCompactProps) {
   // Priority: mainPhotoUrl (from establishment_photos) > bannerImage > profileImage
   const displayImage = mainPhotoUrl || bannerImage || profileImage;
