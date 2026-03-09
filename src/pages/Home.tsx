@@ -130,7 +130,16 @@ export default function Home() {
   const [locationFilter, setLocationFilter] = useState<LocationFilter | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   
-  const { locationDetails, hasPermission } = useUserLocation();
+  const { data: planConfigs } = usePlanConfigs();
+  const planWeights: PlanWeight[] = useMemo(() => {
+    if (!planConfigs) return [];
+    return planConfigs.map(c => ({
+      plan_name: c.plan_name,
+      visibility_weight: c.visibility_weight,
+      promotion_boost: c.promotion_boost,
+    }));
+  }, [planConfigs]);
+
 
   useEffect(() => {
     if (locationFilter) {
