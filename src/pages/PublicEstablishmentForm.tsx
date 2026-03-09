@@ -12,7 +12,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
-import { Building2, Upload, CheckCircle, Plus, Trash2, Star, MapPin, Phone, Package, Image, Loader2, Truck } from "lucide-react";
+import { Building2, Upload, CheckCircle, Plus, Trash2, Star, MapPin, Phone, Package, Image, Loader2, Truck, AlertTriangle } from "lucide-react";
 import { Database } from "@/integrations/supabase/types";
 import { useAuth } from "@/contexts/AuthContext";
 import { useUserRole } from "@/hooks/useUserRole";
