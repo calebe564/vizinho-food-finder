@@ -261,6 +261,8 @@ export default function Favorites() {
                             state={establishment.state}
                             schedule={establishment.schedule}
                             hasDelivery={establishment.has_delivery ?? false}
+                            ratingAverage={(establishment as any).rating_average ?? 0}
+                            ratingCount={(establishment as any).rating_count ?? 0}
                           />
                         </div>
                     ))}

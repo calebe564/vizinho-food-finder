@@ -558,6 +558,8 @@ export default function Home() {
                         state={est.state}
                         schedule={est.schedule}
                         hasDelivery={est.has_delivery ?? false}
+                        ratingAverage={(est as any).rating_average ?? 0}
+                        ratingCount={(est as any).rating_count ?? 0}
                       />
                   ))}
                 </div>
