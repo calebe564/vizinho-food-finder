@@ -441,6 +441,13 @@ export default function EstablishmentDetail() {
                 </CardContent>
               </Card>
             )}
+
+            {/* Reviews Section */}
+            <ReviewSection 
+              establishmentId={id!} 
+              ratingAverage={(establishment as any).rating_average || 0}
+              ratingCount={(establishment as any).rating_count || 0}
+            />
           </div>
 
           <div className="space-y-4">
