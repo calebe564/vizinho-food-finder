@@ -67,6 +67,8 @@ export function ProductCardExtended({
   description,
   image,
   unit,
+  isPromotion,
+  promotionDescription,
   establishment,
 }: ProductCardExtendedProps) {
   const formatPrice = (value: number) => {
