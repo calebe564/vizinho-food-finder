@@ -60,6 +60,12 @@ export function HeroCarousel() {
   const [isTransitioning, setIsTransitioning] = useState(false);
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
   const { coordinates } = useUserLocation();
+  const { data: planConfigs } = usePlanConfigs();
+  const planWeights: PlanWeight[] = (planConfigs || []).map(c => ({
+    plan_name: c.plan_name,
+    visibility_weight: c.visibility_weight,
+    promotion_boost: c.promotion_boost,
+  }));
 
   useEffect(() => {
     fetchApprovedHighlights();
