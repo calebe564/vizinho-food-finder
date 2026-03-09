@@ -140,6 +140,7 @@ export default function Home() {
     }));
   }, [planConfigs]);
 
+  const { locationDetails, hasPermission } = useUserLocation();
 
   useEffect(() => {
     if (locationFilter) {
