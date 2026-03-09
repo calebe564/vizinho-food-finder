@@ -33,7 +33,13 @@ import {
   User,
   Star,
   CheckCircle2,
-  ArrowLeftRight
+  ArrowLeftRight,
+  Megaphone,
+  Sparkles,
+  BarChart3,
+  StickyNote,
+  ChevronRight,
+  Crown
 } from 'lucide-react';
 import {
   Dialog,
