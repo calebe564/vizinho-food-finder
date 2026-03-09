@@ -92,6 +92,7 @@ function App() {
                               <Route path="/suporte" element={<UserConversations />} />
                               <Route path="/suporte/:id" element={<UserChat />} />
                               <Route path="/cadastrar" element={<PublicEstablishmentForm />} />
+                              <Route path="/planos" element={<Plans />} />
                               <Route path="/informacoes" element={<Information />} />
                               <Route path="/sobre" element={<About />} />
                               <Route path="/termos-de-uso" element={<TermsOfUse />} />
