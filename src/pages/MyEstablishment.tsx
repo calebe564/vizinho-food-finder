@@ -601,7 +601,7 @@ export default function MyEstablishment() {
             <BusinessNotesSheet establishmentId={establishmentData.id} />
 
             <Tabs defaultValue="info" className="space-y-4">
-              <TabsList className="grid w-full grid-cols-5">
+              <TabsList className="grid w-full grid-cols-6">
                 <TabsTrigger value="info" className="text-xs md:text-sm">
                   <Building2 className="h-4 w-4 md:mr-2" />
                   <span className="hidden md:inline">Info</span>
@@ -610,6 +610,10 @@ export default function MyEstablishment() {
                   <Package className="h-4 w-4 md:mr-2" />
                   <span className="hidden md:inline">Produtos</span>
                   <Badge variant="secondary" className="ml-1 text-xs">{products.length}</Badge>
+                </TabsTrigger>
+                <TabsTrigger value="reviews" className="text-xs md:text-sm">
+                  <Star className="h-4 w-4 md:mr-2" />
+                  <span className="hidden md:inline">Avaliações</span>
                 </TabsTrigger>
                 <TabsTrigger value="functions" className="text-xs md:text-sm">
                   <Star className="h-4 w-4 md:mr-2" />
