@@ -220,6 +220,18 @@ export default function AdminDashboard() {
                 </Button>
               </Link>
             )}
+
+            {canApproveEstablishments && (
+              <Link to="/admin/dashboard/avaliacoes">
+                <Button 
+                  variant={isActive("/admin/dashboard/avaliacoes") ? "default" : "ghost"} 
+                  className="w-full justify-start"
+                >
+                  <MessageCircle className="mr-2 h-4 w-4" />
+                  Avaliações
+                </Button>
+              </Link>
+            )}
           </nav>
         </aside>
 
