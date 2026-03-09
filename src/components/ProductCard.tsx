@@ -2,7 +2,7 @@ import { Link } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Heart, ImageIcon } from "lucide-react";
+import { Heart, ImageIcon, Flame } from "lucide-react";
 import { useFavorites } from "@/hooks/useFavorites";
 import { useUserRole } from "@/hooks/useUserRole";
 import { toast } from "sonner";
