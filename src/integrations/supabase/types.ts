@@ -936,6 +936,8 @@ export type Database = {
           created_at: string
           establishment_id: string
           id: string
+          owner_reply: string | null
+          owner_reply_created_at: string | null
           rating: number
           updated_at: string
           user_id: string
@@ -945,6 +947,8 @@ export type Database = {
           created_at?: string
           establishment_id: string
           id?: string
+          owner_reply?: string | null
+          owner_reply_created_at?: string | null
           rating: number
           updated_at?: string
           user_id: string
@@ -954,6 +958,8 @@ export type Database = {
           created_at?: string
           establishment_id?: string
           id?: string
+          owner_reply?: string | null
+          owner_reply_created_at?: string | null
           rating?: number
           updated_at?: string
           user_id?: string
