@@ -150,6 +150,14 @@ export function Header() {
                   </Link>
                 </DropdownMenuItem>
               )}
+
+              {user && (
+                <DropdownMenuItem asChild>
+                  <Link to="/planos" className="flex items-center gap-2 cursor-pointer">
+                    <Crown className="h-4 w-4" />
+                    Meu Plano
+                  </Link>
+                </DropdownMenuItem>
               
               <DropdownMenuItem asChild onSelect={(e) => e.preventDefault()}>
                 <AIChatSheet trigger={
