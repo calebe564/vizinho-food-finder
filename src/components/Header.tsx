@@ -158,6 +158,7 @@ export function Header() {
                     Meu Plano
                   </Link>
                 </DropdownMenuItem>
+              )}
               
               <DropdownMenuItem asChild onSelect={(e) => e.preventDefault()}>
                 <AIChatSheet trigger={
