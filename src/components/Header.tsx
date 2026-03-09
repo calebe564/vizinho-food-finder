@@ -1,5 +1,5 @@
 import { Link, useNavigate } from "react-router-dom";
-import { Home, Building2, Store, Menu, Heart, LogIn, LogOut, User, Briefcase, UserPlus, X, MapPin, MoreVertical, MessageSquare, ClipboardCheck, Bot } from "lucide-react";
+import { Home, Building2, Store, Menu, Heart, LogIn, LogOut, User, Briefcase, UserPlus, X, MapPin, MoreVertical, MessageSquare, ClipboardCheck, Bot, Crown } from "lucide-react";
 import { ThemeToggle } from "./ThemeToggle";
 import { Button } from "./ui/button";
 import { Sheet, SheetContent, SheetTrigger, SheetClose } from "./ui/sheet";
@@ -147,6 +147,15 @@ export function Header() {
                         {unreadCount > 9 ? "9+" : unreadCount}
                       </span>
                     )}
+                  </Link>
+                </DropdownMenuItem>
+              )}
+
+              {user && (
+                <DropdownMenuItem asChild>
+                  <Link to="/planos" className="flex items-center gap-2 cursor-pointer">
+                    <Crown className="h-4 w-4" />
+                    Meu Plano
                   </Link>
                 </DropdownMenuItem>
               )}
@@ -320,6 +329,17 @@ export function Header() {
                   >
                     <ClipboardCheck className="h-4 w-4 text-muted-foreground" />
                     <span className="text-sm font-medium">Reivindicar Empresa</span>
+                  </Link>
+                )}
+
+                {user && (
+                  <Link
+                    to="/planos"
+                    onClick={() => setIsOpen(false)}
+                    className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-secondary transition-colors"
+                  >
+                    <Crown className="h-4 w-4 text-muted-foreground" />
+                    <span className="text-sm font-medium">Meu Plano</span>
                   </Link>
                 )}
                 

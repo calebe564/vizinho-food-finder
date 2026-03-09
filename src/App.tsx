@@ -42,6 +42,7 @@ const MyEstablishment = lazy(() => import("./pages/MyEstablishment"));
 const ClaimEstablishment = lazy(() => import("./pages/ClaimEstablishment"));
 const UserConversations = lazy(() => import("./pages/UserConversations"));
 const UserChat = lazy(() => import("./pages/UserChat"));
+const Plans = lazy(() => import("./pages/Plans"));
 
 // Loading component
 const PageLoader = () => (
@@ -91,6 +92,7 @@ function App() {
                               <Route path="/suporte" element={<UserConversations />} />
                               <Route path="/suporte/:id" element={<UserChat />} />
                               <Route path="/cadastrar" element={<PublicEstablishmentForm />} />
+                              <Route path="/planos" element={<Plans />} />
                               <Route path="/informacoes" element={<Information />} />
                               <Route path="/sobre" element={<About />} />
                               <Route path="/termos-de-uso" element={<TermsOfUse />} />
