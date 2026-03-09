@@ -2,7 +2,7 @@ import { useEffect } from "react";
 import { useNavigate, Routes, Route, Link, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
-import { LogOut, LayoutDashboard, Store, FileText, MessageSquare, Megaphone, Users, Crown, Loader2, ClipboardCheck, Home, Star } from "lucide-react";
+import { LogOut, LayoutDashboard, Store, FileText, MessageSquare, Megaphone, Users, Crown, Loader2, ClipboardCheck, Home, Star, Copy } from "lucide-react";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { useAuth } from "@/contexts/AuthContext";
 import { useUserRole } from "@/hooks/useUserRole";
@@ -18,6 +18,7 @@ import AdminAdvertisements from "./admin/AdminAdvertisements";
 import AdminUsers from "./admin/AdminUsers";
 import AdminClaims from "./admin/AdminClaims";
 import AdminHighlights from "./admin/AdminHighlights";
+import AdminDuplicates from "./admin/AdminDuplicates";
 
 const roleLabels = {
   adm_master: 'ADM Master',
@@ -206,6 +207,18 @@ export default function AdminDashboard() {
                 </Button>
               </Link>
             )}
+
+            {canApproveEstablishments && (
+              <Link to="/admin/dashboard/duplicadas">
+                <Button 
+                  variant={isActive("/admin/dashboard/duplicadas") ? "default" : "ghost"} 
+                  className="w-full justify-start"
+                >
+                  <Copy className="mr-2 h-4 w-4" />
+                  Duplicadas
+                </Button>
+              </Link>
+            )}
           </nav>
         </aside>
 
@@ -223,6 +236,7 @@ export default function AdminDashboard() {
             <Route path="reivindicacoes" element={<AdminClaims />} />
             <Route path="destaques" element={<AdminHighlights />} />
             <Route path="usuarios" element={<AdminUsers />} />
+            <Route path="duplicadas" element={<AdminDuplicates />} />
           </Routes>
         </main>
       </div>
