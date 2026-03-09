@@ -134,6 +134,12 @@ export function ProductCardExtended({
           {/* Status badges — top row */}
           <div className="absolute top-1.5 left-1.5 right-1.5 md:top-2.5 md:left-2.5 md:right-2.5 flex justify-between items-start gap-1">
             <div className="flex flex-wrap gap-1 md:gap-1.5">
+              {isPromotion && (
+                <Badge className="bg-red-600 text-white text-[9px] md:text-[10px] px-1.5 py-0.5 animate-pulse">
+                  <Flame className="h-2.5 w-2.5 mr-0.5" />
+                  PROMOÇÃO
+                </Badge>
+              )}
               <OpenClosedBadge schedule={establishment?.schedule} size="sm" />
               <DeliveryBadge hasDelivery={establishment?.hasDelivery} size="sm" />
             </div>
