@@ -1328,13 +1328,46 @@ export default function PublicEstablishmentForm() {
                 </div>
               </div>
 
+              {/* Duplicate Warning */}
+              {showDuplicateWarning && duplicateFound && (
+                <div className="p-4 rounded-xl border-2 border-amber-500 bg-amber-500/10 space-y-3">
+                  <div className="flex items-center gap-2">
+                    <AlertTriangle className="h-5 w-5 text-amber-600" />
+                    <h4 className="font-semibold text-amber-700 dark:text-amber-400">Empresa semelhante encontrada</h4>
+                  </div>
+                  <p className="text-sm text-foreground">
+                    Já encontramos uma empresa muito parecida cadastrada na plataforma. Se esta empresa for sua, utilize a opção <strong>Reivindicar empresa</strong> em vez de criar uma nova.
+                  </p>
+                  <div className="p-3 rounded-lg border bg-card">
+                    <p className="font-medium">{duplicateFound.name}</p>
+                    <p className="text-xs text-muted-foreground">{duplicateFound.address}</p>
+                  </div>
+                  <div className="flex gap-2">
+                    <Button 
+                      type="button"
+                      onClick={() => navigate(`/reivindicar-empresa`)}
+                      className="flex-1"
+                    >
+                      Reivindicar esta empresa
+                    </Button>
+                    <Button 
+                      type="button"
+                      variant="outline"
+                      onClick={() => setShowDuplicateWarning(false)}
+                    >
+                      Fechar
+                    </Button>
+                  </div>
+                </div>
+              )}
+
               {/* Submit */}
               <div className="pt-6">
-                <Button type="submit" className="w-full h-14 text-lg rounded-xl" disabled={loading || !termsAccepted}>
+                <Button type="submit" className="w-full h-14 text-lg rounded-xl" disabled={loading || !termsAccepted || showDuplicateWarning}>
                   {loading ? (
                     <>
                       <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-                      Enviando...
+                      Enviando solicitação...
                     </>
                   ) : (
                     "Enviar Solicitação"
