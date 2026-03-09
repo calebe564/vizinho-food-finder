@@ -434,6 +434,8 @@ export default function EstablishmentDetail() {
                           variationCount={productVariations.length}
                           minPrice={hasVariations ? Math.min(...prices) : undefined}
                           maxPrice={hasVariations ? Math.max(...prices) : undefined}
+                          isPromotion={(product as any).is_promotion}
+                          promotionDescription={(product as any).promotion_description}
                         />
                       );
                     })}
