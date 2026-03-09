@@ -3,6 +3,8 @@ import { MapPin, Package, MessageCircle, Navigation, Phone, Clock, Flame } from 
 import { Card } from "@/components/ui/card";
 import { OpenClosedBadge, DeliveryBadge } from "@/components/StatusBadge";
 
+import { Badge } from "@/components/ui/badge";
+
 interface ProductCardExtendedProps {
   id: string;
   name: string;
@@ -10,6 +12,8 @@ interface ProductCardExtendedProps {
   description?: string | null;
   image?: string | null;
   unit?: string | null;
+  isPromotion?: boolean;
+  promotionDescription?: string | null;
   establishment: {
     id: string;
     name: string;
