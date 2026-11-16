@@ -2,7 +2,8 @@ import { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { Loader2, Flame, ArrowRight, ArrowLeft, Check, Package, ImageIcon, Calendar } from 'lucide-react';
+import { aiAssist } from '@/lib/aiAssist';
+import { Sparkles, Loader2, Flame, ArrowRight, ArrowLeft, Check, Package, ImageIcon, Calendar } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -45,6 +46,7 @@ export function PromotionDialog({
   const [step, setStep] = useState(1);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [description, setDescription] = useState('');
+  const [aiLoading, setAiLoading] = useState(false);
   const [expiration, setExpiration] = useState('');
   const [saving, setSaving] = useState(false);
 
@@ -249,7 +251,28 @@ export function PromotionDialog({
             </div>
 
             <div className="space-y-2">
-              <Label>Descrição da promoção *</Label>
+              <div className="flex items-center justify-between">
+                <Label>Descrição da promoção *</Label>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="h-7 gap-1 text-primary"
+                  disabled={aiLoading || !selectedProduct}
+                  onClick={async () => {
+                    if (!selectedProduct) return;
+                    setAiLoading(true);
+                    try {
+                      const text = await aiAssist({ task: 'promo_text', productName: selectedProduct.name, price: selectedProduct.price ?? null, idea: description || undefined });
+                      setDescription(text);
+                    } catch (e) { toast.error((e as Error).message); }
+                    finally { setAiLoading(false); }
+                  }}
+                >
+                  {aiLoading ? <Loader2 className="h-3 w-3 animate-spin" /> : <Sparkles className="h-3 w-3" />}
+                  Sugerir com IA
+                </Button>
+              </div>
               <Textarea
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}

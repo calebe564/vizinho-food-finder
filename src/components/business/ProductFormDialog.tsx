@@ -4,7 +4,8 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { Loader2, Plus, Trash2, Upload } from 'lucide-react';
+import { Loader2, Plus, Trash2, Upload, Sparkles } from 'lucide-react';
+import { aiAssist } from '@/lib/aiAssist';
 import { CurrencyInput } from '@/components/CurrencyInput';
 import {
   Dialog,
@@ -76,6 +77,7 @@ export function ProductFormDialog({
   const [imageUrl, setImageUrl] = useState<string | null>(editingProduct?.image || null);
   const isEditing = editingProduct !== null && editingIndex !== undefined;
 
+  const [aiLoading, setAiLoading] = useState(false);
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -257,7 +259,29 @@ export function ProductFormDialog({
               name="description"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Descrição / Ingredientes</FormLabel>
+                  <div className="flex items-center justify-between">
+                    <FormLabel>Descrição / Ingredientes</FormLabel>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      className="h-7 gap-1 text-primary"
+                      disabled={aiLoading}
+                      onClick={async () => {
+                        const name = form.getValues('name');
+                        if (!name?.trim()) { toast.error('Digite o nome do produto primeiro'); return; }
+                        setAiLoading(true);
+                        try {
+                          const text = await aiAssist({ task: 'product_description', name, notes: field.value || undefined });
+                          form.setValue('description', text, { shouldDirty: true });
+                        } catch (e) { toast.error((e as Error).message); }
+                        finally { setAiLoading(false); }
+                      }}
+                    >
+                      {aiLoading ? <Loader2 className="h-3 w-3 animate-spin" /> : <Sparkles className="h-3 w-3" />}
+                      Escrever com IA
+                    </Button>
+                  </div>
                   <FormControl>
                     <Textarea
                       placeholder="Descreva o produto..."

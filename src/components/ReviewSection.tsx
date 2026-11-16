@@ -8,7 +8,8 @@ import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent } from '@/components/ui/card';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { toast } from 'sonner';
-import { Loader2, Pencil, Trash2, MessageSquare, Reply } from 'lucide-react';
+import { Loader2, Pencil, Trash2, MessageSquare, Reply, Sparkles } from 'lucide-react';
+import { aiAssist } from '@/lib/aiAssist';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
@@ -41,6 +42,9 @@ export function ReviewSection({ establishmentId, ratingAverage = 0, ratingCount 
   const [editingId, setEditingId] = useState<string | null>(null);
   const [replyingId, setReplyingId] = useState<string | null>(null);
   const [replyText, setReplyText] = useState('');
+  const [replyAiLoading, setReplyAiLoading] = useState(false);
+  const [summary, setSummary] = useState<string | null>(null);
+  const [summaryLoading, setSummaryLoading] = useState(false);
 
   // Check if user is owner of this establishment
   const { data: isOwner = false } = useQuery({
@@ -250,6 +254,30 @@ export function ReviewSection({ establishmentId, ratingAverage = 0, ratingCount 
           </p>
         ) : (
           <div className="space-y-4">
+            {reviews.filter(r => r.comment?.trim()).length >= 2 && (
+              <div className="rounded-lg bg-primary/5 border border-primary/20 p-3">
+                {summary ? (
+                  <>
+                    <p className="text-xs font-semibold text-primary flex items-center gap-1 mb-1"><Sparkles className="h-3 w-3" /> O que os clientes dizem</p>
+                    <p className="text-sm text-foreground">{summary}</p>
+                  </>
+                ) : (
+                  <button
+                    className="text-sm text-primary font-medium flex items-center gap-1 disabled:opacity-60"
+                    disabled={summaryLoading}
+                    onClick={async () => {
+                      setSummaryLoading(true);
+                      try { setSummary(await aiAssist({ task: 'review_summary', establishmentId })); }
+                      catch (e) { toast.error((e as Error).message); }
+                      finally { setSummaryLoading(false); }
+                    }}
+                  >
+                    {summaryLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
+                    Ver resumo das avaliações com IA
+                  </button>
+                )}
+              </div>
+            )}
             {reviews.map((review) => (
               <div key={review.id} className="p-3 rounded-lg border space-y-2">
                 <div className="flex gap-3">
@@ -319,6 +347,21 @@ export function ReviewSection({ establishmentId, ratingAverage = 0, ratingCount 
                           >
                             {replyMutation.isPending && <Loader2 className="h-3 w-3 mr-1 animate-spin" />}
                             Enviar resposta
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            className="gap-1 text-primary"
+                            disabled={replyAiLoading}
+                            onClick={async () => {
+                              setReplyAiLoading(true);
+                              try { setReplyText(await aiAssist({ task: 'review_reply', rating: review.rating, comment: review.comment || undefined })); }
+                              catch (e) { toast.error((e as Error).message); }
+                              finally { setReplyAiLoading(false); }
+                            }}
+                          >
+                            {replyAiLoading ? <Loader2 className="h-3 w-3 animate-spin" /> : <Sparkles className="h-3 w-3" />}
+                            Sugerir com IA
                           </Button>
                           <Button size="sm" variant="outline" onClick={() => { setReplyingId(null); setReplyText(''); }}>
                             Cancelar
