@@ -58,7 +58,7 @@ export function HeroCarousel() {
   const [isHovered, setIsHovered] = useState(false);
   const [isMobile, setIsMobile] = useState(typeof window !== "undefined" && window.innerWidth < 768);
   const [isTransitioning, setIsTransitioning] = useState(false);
-  const intervalRef = useRef<NodeJS.Timeout | null>(null);
+  const intervalRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const { coordinates } = useUserLocation();
   const { data: planConfigs } = usePlanConfigs();
   const planWeights: PlanWeight[] = (planConfigs || []).map(c => ({
