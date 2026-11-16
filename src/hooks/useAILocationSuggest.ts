@@ -11,7 +11,7 @@ export interface LocationSuggestion {
 export function useAILocationSuggest() {
   const [isLoading, setIsLoading] = useState(false);
   const [suggestions, setSuggestions] = useState<LocationSuggestion[]>([]);
-  const debounceRef = useRef<NodeJS.Timeout | null>(null);
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const getSuggestions = useCallback(async (query: string) => {
     if (!query || query.trim().length < 2) {

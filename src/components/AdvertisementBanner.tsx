@@ -25,7 +25,7 @@ const AUTO_ROTATE_MS = 5000;
 export function AdvertisementBanner({ advertisements, position }: AdvertisementBannerProps) {
   const [currentSlide, setCurrentSlide] = useState(0);
   const [isTransitioning, setIsTransitioning] = useState(false);
-  const intervalRef = useRef<NodeJS.Timeout | null>(null);
+  const intervalRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const filteredAds = position
     ? advertisements.filter(ad => ad.position === position)
