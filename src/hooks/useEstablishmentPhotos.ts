@@ -62,7 +62,7 @@ export function useMainPhotosMap(establishmentIds: string[]) {
         .eq('is_main', true);
       if (error) throw error;
       const map: Record<string, string> = {};
-      (data || []).forEach((p: any) => {
+      (data || []).forEach((p) => {
         map[p.establishment_id] = p.url;
       });
       return map;

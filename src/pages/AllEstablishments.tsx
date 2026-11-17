@@ -14,6 +14,7 @@ import { isOpenNow } from "@/lib/scheduleUtils";
 import { areNeighborhoodsEquivalent, matchesNormalizedNeighborhood } from "@/lib/locationUtils";
 import { matchesCategory } from "@/lib/sortingUtils";
 import { useMainPhotosMap } from "@/hooks/useEstablishmentPhotos";
+import { ratingOf } from "@/lib/dbFields";
 
 type EstablishmentCategory = Database["public"]["Enums"]["establishment_category"];
 
@@ -241,8 +242,8 @@ export default function AllEstablishments() {
                       state={establishment.state}
                       schedule={establishment.schedule}
                       hasDelivery={establishment.has_delivery ?? false}
-                      ratingAverage={(establishment as any).rating_average ?? 0}
-                      ratingCount={(establishment as any).rating_count ?? 0}
+                      ratingAverage={ratingOf(establishment).average}
+                      ratingCount={ratingOf(establishment).count}
                     />
                   </div>
                 );

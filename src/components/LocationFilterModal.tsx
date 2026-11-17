@@ -20,6 +20,7 @@ import { MapPin, Navigation, X, Search, Loader2 } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useUserLocation } from "@/contexts/LocationContext";
 import { cn } from "@/lib/utils";
+import { APP_CONFIG } from "@/config/app";
 
 // Brazilian states
 const brazilianStates = [
@@ -233,7 +234,7 @@ export function LocationFilterModal({
             id="neighborhood"
             value={neighborhood}
             onChange={(e) => setNeighborhood(e.target.value)}
-            placeholder="Ex: Vila Pinho, Barreiro"
+            placeholder={APP_CONFIG.locationPlaceholder}
             className="h-12 rounded-xl pr-10"
           />
           {neighborhood && (

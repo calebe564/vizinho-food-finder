@@ -22,6 +22,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { useEffect, useMemo, useState } from "react";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { ratingOf, promoOf } from "@/lib/dbFields";
 
 interface Establishment {
   id: string;
@@ -121,7 +122,7 @@ export default function EstablishmentDetail() {
         .select("*")
         .eq("establishment_id", id);
       if (error) throw error;
-      return (data || []).map((p: any) => {
+      return (data || []).map((p) => {
         if (p.is_promotion && p.promotion_expiration && new Date(p.promotion_expiration) < new Date()) {
           return { ...p, is_promotion: false, promotion_description: null, promotion_expiration: null };
         }
@@ -248,8 +249,8 @@ export default function EstablishmentDetail() {
   const hasWhatsapp = establishment.whatsapp && establishment.whatsapp.trim() !== "";
   const hasSite = establishment.external_link && establishment.external_link.trim() !== "";
   const profileImg = establishment.profile_image || (allPhotos.length > 0 ? allPhotos[0] : null);
-  const ratingAvg = (establishment as any).rating_average || 0;
-  const ratingCount = (establishment as any).rating_count || 0;
+  const ratingAvg = ratingOf(establishment).average;
+  const ratingCount = ratingOf(establishment).count;
 
   const getDeliveryLabel = () => {
     if (!establishment.has_delivery) return null;
@@ -532,8 +533,8 @@ export default function EstablishmentDetail() {
                         variationCount={productVariations.length}
                         minPrice={hasVariations ? Math.min(...prices) : undefined}
                         maxPrice={hasVariations ? Math.max(...prices) : undefined}
-                        isPromotion={(product as any).is_promotion}
-                        promotionDescription={(product as any).promotion_description}
+                        isPromotion={promoOf(product).isPromotion}
+                        promotionDescription={promoOf(product).description}
                       />
                     );
                   })}

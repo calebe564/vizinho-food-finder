@@ -20,6 +20,7 @@ import { useUserLocation } from "@/contexts/LocationContext";
 import { Link, useSearchParams } from "react-router-dom";
 import { Store, Loader2, Building2, Package, ChevronLeft, ChevronRight, UtensilsCrossed, ShoppingCart, Croissant, MoreHorizontal, IceCream, Beef, Flame, Pizza, Beer, Coffee, Drumstick } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { ratingOf, promoOf } from "@/lib/dbFields";
 
 interface Establishment {
   id: string;
@@ -180,23 +181,23 @@ export default function Home() {
       
       if (productsDetailedRes.data) {
         const mappedProducts: ProductWithEstablishment[] = productsDetailedRes.data
-          .filter((p: any) => p.establishments?.active)
-          .map((p: any) => ({
+          .filter((p) => p.establishments?.active)
+          .map((p) => ({
             id: p.id,
             name: p.name,
             price: p.price,
             description: p.description,
             image: p.image,
             unit: p.unit || null,
-            is_promotion: (p.is_promotion && p.promotion_expiration && new Date(p.promotion_expiration) < new Date()) ? false : (p.is_promotion || false),
-            promotion_description: (p.is_promotion && p.promotion_expiration && new Date(p.promotion_expiration) < new Date()) ? null : (p.promotion_description || null),
+            is_promotion: promoOf(p).expired ? false : promoOf(p).isPromotion,
+            promotion_description: promoOf(p).expired ? null : (promoOf(p).description || null),
             establishment_id: p.establishment_id,
             establishment_schedule: p.establishments?.schedule || "",
             establishment_name: p.establishments?.name || "",
             establishment_category: p.establishments?.category || "",
             establishment_image: p.establishments?.profile_image || null,
             establishment_neighborhood: p.establishments?.neighborhood || null,
-            establishment_neighborhood_normalized: (p.establishments as any)?.neighborhood_normalized || null,
+            establishment_neighborhood_normalized: p.establishments?.neighborhood_normalized || null,
             establishment_city: p.establishments?.city || null,
             establishment_state: p.establishments?.state || null,
             establishment_phone: p.establishments?.phone || null,
@@ -611,8 +612,8 @@ export default function Home() {
                         state={est.state}
                         schedule={est.schedule}
                         hasDelivery={est.has_delivery ?? false}
-                        ratingAverage={(est as any).rating_average ?? 0}
-                        ratingCount={(est as any).rating_count ?? 0}
+                        ratingAverage={ratingOf(est).average}
+                        ratingCount={ratingOf(est).count}
                       />
                     ))}
                   </div>

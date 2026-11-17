@@ -153,7 +153,7 @@ export function ReviewSection({ establishmentId, ratingAverage = 0, ratingCount 
         .update({ 
           owner_reply: reply, 
           owner_reply_created_at: new Date().toISOString() 
-        } as any)
+        })
         .eq('id', reviewId);
       if (error) throw error;
     },

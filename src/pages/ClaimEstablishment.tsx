@@ -475,7 +475,7 @@ export default function ClaimEstablishment() {
       console.log("Reivindicação enviada com sucesso!");
       toast.success('Reivindicação enviada com sucesso! Aguarde a análise do administrador.');
       navigate('/minha-empresa');
-    } catch (err: any) {
+    } catch (err) {
       console.error('Erro real ao enviar reivindicação:', err);
       const msg = err?.message || err?.details || 'Erro desconhecido';
       setError(`Erro ao enviar reivindicação: ${msg}`);

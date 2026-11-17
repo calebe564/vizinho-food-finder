@@ -87,7 +87,7 @@ export default function AdminReviews() {
           </Card>
         ) : (
           <div className="space-y-3">
-            {reviews.map((review: any) => (
+            {reviews.map((review) => (
               <Card key={review.id}>
                 <CardContent className="py-4">
                   <div className="flex items-start justify-between gap-4">

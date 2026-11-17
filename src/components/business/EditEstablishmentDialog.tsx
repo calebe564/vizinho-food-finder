@@ -29,23 +29,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { CATEGORY_OPTIONS } from '@/config/categories';
 
-const categories = [
-  { value: 'restaurante', label: 'Restaurante' },
-  { value: 'lanchonete', label: 'Lanchonete' },
-  { value: 'padaria', label: 'Padaria' },
-  { value: 'supermercado', label: 'Supermercado' },
-  { value: 'açougue', label: 'Açougue' },
-  { value: 'hortifruti', label: 'Hortifruti' },
-  { value: 'pizzaria', label: 'Pizzaria' },
-  { value: 'hamburgueria', label: 'Hamburgueria' },
-  { value: 'bar', label: 'Bar' },
-  { value: 'cafe', label: 'Café' },
-  { value: 'sorveteria', label: 'Sorveteria' },
-  { value: 'acai', label: 'Açaí' },
-  { value: 'espetinho', label: 'Espetinho' },
-  { value: 'outro', label: 'Outro' },
-];
+const categories = CATEGORY_OPTIONS;
 
 const formSchema = z.object({
   name: z.string().min(2, 'Nome muito curto'),
