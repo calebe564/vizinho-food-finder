@@ -31,6 +31,32 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+// Os dados do cadastro viajam nos metadados do usuário só até o perfil ser criado;
+// depois são apagados dos metadados (eles também vão dentro do token de login).
+async function scrubPendingProfileMetadata() {
+  try {
+    await supabase.auth.updateUser({
+      data: { recovery_pin_hash: null, birth_date: null, favorite_color: null },
+    });
+  } catch (err) {
+    console.warn('Could not clear pending profile metadata', err);
+  }
+}
+
+/** Lê a mensagem de erro devolvida por uma edge function (respostas não-2xx). */
+async function functionErrorMessage(error: unknown, fallback: string): Promise<string> {
+  try {
+    const ctx = (error as { context?: Response })?.context;
+    if (ctx && typeof ctx.json === 'function') {
+      const body = await ctx.json();
+      if (body && typeof body.error === 'string') return body.error;
+    }
+  } catch {
+    // usa a mensagem padrão
+  }
+  return fallback;
+}
+
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
@@ -39,16 +65,42 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [isAdmin, setIsAdmin] = useState(false);
   const [userRole, setUserRole] = useState<UserRole>('user');
 
-  const fetchProfile = useCallback(async (userId: string) => {
+  const fetchProfile = useCallback(async (authUser: User) => {
     try {
       const { data, error } = await supabase
         .from('profiles')
         .select('*')
-        .eq('user_id', userId)
+        .eq('user_id', authUser.id)
         .maybeSingle();
 
       if (!error && data) {
         setProfile(data as UserProfile);
+        return;
+      }
+
+      // Cadastro feito com confirmação de e-mail: o perfil ainda não existe.
+      // Cria agora (primeiro login) a partir dos dados guardados no cadastro.
+      const meta = authUser.user_metadata ?? {};
+      if (!error && !data && typeof meta.recovery_pin_hash === 'string') {
+        const { data: created, error: insertError } = await supabase
+          .from('profiles')
+          .insert({
+            user_id: authUser.id,
+            full_name: meta.full_name ?? '',
+            email: (authUser.email ?? '').toLowerCase(),
+            recovery_pin_hash: meta.recovery_pin_hash,
+            birth_date: meta.birth_date ?? null,
+            favorite_color: meta.favorite_color ?? null,
+          })
+          .select('*')
+          .maybeSingle();
+
+        if (!insertError && created) {
+          setProfile(created as UserProfile);
+          await scrubPendingProfileMetadata();
+        } else if (insertError) {
+          console.error('Error creating profile:', insertError);
+        }
       }
     } catch (err) {
       console.error('Error fetching profile:', err);
@@ -63,15 +115,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       if (error) {
         console.error('Error fetching user role:', error);
+        setUserRole('user');
+        setIsAdmin(false);
         return 'user';
       }
-      
+
       const role = (data as UserRole) || 'user';
       setUserRole(role);
       setIsAdmin(role === 'adm_master' || role === 'admin');
       return role;
     } catch (err) {
       console.error('Error in fetchUserRole:', err);
+      setUserRole('user');
+      setIsAdmin(false);
       return 'user';
     }
   }, []);
@@ -87,18 +143,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       (event, session) => {
         setSession(session);
         setUser(session?.user ?? null);
-        
+
         if (session?.user) {
+          const authUser = session.user;
           setTimeout(() => {
-            fetchProfile(session.user.id);
-            fetchUserRole(session.user.id);
+            fetchProfile(authUser);
+            fetchUserRole(authUser.id);
           }, 0);
         } else {
           setProfile(null);
           setIsAdmin(false);
           setUserRole('user');
         }
-        
+
         setIsLoading(false);
       }
     );
@@ -106,12 +163,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
       setUser(session?.user ?? null);
-      
+
       if (session?.user) {
-        fetchProfile(session.user.id);
+        fetchProfile(session.user);
         fetchUserRole(session.user.id);
       }
-      
+
       setIsLoading(false);
     });
 
@@ -121,16 +178,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const signUp = async (formData: SignupFormData): Promise<{ success: boolean; message: string }> => {
     try {
       const normalizedEmail = formData.email.toLowerCase().trim();
-
-      const { data: existingProfile } = await supabase
-        .from('profiles')
-        .select('email')
-        .eq('email', normalizedEmail)
-        .maybeSingle();
-
-      if (existingProfile) {
-        return { success: false, message: 'Este email já está cadastrado' };
-      }
+      const pinHash = await hashPin(formData.recoveryPin);
 
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email: normalizedEmail,
@@ -139,12 +187,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           emailRedirectTo: `${window.location.origin}/`,
           data: {
             full_name: formData.fullName,
+            birth_date: formData.birthDate,
+            favorite_color: formData.favoriteColor,
+            recovery_pin_hash: pinHash,
           }
         }
       });
 
       if (authError) {
         console.error('Auth error:', authError);
+        if (/already|registered|exists/i.test(authError.message)) {
+          return { success: false, message: 'Este email já está cadastrado' };
+        }
         return { success: false, message: authError.message };
       }
 
@@ -152,8 +206,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         return { success: false, message: 'Erro ao criar usuário' };
       }
 
-      const pinHash = await hashPin(formData.recoveryPin);
+      // Com confirmação de e-mail ligada, e-mail já existente volta sem "identities".
+      if (authData.user.identities && authData.user.identities.length === 0) {
+        return { success: false, message: 'Este email já está cadastrado' };
+      }
 
+      // Sem sessão = confirmação de e-mail pendente. O perfil é criado no primeiro login.
+      if (!authData.session) {
+        return { success: true, message: 'Conta criada! Confirme seu email para poder entrar.' };
+      }
+
+      // O e-mail do perfil é sempre ajustado no banco para o e-mail real da conta.
       const { error: profileError } = await supabase
         .from('profiles')
         .insert({
@@ -167,8 +230,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       if (profileError) {
         console.error('Profile error:', profileError);
-        return { success: false, message: 'Erro ao criar perfil: ' + profileError.message };
+        return { success: false, message: 'Erro ao criar perfil. Tente novamente.' };
       }
+
+      await scrubPendingProfileMetadata();
 
       return { success: true, message: 'Conta criada com sucesso!' };
     } catch (error) {
@@ -227,51 +292,37 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setUserRole('user');
   };
 
+  // A verificação e a troca de senha acontecem no servidor (edge function
+  // `recover-password`), com limite de tentativas. O navegador nunca recebe o
+  // resultado da verificação nem consegue trocar a senha por conta própria.
   const recoverPassword = async (formData: RecoveryFormData): Promise<{ success: boolean; message: string }> => {
     try {
-      const normalizedEmail = formData.email.toLowerCase().trim();
-      const pinHash = await hashPin(formData.recoveryPin);
-
-      const { data: userId, error: verifyError } = await supabase
-        .rpc('verify_recovery_pin_enhanced', {
-          _email: normalizedEmail,
-          _pin_hash: pinHash,
-          _full_name: formData.fullName,
-          _birth_date: formData.birthDate,
-        });
-
-      await supabase.from('recovery_attempts').insert({
-        email: normalizedEmail,
-        success: !!userId,
+      const { data, error } = await supabase.functions.invoke('recover-password', {
+        body: {
+          email: formData.email.toLowerCase().trim(),
+          fullName: formData.fullName,
+          birthDate: formData.birthDate,
+          recoveryPin: formData.recoveryPin,
+          newPassword: formData.newPassword,
+        },
       });
 
-      if (verifyError || !userId) {
-        return { 
-          success: false, 
-          message: 'Dados de recuperação incorretos. Verifique email, nome, data de nascimento e senha secundária.' 
+      if (error) {
+        return {
+          success: false,
+          message: await functionErrorMessage(
+            error,
+            'Dados de recuperação incorretos. Verifique email, nome, data de nascimento e senha secundária.'
+          ),
         };
       }
-      
-      const { error: signInError } = await supabase.auth.signInWithPassword({
-        email: normalizedEmail,
-        password: formData.recoveryPin,
-      });
 
-      if (!signInError) {
-        const { error: updateError } = await supabase.auth.updateUser({
-          password: formData.newPassword
-        });
-
-        if (!updateError) {
-          await supabase.auth.signOut();
-          return { success: true, message: 'Senha atualizada com sucesso! Faça login com sua nova senha.' };
-        }
+      if (data?.success) {
+        await supabase.auth.signOut();
+        return { success: true, message: data.message || 'Senha atualizada com sucesso! Faça login com sua nova senha.' };
       }
 
-      return { 
-        success: false, 
-        message: 'Dados verificados, mas não foi possível atualizar automaticamente. Entre em contato com o administrador.' 
-      };
+      return { success: false, message: data?.error || 'Não foi possível recuperar a senha.' };
     } catch (error) {
       console.error('Recovery error:', error);
       return { success: false, message: 'Erro ao recuperar senha' };
@@ -289,11 +340,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   return (
-    <AuthContext.Provider value={{ 
-      user, 
-      session, 
+    <AuthContext.Provider value={{
+      user,
+      session,
       profile,
-      isLoading, 
+      isLoading,
       isAdmin,
       userRole,
       signUp,

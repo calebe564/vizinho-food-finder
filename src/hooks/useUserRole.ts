@@ -21,17 +21,22 @@ export function useUserRole(): UseUserRoleReturn {
   const [role, setRole] = useState<UserRole>('user');
   const [isLoading, setIsLoading] = useState(true);
 
-  const fetchRole = useCallback(async () => {
+  const fetchRole = useCallback(async (isStale: () => boolean = () => false) => {
     if (!user) {
       setRole('user');
       setIsLoading(false);
       return;
     }
 
+    // Enquanto a role do novo usuário carrega, as rotas protegidas devem esperar
+    // (antes, isLoading ficava false e um admin podia ser mandado para a home).
+    setIsLoading(true);
+
     try {
       const { data, error } = await supabase.rpc('get_user_role', {
         _user_id: user.id
       });
+      if (isStale()) return;
 
       if (error) {
         console.error('Error fetching user role:', error);
@@ -40,15 +45,20 @@ export function useUserRole(): UseUserRoleReturn {
         setRole((data as UserRole) || 'user');
       }
     } catch (err) {
+      if (isStale()) return;
       console.error('Error in fetchRole:', err);
       setRole('user');
     } finally {
-      setIsLoading(false);
+      if (!isStale()) setIsLoading(false);
     }
   }, [user]);
 
   useEffect(() => {
-    fetchRole();
+    let cancelled = false;
+    fetchRole(() => cancelled);
+    return () => {
+      cancelled = true;
+    };
   }, [fetchRole]);
 
   const isAdmMaster = role === 'adm_master';
@@ -67,6 +77,6 @@ export function useUserRole(): UseUserRoleReturn {
     isEmpresario,
     canApproveEstablishments,
     canManageRoles,
-    refetch: fetchRole,
+    refetch: () => fetchRole(),
   };
 }
