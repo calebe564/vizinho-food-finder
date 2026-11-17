@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { cleanText, clientIp, rateLimit, readJson } from "../_shared/security.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -72,7 +73,16 @@ serve(async (req) => {
   }
 
   try {
-    const { query, location } = await req.json();
+    const ip = clientIp(req);
+    if (!(await rateLimit(`ai-search:min:${ip}`, 20, 60))) {
+      return new Response(
+        JSON.stringify({ error: 'Muitas buscas seguidas. Aguarde um momento.' }),
+        { status: 429, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+    const body = await readJson(req, 4000);
+    const query = cleanText(body.query, 120);
+    const location = cleanText(body.location, 120) || undefined;
     
     if (!query || query.trim().length === 0) {
       return new Response(
@@ -87,7 +97,7 @@ serve(async (req) => {
     }
 
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-    const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+    const supabaseKey = Deno.env.get('SUPABASE_ANON_KEY')!;
     const supabase = createClient(supabaseUrl, supabaseKey);
 
     // Fetch all products with their establishments (include all fields for complete product cards)
@@ -120,7 +130,8 @@ serve(async (req) => {
           cnpj
         )
       `)
-      .order('name');
+      .order('name')
+      .limit(3000);
 
     if (productsError) {
       console.error('Error fetching products:', productsError);
@@ -132,7 +143,8 @@ serve(async (req) => {
       .from('establishments')
       .select('id, name, neighborhood, neighborhood_normalized, region, city, profile_image, category, category_2, category_3, description, schedule, has_delivery, phone')
       .eq('active', true)
-      .order('name');
+      .order('name')
+      .limit(3000);
 
     if (establishmentsError) {
       console.error('Error fetching establishments:', establishmentsError);
@@ -243,7 +255,10 @@ Responda APENAS em JSON válido com este formato:
     const { correctedQuery, searchTerms, searchType, locationFilter } = searchParams;
 
     // Perform intelligent search based on AI interpretation
-    const searchLower = (searchTerms || [correctedQuery || query]).map((t: string) => t.toLowerCase());
+    const searchLower: string[] = (Array.isArray(searchTerms) ? searchTerms : [])
+      .filter((t: unknown): t is string => typeof t === 'string' && t.trim().length >= 2)
+      .map((t: string) => t.toLowerCase().slice(0, 80));
+    if (searchLower.length === 0) searchLower.push(String(correctedQuery || query).toLowerCase());
     
     // Search products
     const matchedProducts = activeProducts.filter(product => {
@@ -397,7 +412,7 @@ Responda APENAS em JSON válido com este formato:
     console.error('Error in ai-search function:', error);
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     return new Response(
-      JSON.stringify({ error: errorMessage }),
+      JSON.stringify({ error: 'Erro ao buscar. Tente novamente.' }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }

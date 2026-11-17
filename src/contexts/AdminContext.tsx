@@ -14,70 +14,14 @@ const AdminContext = createContext<AdminContextType | null>(null);
 
 const ADMIN_SESSION_KEY = "admin_session_token";
 const ADMIN_SESSION_EXPIRY_KEY = "admin_session_expiry";
-const SESSION_DURATION = 24 * 60 * 60 * 1000; // 24 hours
+const SESSION_DURATION = 8 * 60 * 60 * 1000; // 8 horas (igual ao servidor)
 
 export function AdminProvider({ children }: { children: ReactNode }) {
   const [isAdmin, setIsAdmin] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const { user } = useAuth();
 
-  useEffect(() => {
-    checkSession();
-  }, [user]);
-
-  const checkSession = async () => {
-    try {
-      // First check if user is authenticated
-      if (!user) {
-        clearSession();
-        setIsLoading(false);
-        return;
-      }
-
-      const token = sessionStorage.getItem(ADMIN_SESSION_KEY);
-      const expiry = sessionStorage.getItem(ADMIN_SESSION_EXPIRY_KEY);
-      
-      if (token && expiry) {
-        const expiryTime = parseInt(expiry, 10);
-        if (Date.now() < expiryTime) {
-          // Validate session on server
-          try {
-            const { data, error } = await supabase.functions.invoke("validate-admin", {
-              body: { password: token, action: 'validate_session' }
-            });
-            
-            if (!error && data?.valid) {
-              setIsAdmin(true);
-            } else {
-              // Session invalid on server - clear local session
-              clearSession();
-            }
-          } catch {
-            // Fallback to database role check
-            const { data: roleData, error: roleError } = await supabase.rpc('get_user_role', {
-              _user_id: user.id
-            });
-            
-            if (!roleError && (roleData === 'adm_master' || roleData === 'admin')) {
-              setIsAdmin(true);
-            } else {
-              clearSession();
-            }
-          }
-        } else {
-          // Session expired locally
-          clearSession();
-        }
-      }
-    } catch (error) {
-      console.error("Error checking session:", error);
-      clearSession();
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const clearSession = () => {
+  const clearSession = React.useCallback(() => {
     try {
       sessionStorage.removeItem(ADMIN_SESSION_KEY);
       sessionStorage.removeItem(ADMIN_SESSION_EXPIRY_KEY);
@@ -85,23 +29,60 @@ export function AdminProvider({ children }: { children: ReactNode }) {
       console.warn("Could not clear session", e);
     }
     setIsAdmin(false);
-  };
+  }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const checkSession = async () => {
+      try {
+        if (!user) {
+          clearSession();
+          return;
+        }
+
+        const token = sessionStorage.getItem(ADMIN_SESSION_KEY);
+        const expiry = sessionStorage.getItem(ADMIN_SESSION_EXPIRY_KEY);
+
+        if (!token || !expiry || Date.now() >= parseInt(expiry, 10)) {
+          clearSession();
+          return;
+        }
+
+        // O servidor confere a sessão (amarrada a este usuário). Se a validação
+        // falhar por qualquer motivo, NÃO damos acesso: o admin entra de novo.
+        const { data, error } = await supabase.functions.invoke("validate-admin", {
+          body: { action: "validate_session", token },
+        });
+
+        if (cancelled) return;
+        if (!error && data?.valid) {
+          setIsAdmin(true);
+        } else {
+          clearSession();
+        }
+      } catch (error) {
+        console.error("Error checking session:", error);
+        if (!cancelled) clearSession();
+      } finally {
+        if (!cancelled) setIsLoading(false);
+      }
+    };
+
+    checkSession();
+    return () => {
+      cancelled = true;
+    };
+  }, [user, clearSession]);
 
   const login = React.useCallback(async (password: string): Promise<{ success: boolean; message: string }> => {
     try {
-      // Ensure user is authenticated before attempting admin login
       if (!user) {
         return { success: false, message: "Usuário não autenticado" };
       }
 
-      // Get current session for authorization header
-      const { data: { session } } = await supabase.auth.getSession();
-      
       const { data, error } = await supabase.functions.invoke("validate-admin", {
-        body: { password },
-        headers: session?.access_token ? {
-          Authorization: `Bearer ${session.access_token}`
-        } : undefined
+        body: { action: "login", password },
       });
 
       if (error) {
@@ -109,7 +90,7 @@ export function AdminProvider({ children }: { children: ReactNode }) {
         return { success: false, message: "Erro ao verificar senha" };
       }
 
-      if (data.success && data.sessionToken) {
+      if (data?.success && data.sessionToken) {
         try {
           sessionStorage.setItem(ADMIN_SESSION_KEY, data.sessionToken);
           sessionStorage.setItem(ADMIN_SESSION_EXPIRY_KEY, (Date.now() + SESSION_DURATION).toString());
@@ -120,7 +101,7 @@ export function AdminProvider({ children }: { children: ReactNode }) {
         return { success: true, message: data.message };
       }
 
-      return { success: false, message: data.message || "Senha incorreta" };
+      return { success: false, message: data?.message || data?.error || "Senha incorreta" };
     } catch (error) {
       console.error("Login error:", error);
       return { success: false, message: "Erro de conexão" };
@@ -131,38 +112,27 @@ export function AdminProvider({ children }: { children: ReactNode }) {
     try {
       const token = sessionStorage.getItem(ADMIN_SESSION_KEY);
       if (token) {
-        // Revoke session on server
         await supabase.functions.invoke("validate-admin", {
-          body: { password: token, action: 'logout' }
+          body: { action: "logout", token },
         });
       }
     } catch (error) {
       console.error("Error logging out:", error);
     }
     clearSession();
-  }, []);
+  }, [clearSession]);
 
+  // Confere só a senha (ações sensíveis), sem criar uma nova sessão.
   const validateSensitiveAction = React.useCallback(async (password: string): Promise<boolean> => {
     try {
-      // Ensure user is authenticated
-      if (!user) {
-        return false;
-      }
+      if (!user) return false;
 
-      const { data: { session } } = await supabase.auth.getSession();
-      
       const { data, error } = await supabase.functions.invoke("validate-admin", {
-        body: { password },
-        headers: session?.access_token ? {
-          Authorization: `Bearer ${session.access_token}`
-        } : undefined
+        body: { action: "verify", password },
       });
 
-      if (error) {
-        return false;
-      }
-
-      return data.success === true;
+      if (error) return false;
+      return data?.success === true;
     } catch (error) {
       console.error("Validation error:", error);
       return false;

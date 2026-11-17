@@ -1,9 +1,11 @@
 project_id = "khnhzqpqumzligzjjhtc"
 
-[functions.ai-chat]
-verify_jwt = false
+# Funções removidas por segurança: setup-admin, create-initial-admin, check-email.
+# Todas as funções abaixo validam a entrada e aplicam limite de tentativas no próprio código.
+# (verify_jwt = false porque visitantes sem login também usam busca e assistente;
+#  as que exigem login conferem o token dentro da função.)
 
-[functions.setup-admin]
+[functions.ai-chat]
 verify_jwt = false
 
 [functions.ai-search]
@@ -12,14 +14,11 @@ verify_jwt = false
 [functions.ai-location-suggest]
 verify_jwt = false
 
-[functions.create-initial-admin]
+[functions.ai-cadastro-helper]
 verify_jwt = false
 
 [functions.validate-admin]
 verify_jwt = false
 
-[functions.ai-cadastro-helper]
-verify_jwt = false
-
-[functions.check-email]
+[functions.recover-password]
 verify_jwt = false

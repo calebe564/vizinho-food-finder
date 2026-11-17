@@ -2,6 +2,7 @@ import { corsHeaders } from 'npm:@supabase/supabase-js@2/cors';
 import { createClient } from 'npm:@supabase/supabase-js@2';
 import { z } from 'npm:zod@3';
 import { createResponsesCall } from '../_shared/responses.ts';
+import { clientIp, rateLimit } from '../_shared/security.ts';
 
 const GATEWAY = 'https://ai.gateway.lovable.dev/v1';
 const MODEL = 'openai/gpt-6.1-sol';
@@ -21,6 +22,15 @@ const json = (body: unknown, status = 200) =>
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
   try {
+    // Limite de uso por IP (o resumo de avaliações é público e gasta créditos de IA).
+    const ip = clientIp(req);
+    if (!(await rateLimit(`ai-assist:min:${ip}`, 12, 60))) {
+      return json({ error: 'Muitas solicitações. Aguarde um pouco e tente de novo.' }, 429);
+    }
+    if (!(await rateLimit(`ai-assist:day:${ip}`, 150, 86400))) {
+      return json({ error: 'Limite diário de uso da IA atingido. Tente novamente amanhã.' }, 429);
+    }
+
     const apiKey = Deno.env.get('LOVABLE_API_KEY');
     if (!apiKey) return json({ error: 'IA não configurada.' }, 500);
 
