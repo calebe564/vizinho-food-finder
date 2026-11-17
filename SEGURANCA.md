@@ -8,7 +8,7 @@ Pacote com o código corrigido. A estrutura de pastas é a mesma do projeto: cop
 
 | # | Gravidade | Problema | Correção |
 |---|-----------|----------|----------|
-| 1 | Crítico | `setup-admin` e `create-initial-admin` tinham senha/PIN do admin escritos no código e estavam públicas (qualquer um podia redefinir a senha do admin) | Funções apagadas e removidas do `config.toml` |
+| 1 | Crítico | `setup-admin` e `create-initial-admin` tinham senha e PIN do admin escritos no código e estavam públicas (qualquer um podia redefinir a senha do admin) | Funções apagadas e removidas do `config.toml` |
 | 2 | Crítico | **Qualquer usuário cadastrado podia virar `adm_master`**: o papel era concedido por trigger quando um perfil era inserido com o e-mail do dono, e o e-mail do perfil é escolhido pelo próprio usuário | Trigger removido; `is_adm_master`/`get_user_role` usam o e-mail de `auth.users`; e-mail do perfil forçado pelo banco; índice único de e-mail |
 | 3 | Crítico | Funções internas do banco (`create_admin_session`, `verify_recovery_pin_enhanced`, `check_email_exists`…) chamáveis por visitantes | `REVOKE` para anon/authenticated; só `service_role` executa |
 | 4 | Alto | Funções de IA públicas, sem limite e com `messages` livres (inclusive `role: system`) | Validação de entrada, limite de tamanho, limite de uso por IP/usuário (no banco), `max_tokens` |
@@ -22,7 +22,7 @@ Pacote com o código corrigido. A estrutura de pastas é a mesma do projeto: cop
 
 ## Ordem para aplicar (importante)
 
-1. **Troque agora a senha e o PIN do admin** (e qualquer outro lugar onde `Jv151206@`, `Jo151206@` ou `151206` sejam usados). O histórico do git guarda os valores antigos mesmo depois de apagar.
+1. **Troque agora a senha e o PIN do admin** (e qualquer outro lugar onde essas mesmas senhas tenham sido usadas). O histórico do git guarda os valores antigos mesmo depois de apagar.
 2. **Aplique a migration** `supabase/migrations/20261116000000_security_hardening.sql` (antes das funções novas).
 3. **Rode `supabase/audit.sql`** e confira se existe algum administrador que você não reconhece. Se existir, remova o papel e troque as senhas.
 4. **Apague** as pastas `supabase/functions/setup-admin`, `supabase/functions/create-initial-admin` e `supabase/functions/check-email` (e as funções já publicadas).
