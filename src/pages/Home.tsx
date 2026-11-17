@@ -223,7 +223,7 @@ export default function Home() {
     
     const searchLower = searchTerm.toLowerCase();
     
-    let filtered = allProductsWithEstablishment.filter((product) => {
+    const filtered = allProductsWithEstablishment.filter((product) => {
       const matchesProduct = product.name.toLowerCase().includes(searchLower);
       const matchesCategoryFilter = category === "todos" || product.establishment_category === category;
       

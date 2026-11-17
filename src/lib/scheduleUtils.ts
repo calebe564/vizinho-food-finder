@@ -56,7 +56,7 @@ export function isOpenNow(schedule: string): boolean {
       const closeMin = parseInt(hoursMatch[4] || '0', 10);
 
       const openMinutes = openHour * 60 + openMin;
-      let closeMinutes = closeHour * 60 + closeMin;
+      const closeMinutes = closeHour * 60 + closeMin;
       
       // Verifica se o dia atual está incluído
       if (!isDayIncluded(days, currentDay)) continue;
