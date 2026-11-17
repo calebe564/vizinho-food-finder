@@ -13,6 +13,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useEffect, useMemo } from "react";
 import { isOpenNow } from "@/lib/scheduleUtils";
 import { useMainPhotosMap } from "@/hooks/useEstablishmentPhotos";
+import { ratingOf } from "@/lib/dbFields";
 
 interface Establishment {
   id: string;
@@ -261,8 +262,8 @@ export default function Favorites() {
                             state={establishment.state}
                             schedule={establishment.schedule}
                             hasDelivery={establishment.has_delivery ?? false}
-                            ratingAverage={(establishment as any).rating_average ?? 0}
-                            ratingCount={(establishment as any).rating_count ?? 0}
+                            ratingAverage={ratingOf(establishment).average}
+                            ratingCount={ratingOf(establishment).count}
                           />
                         </div>
                     ))}

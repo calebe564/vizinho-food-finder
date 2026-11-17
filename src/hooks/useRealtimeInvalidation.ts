@@ -17,7 +17,7 @@ export function useRealtimeInvalidation() {
         'postgres_changes',
         { event: '*', schema: 'public', table: 'establishment_photos' },
         (payload) => {
-          const estId = (payload.new as any)?.establishment_id || (payload.old as any)?.establishment_id;
+          const estId = (payload.new as { establishment_id?: string })?.establishment_id || (payload.old as { establishment_id?: string })?.establishment_id;
           // Invalidate specific photo queries
           queryClient.invalidateQueries({ queryKey: ['establishment-photos', estId] });
           queryClient.invalidateQueries({ queryKey: ['establishment-main-photo', estId] });
@@ -28,7 +28,7 @@ export function useRealtimeInvalidation() {
         'postgres_changes',
         { event: '*', schema: 'public', table: 'establishments' },
         (payload) => {
-          const estId = (payload.new as any)?.id || (payload.old as any)?.id;
+          const estId = (payload.new as { id?: string })?.id || (payload.old as { id?: string })?.id;
           // Invalidate establishment list queries
           queryClient.invalidateQueries({ queryKey: ['establishments'] });
           queryClient.invalidateQueries({ queryKey: ['establishment', estId] });

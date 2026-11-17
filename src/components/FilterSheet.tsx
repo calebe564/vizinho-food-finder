@@ -5,24 +5,9 @@ import { Badge } from "@/components/ui/badge";
 import { SlidersHorizontal, MapPin, Navigation, Check } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { LocationFilterModal, LocationFilter } from "./LocationFilterModal";
+import { categoriesWithAll } from "@/config/categories";
 
-const categories = [
-  { value: "todos", label: "Todas" },
-  { value: "restaurante", label: "Restaurante" },
-  { value: "lanchonete", label: "Lanchonete" },
-  { value: "padaria", label: "Padaria" },
-  { value: "supermercado", label: "Supermercado" },
-  { value: "açougue", label: "Açougue" },
-  { value: "hortifruti", label: "Hortifruti" },
-  { value: "pizzaria", label: "Pizzaria" },
-  { value: "hamburgueria", label: "Hamburgueria" },
-  { value: "bar", label: "Bar" },
-  { value: "cafe", label: "Café" },
-  { value: "sorveteria", label: "Sorveteria" },
-  { value: "acai", label: "Açaí" },
-  { value: "espetinho", label: "Espetinho" },
-  { value: "outro", label: "Outro" },
-];
+const categories = categoriesWithAll("Todas");
 
 // Exportar categorias para uso em outros componentes
 export const CATEGORIES = categories;

@@ -57,6 +57,7 @@ import { HighlightRequestSection } from '@/components/business/HighlightRequestS
 import { PromotionManagementSection } from '@/components/business/PromotionManagementSection';
 import { useEstablishmentPhotos, useAddPhotos, useSetMainPhoto, useDeletePhoto } from '@/hooks/useEstablishmentPhotos';
 import { ReviewSection } from '@/components/ReviewSection';
+import { ratingOf } from "@/lib/dbFields";
 
 interface EstablishmentData {
   id: string;
@@ -807,8 +808,8 @@ export default function MyEstablishment() {
                 {!establishmentData.isFromRequest ? (
                   <ReviewSection 
                     establishmentId={establishmentData.id}
-                    ratingAverage={(activeEstablishment as any)?.rating_average || 0}
-                    ratingCount={(activeEstablishment as any)?.rating_count || 0}
+                    ratingAverage={ratingOf(activeEstablishment).average}
+                    ratingCount={ratingOf(activeEstablishment).count}
                     isOwnerView={true}
                   />
                 ) : (

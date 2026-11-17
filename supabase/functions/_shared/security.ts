@@ -98,6 +98,7 @@ export async function readJson(req: Request, maxBytes = 16_000): Promise<Record<
 export function cleanText(value: unknown, max: number): string {
   if (typeof value !== "string") return "";
   // deno-lint-ignore no-control-regex
+  // eslint-disable-next-line no-control-regex
   return value.replace(/[\u0000-\u001F\u007F]+/g, " ").replace(/"/g, "'").trim().slice(0, max);
 }
 

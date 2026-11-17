@@ -1,3 +1,4 @@
+import type { Database } from "@/integrations/supabase/types";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -24,6 +25,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { ScrollArea } from "@/components/ui/scroll-area";
+
+type EstablishmentCategory = Database["public"]["Enums"]["establishment_category"];
 
 interface ProductVariation {
   name: string;
@@ -131,7 +134,7 @@ export default function AdminRequests() {
       }));
       
       setRequests(parsedData);
-    } catch (error: any) {
+    } catch (error) {
       console.error("Error fetching requests:", error);
       toast.error("Erro ao carregar solicitações");
     } finally {
@@ -146,7 +149,7 @@ export default function AdminRequests() {
         .from("establishments")
         .insert([{
           name: request.name,
-          category: request.category as any,
+          category: request.category as EstablishmentCategory,
           neighborhood: request.neighborhood,
           address: request.address,
           phone: request.phone,
@@ -238,7 +241,7 @@ export default function AdminRequests() {
       setNotes("");
       // Remove from local list immediately
       setRequests(prev => prev.map(r => r.id === request.id ? { ...r, status: 'approved' } : r));
-    } catch (error: any) {
+    } catch (error) {
       console.error("Error approving request:", error);
       toast.error("Erro ao aprovar solicitação");
     }
@@ -267,7 +270,7 @@ export default function AdminRequests() {
       setRejectReason("");
       // Update local list immediately
       setRequests(prev => prev.map(r => r.id === request.id ? { ...r, status: 'rejected' } : r));
-    } catch (error: any) {
+    } catch (error) {
       console.error("Error rejecting request:", error);
       toast.error("Erro ao rejeitar solicitação");
     }
@@ -281,7 +284,7 @@ export default function AdminRequests() {
         .from("establishment_requests")
         .update({
           name: editedRequest.name,
-          category: editedRequest.category as any,
+          category: editedRequest.category as EstablishmentCategory,
           neighborhood: editedRequest.neighborhood,
           address: editedRequest.address,
           phone: editedRequest.phone,
@@ -297,7 +300,7 @@ export default function AdminRequests() {
       toast.success("Dados atualizados com sucesso!");
       setIsEditing(false);
       setSelectedRequest(null);
-    } catch (error: any) {
+    } catch (error) {
       console.error("Error updating request:", error);
       toast.error("Erro ao atualizar dados");
     }

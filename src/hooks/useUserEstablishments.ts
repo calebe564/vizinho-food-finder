@@ -63,8 +63,8 @@ export function useUserEstablishments(): UseUserEstablishmentsReturn {
         setEstablishments([]);
       } else {
         const mapped = (data || [])
-          .filter((item: any) => item.establishments)
-          .map((item: any) => ({
+          .filter((item) => item.establishments)
+          .map((item) => ({
             id: item.id,
             establishment_id: item.establishment_id,
             role: item.role,

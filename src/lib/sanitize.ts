@@ -99,6 +99,11 @@ export function sanitizeUrl(url: string): string {
   
   const trimmed = url.trim();
   
+  // Block dangerous protocols first (before any "https://" is prepended)
+  if (/^(javascript:|data:|vbscript:|file:)/i.test(trimmed)) {
+    return '';
+  }
+  
   // Only allow safe protocols
   const safeProtocols = ['http://', 'https://', 'mailto:', 'tel:'];
   const hasValidProtocol = safeProtocols.some(protocol => 
@@ -108,11 +113,6 @@ export function sanitizeUrl(url: string): string {
   if (!hasValidProtocol && !trimmed.startsWith('/')) {
     // If no protocol and not a relative URL, add https://
     return `https://${trimmed}`;
-  }
-  
-  // Block dangerous protocols
-  if (/^(javascript:|data:|vbscript:|file:)/i.test(trimmed)) {
-    return '';
   }
   
   return trimmed;

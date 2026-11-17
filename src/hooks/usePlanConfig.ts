@@ -21,7 +21,7 @@ export function usePlanConfigs() {
     queryKey: ["plan-configurations"],
     queryFn: async (): Promise<PlanConfig[]> => {
       const { data, error } = await supabase
-        .from("plan_configurations" as any)
+        .from("plan_configurations")
         .select("plan_name, max_products, visibility_weight, promotion_boost, display_label");
 
       if (error || !data || data.length === 0) {

@@ -132,7 +132,7 @@ export function sortEstablishments<T extends EstablishmentForSort>(
     
     // PRIORIDADE 3: Ordenação selecionada
     switch (sortBy) {
-      case 'proximity':
+      case 'proximity': {
         // Mesma localização agrupada
         if (a.proximityScore !== b.proximityScore) {
           return a.proximityScore - b.proximityScore;
@@ -144,7 +144,8 @@ export function sortEstablishments<T extends EstablishmentForSort>(
           return aCanonical.localeCompare(bCanonical, 'pt-BR');
         }
         return a.name.localeCompare(b.name, 'pt-BR');
-        
+      }
+
       case 'name-asc':
         return a.name.localeCompare(b.name, 'pt-BR');
         

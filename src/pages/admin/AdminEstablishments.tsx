@@ -1,3 +1,4 @@
+import type { Database } from "@/integrations/supabase/types";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
@@ -22,7 +23,7 @@ export default function AdminEstablishments() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { removeDeletedEstablishment } = useFavorites();
-  const [establishments, setEstablishments] = useState<any[]>([]);
+  const [establishments, setEstablishments] = useState<Database["public"]["Tables"]["establishments"]["Row"][]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [deleteId, setDeleteId] = useState<string | null>(null);
@@ -40,7 +41,7 @@ export default function AdminEstablishments() {
 
       if (error) throw error;
       setEstablishments(data || []);
-    } catch (error: any) {
+    } catch (error) {
       console.error("Error fetching establishments:", error);
       toast.error("Erro ao carregar estabelecimentos");
     } finally {
@@ -122,7 +123,7 @@ export default function AdminEstablishments() {
       
       // Refresh the local list
       fetchEstablishments();
-    } catch (error: any) {
+    } catch (error) {
       console.error("Error deleting establishment:", error);
       toast.error("Erro ao excluir estabelecimento: " + (error.message || "Erro desconhecido"));
     } finally {
@@ -143,7 +144,7 @@ export default function AdminEstablishments() {
         !currentActive ? "Estabelecimento ativado" : "Estabelecimento desativado"
       );
       fetchEstablishments();
-    } catch (error: any) {
+    } catch (error) {
       console.error("Error toggling active:", error);
       toast.error("Erro ao atualizar status");
     }

@@ -119,7 +119,7 @@ export default function Plans() {
       setCurrentPlan(planId);
       toast.success(`Plano alterado para ${plans.find(p => p.id === planId)?.name || planId}!`);
       await refetch();
-    } catch (err: any) {
+    } catch (err) {
       toast.error("Erro ao alterar plano: " + (err.message || "Tente novamente"));
     } finally {
       setChangingPlan(null);

@@ -1,23 +1,8 @@
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Filter, ArrowUpDown } from "lucide-react";
+import { categoriesWithAll } from "@/config/categories";
 
-const categories = [
-  { value: "todos", label: "Todas as categorias" },
-  { value: "restaurante", label: "Restaurante" },
-  { value: "lanchonete", label: "Lanchonete" },
-  { value: "padaria", label: "Padaria" },
-  { value: "supermercado", label: "Supermercado" },
-  { value: "açougue", label: "Açougue" },
-  { value: "hortifruti", label: "Hortifruti" },
-  { value: "pizzaria", label: "Pizzaria" },
-  { value: "hamburgueria", label: "Hamburgueria" },
-  { value: "bar", label: "Bar" },
-  { value: "cafe", label: "Café" },
-  { value: "sorveteria", label: "Sorveteria" },
-  { value: "acai", label: "Açaí" },
-  { value: "espetinho", label: "Espetinho" },
-  { value: "outro", label: "Outro" },
-];
+const categories = categoriesWithAll("Todas as categorias");
 
 const sortOptions = [
   { value: "proximity", label: "Mais próximos" },

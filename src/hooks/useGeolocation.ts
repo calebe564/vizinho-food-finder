@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { APP_CONFIG } from "@/config/app";
 
 interface Coordinates {
   latitude: number;
@@ -12,8 +13,8 @@ export function useGeolocation() {
   useEffect(() => {
     if (!navigator.geolocation) {
       setError("Geolocalização não suportada pelo navegador");
-      // Default to Barreiro, Belo Horizonte coordinates
-      setCoordinates({ latitude: -19.9833, longitude: -44.0333 });
+      // Usa o ponto padrão da região configurada
+      setCoordinates({ ...APP_CONFIG.defaultCoordinates });
       return;
     }
 
@@ -26,8 +27,8 @@ export function useGeolocation() {
       },
       (err) => {
         setError(err.message);
-        // Default to Barreiro, Belo Horizonte coordinates
-        setCoordinates({ latitude: -19.9833, longitude: -44.0333 });
+        // Usa o ponto padrão da região configurada
+        setCoordinates({ ...APP_CONFIG.defaultCoordinates });
       }
     );
   }, []);

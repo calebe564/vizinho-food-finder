@@ -161,9 +161,9 @@ export default function AdminEstablishmentForm() {
           neighborhood: data.neighborhood || "",
           region: data.region || "",
           city: data.city || "São Paulo",
-          state: (data as any).state || "SP",
+          state: data.state || "SP",
           address: data.address,
-          cep: (data as any).cep || "",
+          cep: data.cep || "",
           phone: data.phone,
           whatsapp: data.whatsapp || "",
           schedule: data.schedule,
@@ -188,7 +188,7 @@ export default function AdminEstablishmentForm() {
           setCnpjAutoFilled(true);
         }
       }
-    } catch (error: any) {
+    } catch (error) {
       console.error("Error fetching establishment:", error);
       toast.error("Erro ao carregar estabelecimento");
     }
@@ -227,7 +227,7 @@ export default function AdminEstablishmentForm() {
       }));
 
       setProducts(productsWithVariations);
-    } catch (error: any) {
+    } catch (error) {
       console.error("Error fetching products:", error);
     }
   };
@@ -401,7 +401,7 @@ export default function AdminEstablishmentForm() {
     }
   };
 
-  const updateProduct = (productId: string, field: keyof Product, value: any) => {
+  const updateProduct = (productId: string, field: keyof Product, value: Product[keyof Product]) => {
     setProducts(prev => prev.map(p => p.id === productId ? { ...p, [field]: value } : p));
   };
 
@@ -634,7 +634,7 @@ export default function AdminEstablishmentForm() {
       }
 
       navigate("/admin/dashboard/estabelecimentos");
-    } catch (error: any) {
+    } catch (error) {
       console.error("Error saving establishment:", error);
       toast.error("Erro ao salvar estabelecimento: " + error.message);
     } finally {
@@ -642,7 +642,7 @@ export default function AdminEstablishmentForm() {
     }
   };
 
-  const handleChange = (field: string, value: any) => {
+  const handleChange = (field: string, value: string | number | boolean | null) => {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
