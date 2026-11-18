@@ -537,6 +537,7 @@ export type Database = {
           cep: string | null
           city: string
           cnpj: string | null
+          contact_email: string | null
           created_at: string | null
           delivery_other: string | null
           delivery_type: string | null
@@ -547,6 +548,7 @@ export type Database = {
           has_delivery: boolean | null
           id: string
           images: Json | null
+          instagram: string | null
           is_destaque: boolean
           is_paid: boolean | null
           last_update: string | null
@@ -564,6 +566,7 @@ export type Database = {
           region: string | null
           schedule: string
           state: string | null
+          website: string | null
           whatsapp: string | null
         }
         Insert: {
@@ -576,6 +579,7 @@ export type Database = {
           cep?: string | null
           city?: string
           cnpj?: string | null
+          contact_email?: string | null
           created_at?: string | null
           delivery_other?: string | null
           delivery_type?: string | null
@@ -586,6 +590,7 @@ export type Database = {
           has_delivery?: boolean | null
           id?: string
           images?: Json | null
+          instagram?: string | null
           is_destaque?: boolean
           is_paid?: boolean | null
           last_update?: string | null
@@ -603,6 +608,7 @@ export type Database = {
           region?: string | null
           schedule: string
           state?: string | null
+          website?: string | null
           whatsapp?: string | null
         }
         Update: {
@@ -615,6 +621,7 @@ export type Database = {
           cep?: string | null
           city?: string
           cnpj?: string | null
+          contact_email?: string | null
           created_at?: string | null
           delivery_other?: string | null
           delivery_type?: string | null
@@ -625,6 +632,7 @@ export type Database = {
           has_delivery?: boolean | null
           id?: string
           images?: Json | null
+          instagram?: string | null
           is_destaque?: boolean
           is_paid?: boolean | null
           last_update?: string | null
@@ -642,6 +650,7 @@ export type Database = {
           region?: string | null
           schedule?: string
           state?: string | null
+          website?: string | null
           whatsapp?: string | null
         }
         Relationships: []
@@ -1016,6 +1025,24 @@ export type Database = {
           },
         ]
       }
+      security_rate_limits: {
+        Row: {
+          hits: number
+          key: string
+          window_start: string
+        }
+        Insert: {
+          hits?: number
+          key: string
+          window_start?: string
+        }
+        Update: {
+          hits?: number
+          key?: string
+          window_start?: string
+        }
+        Relationships: []
+      }
       user_establishments: {
         Row: {
           created_at: string
@@ -1256,11 +1283,44 @@ export type Database = {
       is_admin: { Args: { _user_id: string }; Returns: boolean }
       is_admin_user: { Args: { _user_id: string }; Returns: boolean }
       is_authenticated_admin: { Args: never; Returns: boolean }
+      norm_text: { Args: { _t: string }; Returns: string }
       normalize_neighborhood: {
         Args: { raw_neighborhood: string }
         Returns: string
       }
       revoke_admin_session: { Args: { _token_hash: string }; Returns: boolean }
+      rl_hit: {
+        Args: { _key: string; _max: number; _window_seconds: number }
+        Returns: boolean
+      }
+      search_directory: {
+        Args: {
+          _categories?: string[]
+          _category?: string
+          _limit?: number
+          _offset?: number
+          _query: string
+        }
+        Returns: {
+          category: string
+          city: string
+          description: string
+          establishment_id: string
+          id: string
+          image: string
+          is_destaque: boolean
+          is_paid: boolean
+          kind: string
+          name: string
+          neighborhood: string
+          plan: string
+          price: number
+          rating_average: number
+          rating_count: number
+          score: number
+          unit: string
+        }[]
+      }
       validate_admin_session: {
         Args: { _token_hash: string }
         Returns: {
@@ -1307,6 +1367,24 @@ export type Database = {
         | "sorveteria"
         | "acai"
         | "espetinho"
+        | "moda"
+        | "calcados"
+        | "farmacia"
+        | "pet_shop"
+        | "papelaria"
+        | "eletronicos"
+        | "casa_construcao"
+        | "floricultura"
+        | "salao_beleza"
+        | "barbearia"
+        | "mecanica"
+        | "academia"
+        | "saude"
+        | "educacao"
+        | "assistencia_tecnica"
+        | "reparos_manutencao"
+        | "lavanderia"
+        | "servicos_profissionais"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -1458,6 +1536,24 @@ export const Constants = {
         "sorveteria",
         "acai",
         "espetinho",
+        "moda",
+        "calcados",
+        "farmacia",
+        "pet_shop",
+        "papelaria",
+        "eletronicos",
+        "casa_construcao",
+        "floricultura",
+        "salao_beleza",
+        "barbearia",
+        "mecanica",
+        "academia",
+        "saude",
+        "educacao",
+        "assistencia_tecnica",
+        "reparos_manutencao",
+        "lavanderia",
+        "servicos_profissionais",
       ],
     },
   },
