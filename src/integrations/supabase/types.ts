@@ -1306,6 +1306,7 @@ export type Database = {
           city: string
           description: string
           establishment_id: string
+          establishment_name: string
           id: string
           image: string
           is_destaque: boolean
