@@ -5,7 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { SlidersHorizontal, MapPin, Navigation, Check } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { LocationFilterModal, LocationFilter } from "./LocationFilterModal";
-import { categoriesWithAll } from "@/config/categories";
+import { categoriesWithAll, CATEGORY_GROUPS } from "@/config/categories";
 
 const categories = categoriesWithAll("Todas");
 
@@ -104,8 +104,8 @@ export function FilterSheet({
               {/* Categories */}
               <div>
                 <h3 className="text-sm font-semibold mb-3 text-foreground">Categoria</h3>
-                <div className="flex flex-wrap gap-2">
-                  {categories.map((cat) => (
+                <div className="flex flex-wrap gap-2 mb-4">
+                  {categories.slice(0, 1).map((cat) => (
                     <button
                       key={cat.value}
                       onClick={() => setTempCategory(cat.value)}
@@ -117,6 +117,28 @@ export function FilterSheet({
                     >
                       {cat.label}
                     </button>
+                  ))}
+                </div>
+                <div className="space-y-4">
+                  {CATEGORY_GROUPS.map((group) => (
+                    <div key={group.id}>
+                      <p className="text-xs font-medium text-muted-foreground mb-2">{group.label}</p>
+                      <div className="flex flex-wrap gap-2">
+                        {group.options.map((cat) => (
+                    <button
+                      key={cat.value}
+                      onClick={() => setTempCategory(cat.value)}
+                      className={`px-3 py-2 rounded-xl text-sm font-medium transition-all ${
+                        tempCategory === cat.value
+                          ? "bg-accent text-accent-foreground shadow-button"
+                          : "bg-secondary text-secondary-foreground hover:bg-muted"
+                      }`}
+                    >
+                      {cat.label}
+                    </button>
+                        ))}
+                      </div>
+                    </div>
                   ))}
                 </div>
               </div>

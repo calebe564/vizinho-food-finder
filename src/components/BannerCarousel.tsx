@@ -3,6 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Link } from "react-router-dom";
 import { ChevronLeft, ChevronRight, Store, Star } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { categoryLabels } from "@/config/categories";
 
 interface CarouselItem {
   establishmentId: string;
@@ -11,23 +12,6 @@ interface CarouselItem {
   image: string;
   profileImage: string | null;
 }
-
-const categoryLabels: Record<string, string> = {
-  restaurante: "Restaurante",
-  lanchonete: "Lanchonete",
-  padaria: "Padaria",
-  supermercado: "Supermercado",
-  açougue: "Açougue",
-  hortifruti: "Hortifruti",
-  pizzaria: "Pizzaria",
-  hamburgueria: "Hamburgueria",
-  bar: "Bar",
-  cafe: "Café",
-  outro: "Outro",
-  sorveteria: "Sorveteria",
-  acai: "Açaí",
-  espetinho: "Espetinho",
-};
 
 export function BannerCarousel() {
   const [carouselItems, setCarouselItems] = useState<CarouselItem[]>([]);

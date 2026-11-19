@@ -25,6 +25,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { categoryLabels } from "@/config/categories";
 
 type EstablishmentCategory = Database["public"]["Enums"]["establishment_category"];
 
@@ -62,20 +63,6 @@ interface Request {
   favorite_images: string[] | null;
   user_id: string | null;
 }
-
-const categoryLabels: Record<string, string> = {
-  restaurante: "Restaurante",
-  lanchonete: "Lanchonete",
-  padaria: "Padaria",
-  supermercado: "Supermercado",
-  açougue: "Açougue",
-  hortifruti: "Hortifruti",
-  pizzaria: "Pizzaria",
-  hamburgueria: "Hamburgueria",
-  bar: "Bar",
-  cafe: "Café",
-  outro: "Outro",
-};
 
 const categoryOptions = Object.entries(categoryLabels).map(([value, label]) => ({
   value,

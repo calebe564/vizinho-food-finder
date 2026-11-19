@@ -34,6 +34,10 @@ import { Progress } from '@/components/ui/progress';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useOwnershipCheck } from '@/hooks/useOwnershipCheck';
 import { OwnershipBlockDialog } from '@/components/OwnershipBlockDialog';
+import { CategorySelectItems } from "@/components/CategorySelectItems";
+import type { Database } from "@/integrations/supabase/types";
+
+type EstablishmentCategory = Database["public"]["Enums"]["establishment_category"];
 
 // Step indicator component
 interface StepIndicatorProps {
@@ -362,7 +366,7 @@ export default function ClaimEstablishment() {
         query = query.ilike('name', `%${searchTerm.trim()}%`);
       }
       if (searchCategory && searchCategory !== '') {
-        query = query.eq('category', searchCategory as "acai" | "açougue" | "bar" | "cafe" | "espetinho" | "hamburgueria" | "hortifruti" | "lanchonete" | "outro" | "padaria" | "pizzaria" | "restaurante" | "sorveteria" | "supermercado");
+        query = query.eq('category', searchCategory as EstablishmentCategory);
       }
       if (searchCity.trim()) {
         query = query.ilike('city', `%${searchCity.trim()}%`);
@@ -893,19 +897,7 @@ export default function ClaimEstablishment() {
                             </SelectTrigger>
                             <SelectContent>
                               <SelectItem value="todas">Todas</SelectItem>
-                              <SelectItem value="restaurante">Restaurante</SelectItem>
-                              <SelectItem value="lanchonete">Lanchonete</SelectItem>
-                              <SelectItem value="hamburgueria">Hamburgueria</SelectItem>
-                              <SelectItem value="pizzaria">Pizzaria</SelectItem>
-                              <SelectItem value="padaria">Padaria</SelectItem>
-                              <SelectItem value="bar">Bar</SelectItem>
-                              <SelectItem value="cafe">Café</SelectItem>
-                              <SelectItem value="sorveteria">Sorveteria</SelectItem>
-                              <SelectItem value="acai">Açaí</SelectItem>
-                              <SelectItem value="supermercado">Supermercado</SelectItem>
-                              <SelectItem value="hortifruti">Hortifruti</SelectItem>
-                              <SelectItem value="açougue">Açougue</SelectItem>
-                              <SelectItem value="outro">Outro</SelectItem>
+                              <CategorySelectItems />
                             </SelectContent>
                           </Select>
                         </div>

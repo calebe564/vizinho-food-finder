@@ -15,42 +15,9 @@ import { ConfirmPasswordDialog } from "@/components/ConfirmPasswordDialog";
 import { InviteAdminDialog } from "@/components/business/InviteAdminDialog";
 import { CNPJInput } from "@/components/CNPJInput";
 import { useCNPJLookup } from "@/hooks/useCNPJLookup";
+import { CategorySelectItems } from "@/components/CategorySelectItems";
 
 type EstablishmentCategory = Database["public"]["Enums"]["establishment_category"];
-
-const categories: EstablishmentCategory[] = [
-  "restaurante",
-  "lanchonete",
-  "padaria",
-  "supermercado",
-  "açougue",
-  "hortifruti",
-  "pizzaria",
-  "hamburgueria",
-  "bar",
-  "cafe",
-  "sorveteria",
-  "acai",
-  "espetinho",
-  "outro"
-];
-
-const categoryLabels: Record<string, string> = {
-  restaurante: "Restaurante",
-  lanchonete: "Lanchonete",
-  padaria: "Padaria",
-  supermercado: "Supermercado",
-  açougue: "Açougue",
-  hortifruti: "Hortifruti",
-  pizzaria: "Pizzaria",
-  hamburgueria: "Hamburgueria",
-  bar: "Bar",
-  cafe: "Café",
-  sorveteria: "Sorveteria",
-  acai: "Açaí",
-  espetinho: "Espetinho",
-  outro: "Outro"
-};
 
 const brazilianStates = [
   { uf: "AC", name: "Acre" }, { uf: "AL", name: "Alagoas" }, { uf: "AP", name: "Amapá" },
@@ -773,11 +740,7 @@ export default function AdminEstablishmentForm() {
                     <SelectValue placeholder="Selecione a categoria" />
                   </SelectTrigger>
                   <SelectContent className="max-h-[200px] overflow-y-auto">
-                    {categories.map((cat) => (
-                      <SelectItem key={cat} value={cat}>
-                        {categoryLabels[cat]}
-                      </SelectItem>
-                    ))}
+                    <CategorySelectItems />
                   </SelectContent>
                 </Select>
               </div>

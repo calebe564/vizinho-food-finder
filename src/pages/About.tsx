@@ -73,7 +73,7 @@ export default function About() {
                   <div>
                     <h4 className="font-medium">Busque por categoria ou localização</h4>
                     <p className="text-sm text-muted-foreground">
-                      Use a busca para encontrar restaurantes, padarias, mercados e muito mais.
+                      Use a Bússola para encontrar restaurantes, lojas, salões, oficinas, serviços e muito mais.
                     </p>
                   </div>
                 </div>

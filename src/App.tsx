@@ -28,6 +28,7 @@ const EstablishmentDetail = lazy(() => import("./pages/EstablishmentDetail"));
 const AdminLogin = lazy(() => import("./pages/AdminLogin"));
 const AdminDashboard = lazy(() => import("./pages/AdminDashboard"));
 const Categories = lazy(() => import("./pages/Categories"));
+const Compass = lazy(() => import("./pages/Compass"));
 const AllEstablishments = lazy(() => import("./pages/AllEstablishments"));
 const PublicEstablishmentForm = lazy(() => import("./pages/PublicEstablishmentForm"));
 const NotFound = lazy(() => import("./pages/NotFound"));
@@ -85,6 +86,7 @@ function App() {
                               <Route path="/estabelecimento/:id" element={<EstablishmentDetail />} />
                               <Route path="/produto/:id" element={<ProductDetail />} />
                               <Route path="/categorias" element={<Categories />} />
+                              <Route path="/buscar" element={<Compass />} />
                               <Route path="/estabelecimentos" element={<AllEstablishments />} />
                               <Route path="/favoritos" element={<Favorites />} />
                               <Route path="/minha-empresa" element={<MyEstablishment />} />

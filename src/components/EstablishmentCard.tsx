@@ -15,6 +15,7 @@ import { useUserRole } from "@/hooks/useUserRole";
 import { shareContent, shareViaWhatsApp, copyToClipboard } from "@/lib/shareUtils";
 import { toast } from "sonner";
 import { StatusBadges } from "@/components/StatusBadge";
+import { categoryLabels } from "@/config/categories";
 
 interface Product {
   name: string;
@@ -58,23 +59,6 @@ interface EstablishmentCardProps {
   establishment?: Establishment;
   hasDelivery?: boolean;
 }
-
-const categoryLabels: Record<string, string> = {
-  restaurante: "Restaurante",
-  lanchonete: "Lanchonete",
-  padaria: "Padaria",
-  supermercado: "Supermercado",
-  açougue: "Açougue",
-  hortifruti: "Hortifruti",
-  pizzaria: "Pizzaria",
-  hamburgueria: "Hamburgueria",
-  bar: "Bar",
-  cafe: "Café",
-  outro: "Outro",
-  sorveteria: "Sorveteria",
-  acai: "Açaí",
-  espetinho: "Espetinho",
-};
 
 export function EstablishmentCard({
   id,

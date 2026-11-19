@@ -1,7 +1,7 @@
 {
   "name": "Comércio Vizinho",
   "short_name": "ComVizinho",
-  "description": "Encontre estabelecimentos de alimentação próximos a você no Barreiro",
+  "description": "Encontre comércio e serviços do seu bairro: comida, lojas, salões, oficinas e mais",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#ffffff",

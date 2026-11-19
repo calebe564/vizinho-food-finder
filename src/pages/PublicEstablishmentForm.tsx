@@ -22,36 +22,10 @@ import { DocumentInput, type DocumentLookupResult, type CPFFormData } from "@/co
 import { validateDocument, validateAge, type DocumentType } from "@/lib/validationUtils";
 import { useOwnershipCheck } from "@/hooks/useOwnershipCheck";
 import { OwnershipBlockDialog } from "@/components/OwnershipBlockDialog";
+import { CategorySelectItems } from "@/components/CategorySelectItems";
+import { categoryLabels } from "@/config/categories";
 
 type EstablishmentCategory = Database["public"]["Enums"]["establishment_category"];
-
-const categories: EstablishmentCategory[] = [
-  "restaurante",
-  "lanchonete",
-  "padaria",
-  "supermercado",
-  "açougue",
-  "hortifruti",
-  "pizzaria",
-  "hamburgueria",
-  "bar",
-  "cafe",
-  "outro"
-];
-
-const categoryLabels: Record<string, string> = {
-  restaurante: "Restaurante",
-  lanchonete: "Lanchonete",
-  padaria: "Padaria",
-  supermercado: "Supermercado",
-  açougue: "Açougue",
-  hortifruti: "Hortifruti",
-  pizzaria: "Pizzaria",
-  hamburgueria: "Hamburgueria",
-  bar: "Bar",
-  cafe: "Café",
-  outro: "Outro"
-};
 
 interface ProductVariation {
   id: string;
@@ -770,11 +744,7 @@ export default function PublicEstablishmentForm() {
                         <SelectValue placeholder="Selecione a categoria" />
                       </SelectTrigger>
                       <SelectContent className="rounded-xl bg-popover">
-                        {categories.map((cat) => (
-                          <SelectItem key={cat} value={cat} className="rounded-lg">
-                            {categoryLabels[cat]}
-                          </SelectItem>
-                        ))}
+                        <CategorySelectItems itemClassName="rounded-lg" />
                       </SelectContent>
                     </Select>
                   </div>

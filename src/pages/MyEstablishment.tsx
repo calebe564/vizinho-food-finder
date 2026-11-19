@@ -58,6 +58,7 @@ import { PromotionManagementSection } from '@/components/business/PromotionManag
 import { useEstablishmentPhotos, useAddPhotos, useSetMainPhoto, useDeletePhoto } from '@/hooks/useEstablishmentPhotos';
 import { ReviewSection } from '@/components/ReviewSection';
 import { ratingOf } from "@/lib/dbFields";
+import { categoryLabels } from "@/config/categories";
 
 interface EstablishmentData {
   id: string;
@@ -66,6 +67,9 @@ interface EstablishmentData {
   address: string;
   phone: string;
   whatsapp: string | null;
+  website?: string | null;
+  instagram?: string | null;
+  contact_email?: string | null;
   schedule: string | null;
   profile_image: string | null;
   category: string;
@@ -122,6 +126,9 @@ export default function MyEstablishment() {
             address: estData.address,
             phone: estData.phone,
             whatsapp: estData.whatsapp,
+            website: estData.website,
+            instagram: estData.instagram,
+            contact_email: estData.contact_email,
             schedule: estData.schedule,
             profile_image: estData.profile_image,
             category: estData.category,
@@ -158,6 +165,9 @@ export default function MyEstablishment() {
               address: estData.address,
               phone: estData.phone,
               whatsapp: estData.whatsapp,
+              website: estData.website,
+              instagram: estData.instagram,
+              contact_email: estData.contact_email,
               schedule: estData.schedule,
               profile_image: estData.profile_image,
               category: estData.category,
@@ -518,13 +528,6 @@ export default function MyEstablishment() {
   const profilePercentage = Math.round((completedItems / 6) * 100);
 
   const pageTitle = estCount > 1 ? 'Empresas' : 'Minha Empresa';
-
-  const categoryLabels: Record<string, string> = {
-    restaurante: "Restaurante", lanchonete: "Lanchonete", padaria: "Padaria",
-    supermercado: "Supermercado", açougue: "Açougue", hortifruti: "Hortifruti",
-    pizzaria: "Pizzaria", hamburgueria: "Hamburgueria", bar: "Bar",
-    cafe: "Café", outro: "Outro", sorveteria: "Sorveteria", acai: "Açaí", espetinho: "Espetinho",
-  };
 
   return (
     <>
@@ -1077,6 +1080,9 @@ export default function MyEstablishment() {
           category: establishmentData.category,
           phone: establishmentData.phone,
           whatsapp: establishmentData.whatsapp,
+          website: establishmentData.website,
+          instagram: establishmentData.instagram,
+          contact_email: establishmentData.contact_email,
           schedule: establishmentData.schedule,
           address: establishmentData.address,
         }}

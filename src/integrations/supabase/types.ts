@@ -543,6 +543,9 @@ export type Database = {
           delivery_type: string | null
           description: string | null
           external_link: string | null
+          website: string | null
+          instagram: string | null
+          contact_email: string | null
           favorite_images: Json | null
           google_maps_link: string | null
           has_delivery: boolean | null
@@ -585,6 +588,9 @@ export type Database = {
           delivery_type?: string | null
           description?: string | null
           external_link?: string | null
+          website?: string | null
+          instagram?: string | null
+          contact_email?: string | null
           favorite_images?: Json | null
           google_maps_link?: string | null
           has_delivery?: boolean | null
@@ -627,6 +633,9 @@ export type Database = {
           delivery_type?: string | null
           description?: string | null
           external_link?: string | null
+          website?: string | null
+          instagram?: string | null
+          contact_email?: string | null
           favorite_images?: Json | null
           google_maps_link?: string | null
           has_delivery?: boolean | null
@@ -1333,6 +1342,39 @@ export type Database = {
       verify_recovery_pin: {
         Args: { _email: string; _pin_hash: string }
         Returns: string
+      }
+      norm_text: {
+        Args: { _t: string }
+        Returns: string
+      }
+      search_directory: {
+        Args: {
+          _categories?: string[] | null
+          _category?: string | null
+          _limit?: number
+          _offset?: number
+          _query: string
+        }
+        Returns: {
+          category: string
+          city: string | null
+          description: string | null
+          establishment_id: string
+          establishment_name: string
+          id: string
+          image: string | null
+          is_destaque: boolean | null
+          is_paid: boolean | null
+          kind: string
+          name: string
+          neighborhood: string | null
+          plan: string | null
+          price: number | null
+          rating_average: number | null
+          rating_count: number | null
+          score: number
+          unit: string | null
+        }[]
       }
       verify_recovery_pin_enhanced: {
         Args: {

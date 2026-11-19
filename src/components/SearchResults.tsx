@@ -4,29 +4,13 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { ProductCardExtended } from './ProductCardExtended';
 import type { AISearchResults } from '@/hooks/useAISearch';
+import { categoryLabels } from "@/config/categories";
 
 interface SearchResultsProps {
   results: AISearchResults | null;
   isLoading: boolean;
   searchTerm: string;
 }
-
-const categoryLabels: Record<string, string> = {
-  restaurante: 'Restaurante',
-  lanchonete: 'Lanchonete',
-  padaria: 'Padaria',
-  supermercado: 'Supermercado',
-  açougue: 'Açougue',
-  hortifruti: 'Hortifruti',
-  pizzaria: 'Pizzaria',
-  hamburgueria: 'Hamburgueria',
-  bar: 'Bar',
-  cafe: 'Café',
-  sorveteria: 'Sorveteria',
-  acai: 'Açaí',
-  espetinho: 'Espetinho',
-  outro: 'Outro',
-};
 
 export function SearchResults({ results, isLoading, searchTerm }: SearchResultsProps) {
   if (isLoading) {
