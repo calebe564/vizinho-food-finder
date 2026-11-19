@@ -32,7 +32,7 @@ LIMIT 50;
 -- 5) Último login e tentativas de login do e-mail do dono nos últimos 30 dias.
 SELECT *
 FROM public.login_attempts
-WHERE lower(email) = 'johnvictorsf1512@gmail.com'
+WHERE lower(email) = 'calebesouzamartins45@gmail.com'
 ORDER BY 1 DESC
 LIMIT 100;
 
