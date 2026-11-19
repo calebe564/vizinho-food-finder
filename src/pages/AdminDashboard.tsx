@@ -2,7 +2,7 @@ import { useEffect } from "react";
 import { useNavigate, Routes, Route, Link, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
-import { LogOut, LayoutDashboard, Store, FileText, MessageSquare, Megaphone, Users, Crown, Loader2, ClipboardCheck, Home, Star, Copy, MessageCircle } from "lucide-react";
+import { LogOut, LayoutDashboard, Store, FileText, MessageSquare, Megaphone, Users, Crown, Loader2, ClipboardCheck, Home, Star, Copy, MessageCircle, CreditCard } from "lucide-react";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { useAuth } from "@/contexts/AuthContext";
 import { useUserRole } from "@/hooks/useUserRole";
@@ -20,6 +20,7 @@ import AdminClaims from "./admin/AdminClaims";
 import AdminHighlights from "./admin/AdminHighlights";
 import AdminDuplicates from "./admin/AdminDuplicates";
 import AdminReviews from "./admin/AdminReviews";
+import AdminPlans from "./admin/AdminPlans";
 
 const roleLabels = {
   adm_master: 'ADM Master',
@@ -232,6 +233,17 @@ export default function AdminDashboard() {
                 </Button>
               </Link>
             )}
+            {canApproveEstablishments && (
+              <Link to="/admin/dashboard/planos">
+                <Button 
+                  variant={isActive("/admin/dashboard/planos") ? "default" : "ghost"} 
+                  className="w-full justify-start"
+                >
+                  <CreditCard className="mr-2 h-4 w-4" />
+                  Planos
+                </Button>
+              </Link>
+            )}
           </nav>
         </aside>
 
@@ -251,6 +263,7 @@ export default function AdminDashboard() {
             <Route path="usuarios" element={<AdminUsers />} />
             <Route path="duplicadas" element={<AdminDuplicates />} />
             <Route path="avaliacoes" element={<AdminReviews />} />
+            <Route path="planos" element={<AdminPlans />} />
           </Routes>
         </main>
       </div>
