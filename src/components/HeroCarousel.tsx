@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { useUserLocation } from "@/contexts/LocationContext";
 import { applyWeightedRanking, type PlanWeight } from "@/lib/weightedRanking";
 import { usePlanConfigs } from "@/hooks/usePlanConfig";
+import { categoryLabels } from "@/config/categories";
 
 interface CarouselItem {
   highlightId: string;
@@ -20,23 +21,6 @@ interface CarouselItem {
   approvedAt: string | null;
   plan: string;
 }
-
-const categoryLabels: Record<string, string> = {
-  restaurante: "Restaurante",
-  lanchonete: "Lanchonete",
-  padaria: "Padaria",
-  supermercado: "Supermercado",
-  açougue: "Açougue",
-  hortifruti: "Hortifruti",
-  pizzaria: "Pizzaria",
-  hamburgueria: "Hamburgueria",
-  bar: "Bar",
-  cafe: "Café",
-  outro: "Outro",
-  sorveteria: "Sorveteria",
-  acai: "Açaí",
-  espetinho: "Espetinho",
-};
 
 // Haversine distance in km
 function haversineDistance(lat1: number, lon1: number, lat2: number, lon2: number): number {

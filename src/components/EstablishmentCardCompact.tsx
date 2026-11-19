@@ -4,6 +4,7 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { OpenClosedBadge, DeliveryBadge } from "@/components/StatusBadge";
 import { RatingBadge } from "@/components/StarRating";
+import { categoryLabels } from "@/config/categories";
 
 interface EstablishmentCardCompactProps {
   id: string;
@@ -22,23 +23,6 @@ interface EstablishmentCardCompactProps {
   ratingAverage?: number;
   ratingCount?: number;
 }
-
-const categoryLabels: Record<string, string> = {
-  restaurante: "Restaurante",
-  lanchonete: "Lanchonete",
-  padaria: "Padaria",
-  supermercado: "Supermercado",
-  açougue: "Açougue",
-  hortifruti: "Hortifruti",
-  pizzaria: "Pizzaria",
-  hamburgueria: "Hamburgueria",
-  bar: "Bar",
-  cafe: "Café",
-  outro: "Outro",
-  sorveteria: "Sorveteria",
-  acai: "Açaí",
-  espetinho: "Espetinho",
-};
 
 function formatLocation(neighborhood?: string | null, city?: string, state?: string | null): string {
   if (!neighborhood && !city) return "";

@@ -18,9 +18,11 @@ import { useMainPhotosMap } from "@/hooks/useEstablishmentPhotos";
 
 import { useUserLocation } from "@/contexts/LocationContext";
 import { Link, useSearchParams } from "react-router-dom";
-import { Store, Loader2, Building2, Package, ChevronLeft, ChevronRight, UtensilsCrossed, ShoppingCart, Croissant, MoreHorizontal, IceCream, Beef, Flame, Pizza, Beer, Coffee, Drumstick } from "lucide-react";
+import { Store, Loader2, Building2, Package, ChevronLeft, ChevronRight, UtensilsCrossed, ShoppingCart, Croissant, MoreHorizontal, IceCream, Beef, Flame, Pizza, Beer, Coffee, Drumstick, Compass } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ratingOf, promoOf } from "@/lib/dbFields";
+import { CATEGORY_OPTIONS } from "@/config/categories";
+import { categoryIcon } from "@/config/categoryIcons";
 
 interface Establishment {
   id: string;
@@ -100,20 +102,7 @@ const ITEMS_PER_PAGE = 12;
 
 const quickCategories = [
   { value: "todos", label: "Todos", icon: Store },
-  { value: "restaurante", label: "Restaurante", icon: UtensilsCrossed },
-  { value: "lanchonete", label: "Lanchonete", icon: UtensilsCrossed },
-  { value: "padaria", label: "Padaria", icon: Croissant },
-  { value: "supermercado", label: "Mercado", icon: ShoppingCart },
-  { value: "açougue", label: "Açougue", icon: Beef },
-  { value: "hortifruti", label: "Hortifruti", icon: ShoppingCart },
-  { value: "pizzaria", label: "Pizzaria", icon: Pizza },
-  { value: "hamburgueria", label: "Hamburgueria", icon: UtensilsCrossed },
-  { value: "bar", label: "Bar", icon: Beer },
-  { value: "cafe", label: "Café", icon: Coffee },
-  { value: "sorveteria", label: "Sorveteria", icon: IceCream },
-  { value: "acai", label: "Açaí", icon: IceCream },
-  { value: "espetinho", label: "Espetinho", icon: Drumstick },
-  { value: "outro", label: "Outro", icon: MoreHorizontal },
+  ...CATEGORY_OPTIONS.map((c) => ({ value: c.value as string, label: c.label as string, icon: categoryIcon(c.value) })),
 ];
 
 export default function Home() {
@@ -404,6 +393,13 @@ export default function Home() {
             <div className="flex-1">
               <SearchBar value={searchTerm} onChange={setSearchTerm} />
             </div>
+            {/* Bússola: busca de comércio e serviços no servidor */}
+            <Button asChild variant="outline" size="sm" className="rounded-full gap-1.5 h-9 px-3 text-xs shrink-0">
+              <Link to={searchTerm.trim() ? `/buscar?q=${encodeURIComponent(searchTerm.trim())}` : "/buscar"}>
+                <Compass className="h-3.5 w-3.5" aria-hidden="true" />
+                <span className="hidden sm:inline">Bússola</span>
+              </Link>
+            </Button>
             {/* Search mode toggle - compact pills */}
             <div className="hidden md:flex items-center gap-1.5">
               <Button

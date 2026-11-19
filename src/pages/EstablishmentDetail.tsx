@@ -1,7 +1,7 @@
 import { useParams, Link, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { ArrowLeft, MapPin, Phone, Clock, Tag, Share2, MessageCircle, Globe, MoreVertical, Heart, Copy, Loader2, Truck, Navigation, Building2, Store, Star, ChevronRight } from "lucide-react";
+import { ArrowLeft, MapPin, Phone, Clock, Tag, Share2, MessageCircle, Globe, MoreVertical, Heart, Copy, Loader2, Truck, Navigation, Building2, Store, Star, ChevronRight, Instagram, Mail } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ThemeToggle } from "@/components/ThemeToggle";
@@ -23,6 +23,8 @@ import {
 import { useEffect, useMemo, useState } from "react";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { ratingOf, promoOf } from "@/lib/dbFields";
+import { categoryLabels } from "@/config/categories";
+import { websiteUrl, websiteLabel, instagramUrl, instagramHandle, mailtoUrl } from "@/lib/contactLinks";
 
 interface Establishment {
   id: string;
@@ -34,6 +36,9 @@ interface Establishment {
   phone: string;
   whatsapp: string | null;
   external_link: string | null;
+  website?: string | null;
+  instagram?: string | null;
+  contact_email?: string | null;
   google_maps_link: string | null;
   schedule: string;
   category: string;
@@ -63,23 +68,6 @@ interface ProductVariation {
   price: number;
   product_id: string;
 }
-
-const categoryLabels: Record<string, string> = {
-  restaurante: "Restaurante",
-  lanchonete: "Lanchonete",
-  padaria: "Padaria",
-  supermercado: "Supermercado",
-  açougue: "Açougue",
-  hortifruti: "Hortifruti",
-  pizzaria: "Pizzaria",
-  hamburgueria: "Hamburgueria",
-  bar: "Bar",
-  cafe: "Café",
-  outro: "Outro",
-  sorveteria: "Sorveteria",
-  acai: "Açaí",
-  espetinho: "Espetinho",
-};
 
 const deliveryTypeLabels: Record<string, string> = {
   proprio: "Delivery Próprio",
@@ -247,7 +235,10 @@ export default function EstablishmentDetail() {
 
   const scheduleStatus = getScheduleStatus(establishment.schedule);
   const hasWhatsapp = establishment.whatsapp && establishment.whatsapp.trim() !== "";
-  const hasSite = establishment.external_link && establishment.external_link.trim() !== "";
+  const siteLink = websiteUrl(establishment.website) || websiteUrl(establishment.external_link);
+  const hasSite = !!siteLink;
+  const instagramLink = instagramUrl(establishment.instagram);
+  const emailLink = mailtoUrl(establishment.contact_email);
   const profileImg = establishment.profile_image || (allPhotos.length > 0 ? allPhotos[0] : null);
   const ratingAvg = ratingOf(establishment).average;
   const ratingCount = ratingOf(establishment).count;
@@ -463,13 +454,38 @@ export default function EstablishmentDetail() {
               variant="outline"
               size="lg"
               className="gap-2 rounded-xl h-12"
-              onClick={() => window.open(establishment.external_link!, '_blank')}
+              onClick={() => window.open(siteLink!, '_blank', 'noopener,noreferrer')}
             >
               <Globe className="h-5 w-5" />
               <span className="hidden sm:inline">Site</span>
             </Button>
           )}
         </div>
+
+        {/* ===== FICHA DA EMPRESA: site, Instagram e e-mail ===== */}
+        {(hasSite || instagramLink || emailLink) && (
+          <div className="bg-card border border-border rounded-xl p-4 mb-6 space-y-2">
+            <h2 className="text-sm font-semibold">Contato e links</h2>
+            {hasSite && (
+              <a href={siteLink!} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-sm hover:underline">
+                <Globe className="h-4 w-4 text-muted-foreground" aria-hidden="true" />
+                {websiteLabel(establishment.website) || websiteLabel(establishment.external_link)}
+              </a>
+            )}
+            {instagramLink && (
+              <a href={instagramLink} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-sm hover:underline">
+                <Instagram className="h-4 w-4 text-muted-foreground" aria-hidden="true" />
+                {instagramHandle(establishment.instagram)}
+              </a>
+            )}
+            {emailLink && (
+              <a href={emailLink} className="flex items-center gap-2 text-sm hover:underline">
+                <Mail className="h-4 w-4 text-muted-foreground" aria-hidden="true" />
+                {establishment.contact_email}
+              </a>
+            )}
+          </div>
+        )}
 
         {/* ===== DESCRIPTION ===== */}
         {establishment.description && (

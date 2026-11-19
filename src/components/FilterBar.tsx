@@ -1,8 +1,7 @@
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Filter, ArrowUpDown } from "lucide-react";
-import { categoriesWithAll } from "@/config/categories";
+import { CategorySelectItems } from "@/components/CategorySelectItems";
 
-const categories = categoriesWithAll("Todas as categorias");
 
 const sortOptions = [
   { value: "proximity", label: "Mais próximos" },
@@ -43,11 +42,7 @@ export function FilterBar({
             </div>
           </SelectTrigger>
           <SelectContent className="rounded-xl max-h-[200px] overflow-y-auto">
-            {categories.map((cat) => (
-              <SelectItem key={cat.value} value={cat.value} className="rounded-lg">
-                {cat.label}
-              </SelectItem>
-            ))}
+            <CategorySelectItems allLabel="Todas as categorias" itemClassName="rounded-lg" />
           </SelectContent>
         </Select>
       </div>

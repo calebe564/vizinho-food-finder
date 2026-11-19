@@ -4,6 +4,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { OpenClosedBadge, DeliveryBadge } from "@/components/StatusBadge";
+import { categoryLabels } from "@/config/categories";
 
 interface ProductCardSearchProps {
   id: string;
@@ -21,23 +22,6 @@ interface ProductCardSearchProps {
   establishmentPhone?: string;
   establishmentHasDelivery?: boolean;
 }
-
-const categoryLabels: Record<string, string> = {
-  restaurante: "Restaurante",
-  lanchonete: "Lanchonete",
-  padaria: "Padaria",
-  supermercado: "Supermercado",
-  açougue: "Açougue",
-  hortifruti: "Hortifruti",
-  pizzaria: "Pizzaria",
-  hamburgueria: "Hamburgueria",
-  bar: "Bar",
-  cafe: "Café",
-  sorveteria: "Sorveteria",
-  acai: "Açaí",
-  espetinho: "Espetinho",
-  outro: "Outro",
-};
 
 export function ProductCardSearch({
   id,
