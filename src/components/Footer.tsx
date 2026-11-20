@@ -70,6 +70,11 @@ export function Footer() {
                   Privacidade
                 </Link>
               </li>
+              <li>
+                <Link to="/politica-de-produtos-proibidos" className="text-foreground/70 hover:text-primary transition-colors text-xs md:text-sm">
+                  Produtos proibidos
+                </Link>
+              </li>
             </ul>
           </div>
 

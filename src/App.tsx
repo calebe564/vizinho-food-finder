@@ -36,6 +36,7 @@ const Information = lazy(() => import("./pages/Information"));
 const About = lazy(() => import("./pages/About"));
 const TermsOfUse = lazy(() => import("./pages/TermsOfUse"));
 const PrivacyPolicy = lazy(() => import("./pages/PrivacyPolicy"));
+const ProhibitedProducts = lazy(() => import("./pages/ProhibitedProducts"));
 const Favorites = lazy(() => import("./pages/Favorites"));
 const ProductDetail = lazy(() => import("./pages/ProductDetail"));
 const Auth = lazy(() => import("./pages/Auth"));
@@ -103,6 +104,7 @@ function App() {
                               <Route path="/sobre" element={<About />} />
                               <Route path="/termos-de-uso" element={<TermsOfUse />} />
                               <Route path="/politica-de-privacidade" element={<PrivacyPolicy />} />
+                              <Route path="/politica-de-produtos-proibidos" element={<ProhibitedProducts />} />
                               <Route path="/admin/login" element={<AdminLogin />} />
                               <Route path="/admin/dashboard/*" element={<AreaRoute area="admin"><AdminDashboard /></AreaRoute>} />
                               <Route path="*" element={<NotFound />} />
