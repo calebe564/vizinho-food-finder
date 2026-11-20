@@ -59,6 +59,7 @@ import { useEstablishmentPhotos, useAddPhotos, useSetMainPhoto, useDeletePhoto }
 import { ReviewSection } from '@/components/ReviewSection';
 import { ratingOf } from "@/lib/dbFields";
 import { categoryLabels } from "@/config/categories";
+import { MERCHANT_HOME } from '@/config/areas';
 
 interface EstablishmentData {
   id: string;
@@ -310,7 +311,7 @@ export default function MyEstablishment() {
   }
 
   if (!user) {
-    navigate('/auth', { state: { from: '/minha-empresa' } });
+    navigate('/auth', { state: { from: MERCHANT_HOME } });
     return null;
   }
 

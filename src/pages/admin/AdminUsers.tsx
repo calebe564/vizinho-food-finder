@@ -34,6 +34,7 @@ import {
   XCircle
 } from 'lucide-react';
 import { ConfirmPasswordDialog } from '@/components/ConfirmPasswordDialog';
+import { isMasterAdminEmail } from '@/config/admin';
 
 interface AdminPermissions {
   can_edit_establishments: boolean;
@@ -179,7 +180,7 @@ export default function AdminUsers() {
   const handleChangeRole = async () => {
     if (!selectedUser || !isAdmMaster) return;
 
-    if (selectedUser.email === 'johnvictorsf1512@gmail.com') {
+    if (isMasterAdminEmail(selectedUser.email)) {
       toast.error('Não é possível alterar a role do ADM Master');
       setIsDialogOpen(false);
       return;
@@ -270,7 +271,7 @@ export default function AdminUsers() {
     if (!deleteUserId) return;
     
     const userToDelete = users.find(u => u.user_id === deleteUserId);
-    if (userToDelete?.email === 'johnvictorsf1512@gmail.com') {
+    if (isMasterAdminEmail(userToDelete?.email)) {
       toast.error('Não é possível excluir o ADM Master');
       setDeleteUserId(null);
       return;
@@ -444,7 +445,7 @@ export default function AdminUsers() {
                       </TableCell>
                       <TableCell className="text-right">
                         <div className="flex items-center justify-end gap-2">
-                          {u.email !== 'johnvictorsf1512@gmail.com' ? (
+                          {!isMasterAdminEmail(u.email) ? (
                             <>
                               <Button 
                                 variant="outline" 
