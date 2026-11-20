@@ -3,7 +3,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { ThemeProvider } from "@/contexts/ThemeContext";
 import { LocationProvider } from "@/contexts/LocationContext";
 import { AdminProvider } from "@/contexts/AdminContext";
@@ -11,7 +11,7 @@ import { AuthProvider } from "@/contexts/AuthContext";
 import { ActiveEstablishmentProvider } from "@/contexts/ActiveEstablishmentContext";
 import { HelmetProvider } from "react-helmet-async";
 import { lazy, Suspense } from "react";
-import { ProtectedRoute } from "./components/ProtectedRoute";
+import { AreaRoute } from "./components/AreaRoute";
 // AI Chat button removed - now integrated into Header menu
 import { ErrorBoundary } from "./components/ErrorBoundary";
 import { useRealtimeInvalidation } from "./hooks/useRealtimeInvalidation";
@@ -89,7 +89,11 @@ function App() {
                               <Route path="/buscar" element={<Compass />} />
                               <Route path="/estabelecimentos" element={<AllEstablishments />} />
                               <Route path="/favoritos" element={<Favorites />} />
-                              <Route path="/minha-empresa" element={<MyEstablishment />} />
+                              {/* Área do comerciante (separada do site do consumidor) */}
+                              <Route path="/painel" element={<Navigate to="/painel/empresa" replace />} />
+                              <Route path="/painel/empresa" element={<AreaRoute area="comerciante"><MyEstablishment /></AreaRoute>} />
+                              <Route path="/painel/planos" element={<AreaRoute area="comerciante"><Plans /></AreaRoute>} />
+                              <Route path="/minha-empresa" element={<Navigate to="/painel/empresa" replace />} />
                               <Route path="/reivindicar-empresa" element={<ClaimEstablishment />} />
                               <Route path="/suporte" element={<UserConversations />} />
                               <Route path="/suporte/:id" element={<UserChat />} />
@@ -100,7 +104,7 @@ function App() {
                               <Route path="/termos-de-uso" element={<TermsOfUse />} />
                               <Route path="/politica-de-privacidade" element={<PrivacyPolicy />} />
                               <Route path="/admin/login" element={<AdminLogin />} />
-                              <Route path="/admin/dashboard/*" element={<ProtectedRoute><AdminDashboard /></ProtectedRoute>} />
+                              <Route path="/admin/dashboard/*" element={<AreaRoute area="admin"><AdminDashboard /></AreaRoute>} />
                               <Route path="*" element={<NotFound />} />
                             </Routes>
                           </Suspense>

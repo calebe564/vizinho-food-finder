@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { Helmet } from "react-helmet-async";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { ArrowLeft, Check, Clock, Crown, Rocket, Sparkles, Star, Zap } from "lucide-react";
 import { toast } from "sonner";
@@ -36,6 +36,7 @@ const formatDate = (iso: string | null) => (iso ? new Date(iso).toLocaleDateStri
 export default function Plans() {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
   const { establishments, isLoading: loadingEstablishments } = useUserEstablishments();
   const { data: planConfigs = [] } = usePlanConfigs();
   const { data: campaign } = useLaunchCampaign();
@@ -69,7 +70,7 @@ export default function Plans() {
   const pendingSub = subscriptions.find((s) => s.status === "pending");
   const launchOffer = campaign?.is_open ? campaign : null;
 
-  const goToLogin = () => navigate("/auth", { state: { from: "/planos" } });
+  const goToLogin = () => navigate("/auth", { state: { from: location.pathname } });
 
   const openConfirm = (plan: PlanConfig) => {
     if (!user) return goToLogin();
