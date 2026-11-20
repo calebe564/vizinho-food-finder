@@ -11,9 +11,10 @@ import { toast } from "sonner";
 import { 
   ArrowLeft, Heart, Store, ImageIcon, Loader2, 
   MessageCircle, Navigation, Clock, Phone, MapPin,
-  Truck, ShieldCheck, ShieldAlert, Flame
+  Truck, ShieldCheck, ShieldAlert, Flame, Flag
 } from "lucide-react";
 import { Helmet } from "react-helmet-async";
+import { ReportDialog } from "@/components/ReportDialog";
 import { useState } from "react";
 import { OpenClosedBadge, DeliveryBadge } from "@/components/StatusBadge";
 
@@ -60,6 +61,7 @@ export default function ProductDetail() {
   const { id } = useParams<{ id: string }>();
   const { isProductFavorite, toggleProductFavorite } = useFavorites();
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
+  const [reportOpen, setReportOpen] = useState(false);
 
   const { data: product, isLoading: productLoading } = useQuery({
     queryKey: ["product", id],
@@ -532,7 +534,21 @@ export default function ProductDetail() {
             </div>
           </div>
         </div>
+        <div className="container mx-auto px-4 pb-6 text-center">
+          <Button variant="link" size="sm" className="text-xs text-muted-foreground gap-1.5" onClick={() => setReportOpen(true)}>
+            <Flag className="h-3.5 w-3.5" aria-hidden="true" />
+            Denunciar este produto
+          </Button>
+        </div>
       </main>
+
+      <ReportDialog
+        open={reportOpen}
+        onOpenChange={setReportOpen}
+        targetType="product"
+        targetId={product.id}
+        targetName={product.name}
+      />
 
       <Footer />
     </div>

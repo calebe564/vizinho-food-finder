@@ -32,6 +32,7 @@ import {
 import { CategorySelectItems } from '@/components/CategorySelectItems';
 import type { Database } from '@/integrations/supabase/types';
 import { websiteUrl, instagramUrl, mailtoUrl } from '@/lib/contactLinks';
+import { Checkbox } from '@/components/ui/checkbox';
 
 type EstablishmentCategory = Database['public']['Enums']['establishment_category'];
 
@@ -50,6 +51,7 @@ const formSchema = z.object({
     .refine((v) => !v || !v.trim() || instagramUrl(v) !== null, 'Instagram inválido (ex.: @minhaloja)'),
   contact_email: z.string().max(200, 'E-mail muito longo').optional()
     .refine((v) => !v || !v.trim() || mailtoUrl(v) !== null, 'E-mail inválido'),
+  has_pickup: z.boolean().optional(),
   schedule: z.string().optional(),
   address: z.string().min(5, 'Endereço muito curto'),
   cnpj: z.string().optional(),
@@ -73,6 +75,7 @@ interface EditEstablishmentDialogProps {
     website?: string | null;
     instagram?: string | null;
     contact_email?: string | null;
+    has_pickup?: boolean | null;
     schedule: string | null;
     address: string;
   };
@@ -102,6 +105,7 @@ export function EditEstablishmentDialog({
       website: initialData.website || '',
       instagram: initialData.instagram || '',
       contact_email: initialData.contact_email || '',
+      has_pickup: !!initialData.has_pickup,
       schedule: initialData.schedule || '',
       address: initialData.address,
     },
@@ -127,6 +131,7 @@ export function EditEstablishmentDialog({
               website: websiteUrl(data.website) || null,
               instagram: instagramUrl(data.instagram) || null,
               contact_email: data.contact_email?.trim() || null,
+              has_pickup: !!data.has_pickup,
             }),
       };
 
@@ -346,6 +351,24 @@ export function EditEstablishmentDialog({
                   />
                 </div>
               </div>
+            )}
+
+            {!isFromRequest && (
+              <FormField
+                control={form.control}
+                name="has_pickup"
+                render={({ field }) => (
+                  <FormItem className="flex items-start gap-3 rounded-lg border border-border p-3">
+                    <FormControl>
+                      <Checkbox checked={!!field.value} onCheckedChange={(v) => field.onChange(v === true)} />
+                    </FormControl>
+                    <div className="space-y-0.5 leading-none">
+                      <FormLabel className="cursor-pointer">Trabalho com retirada no local</FormLabel>
+                      <p className="text-xs text-muted-foreground">Aparece na sua página junto com o delivery.</p>
+                    </div>
+                  </FormItem>
+                )}
+              />
             )}
 
             <FormField

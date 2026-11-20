@@ -1,7 +1,7 @@
 import { useParams, Link, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { ArrowLeft, MapPin, Phone, Clock, Tag, Share2, MessageCircle, Globe, MoreVertical, Heart, Copy, Loader2, Truck, Navigation, Building2, Store, Star, ChevronRight, Instagram, Mail } from "lucide-react";
+import { ArrowLeft, MapPin, Phone, Clock, Tag, Share2, MessageCircle, Globe, MoreVertical, Heart, Copy, Loader2, Truck, Navigation, Building2, Store, Star, ChevronRight, Instagram, Mail, Flag, Package } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ThemeToggle } from "@/components/ThemeToggle";
@@ -25,6 +25,10 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { ratingOf, promoOf } from "@/lib/dbFields";
 import { categoryLabels } from "@/config/categories";
 import { websiteUrl, websiteLabel, instagramUrl, instagramHandle, mailtoUrl } from "@/lib/contactLinks";
+import { Helmet } from "react-helmet-async";
+import { EstablishmentMap } from "@/components/EstablishmentMap";
+import { ReportDialog } from "@/components/ReportDialog";
+import { buildLocalBusinessJsonLd, establishmentMetaDescription, jsonLdScript } from "@/lib/seo";
 
 interface Establishment {
   id: string;
@@ -47,8 +51,14 @@ interface Establishment {
   images: unknown;
   is_paid: boolean;
   has_delivery: boolean | null;
+  reference_point?: string | null;
+  state?: string | null;
+  cep?: string | null;
+  longitude?: number | null;
+  latitude?: number | null;
   delivery_type: string | null;
   delivery_other: string | null;
+  has_pickup?: boolean | null;
   cnpj: string | null;
 }
 
@@ -83,6 +93,7 @@ export default function EstablishmentDetail() {
   const { isAdmin, isLoading: roleLoading } = useUserRole();
   const { isFavorite, toggleFavorite } = useFavorites();
   const isFav = id ? isFavorite(id) : false;
+  const [reportOpen, setReportOpen] = useState(false);
 
   const { data: establishment, isLoading: establishmentLoading, isError } = useQuery({
     queryKey: ["establishment", id],
@@ -234,6 +245,11 @@ export default function EstablishmentDetail() {
   }
 
   const scheduleStatus = getScheduleStatus(establishment.schedule);
+  const activePromotions = products.filter((p) => promoOf(p).isActive);
+  const pageUrl = typeof window !== "undefined" ? window.location.href : "";
+  const categoryName = categoryLabels[establishment.category] || establishment.category;
+  const metaDescription = establishmentMetaDescription(establishment, categoryName);
+  const metaImage = establishment.banner_image || establishment.profile_image || undefined;
   const hasWhatsapp = establishment.whatsapp && establishment.whatsapp.trim() !== "";
   const siteLink = websiteUrl(establishment.website) || websiteUrl(establishment.external_link);
   const hasSite = !!siteLink;
@@ -252,6 +268,16 @@ export default function EstablishmentDetail() {
 
   return (
     <div className="min-h-screen bg-background">
+      <Helmet>
+        <title>{`${establishment.name} | ${categoryName} em ${establishment.neighborhood || establishment.city || "sua região"} | Comércio Vizinho`}</title>
+        <meta name="description" content={metaDescription} />
+        <link rel="canonical" href={pageUrl} />
+        <meta property="og:type" content="website" />
+        <meta property="og:title" content={establishment.name} />
+        <meta property="og:description" content={metaDescription} />
+        {metaImage && <meta property="og:image" content={metaImage} />}
+        <script type="application/ld+json">{jsonLdScript(buildLocalBusinessJsonLd(establishment, pageUrl))}</script>
+      </Helmet>
       {/* Header */}
       <header className="sticky top-0 z-50 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b">
         <div className="container mx-auto px-4 py-3">
@@ -281,6 +307,10 @@ export default function EstablishmentDetail() {
                     <Copy className="h-4 w-4 mr-2" />
                     Copiar link
                   </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setReportOpen(true)} className="cursor-pointer">
+                    <Flag className="h-4 w-4 mr-2" />
+                    Denunciar
+                  </DropdownMenuItem>
                   {!roleLoading && !isAdmin && !establishment?.cnpj && (
                     <DropdownMenuItem
                       onClick={() => {
@@ -302,8 +332,20 @@ export default function EstablishmentDetail() {
       </header>
 
       <main className="container mx-auto px-4 pb-8">
+        {/* ===== CAPA ===== */}
+        {establishment.banner_image && /^https?:\/\//i.test(establishment.banner_image) && (
+          <div className="-mx-4 md:mx-0 md:mt-4 md:rounded-2xl overflow-hidden bg-muted h-32 sm:h-44 md:h-56">
+            <img
+              src={establishment.banner_image}
+              alt={`Capa de ${establishment.name}`}
+              className="w-full h-full object-cover"
+              loading="eager"
+            />
+          </div>
+        )}
+
         {/* ===== HERO: Profile Image + Info ===== */}
-        <div className="flex flex-col items-center pt-6 pb-4">
+        <div className={`flex flex-col items-center pb-4 ${establishment.banner_image ? "-mt-12 md:-mt-14 relative" : "pt-6"}`}>
           {/* Profile Image - centered, rounded */}
           <div className="w-24 h-24 md:w-32 md:h-32 rounded-2xl overflow-hidden border-4 border-background shadow-lg bg-muted flex-shrink-0">
             {profileImg ? (
@@ -400,20 +442,17 @@ export default function EstablishmentDetail() {
           <div className="bg-card border border-border rounded-xl p-3 flex items-start gap-2.5">
             <Truck className="h-4 w-4 text-primary mt-0.5 flex-shrink-0" />
             <div className="min-w-0">
-              <p className="text-[11px] text-muted-foreground">Delivery</p>
-              <p className={`text-xs font-medium ${establishment.has_delivery ? 'text-green-600 dark:text-green-400' : 'text-muted-foreground'}`}>
-                {getDeliveryLabel() || "Não disponível"}
+              <p className="text-[11px] text-muted-foreground">Delivery e retirada</p>
+              <p className={`text-xs font-medium ${establishment.has_delivery || establishment.has_pickup ? 'text-green-600 dark:text-green-400' : 'text-muted-foreground'}`}>
+                {[getDeliveryLabel() ? `Delivery: ${getDeliveryLabel()}` : null, establishment.has_pickup ? "Retirada no local" : null]
+                  .filter(Boolean)
+                  .join(" · ") || "Não informado"}
               </p>
             </div>
           </div>
 
-          {/* Maps */}
-          <div
-            className={`bg-card border border-border rounded-xl p-3 flex items-start gap-2.5 ${
-              establishment.google_maps_link ? 'cursor-pointer hover:bg-accent/50 transition-colors' : ''
-            }`}
-            onClick={() => establishment.google_maps_link && window.open(establishment.google_maps_link, '_blank')}
-          >
+          {/* Endereço (resumo; o mapa completo vem logo abaixo) */}
+          <div className="bg-card border border-border rounded-xl p-3 flex items-start gap-2.5">
             <Navigation className="h-4 w-4 text-primary mt-0.5 flex-shrink-0" />
             <div className="min-w-0">
               <p className="text-[11px] text-muted-foreground">Endereço</p>
@@ -422,14 +461,6 @@ export default function EstablishmentDetail() {
                 {establishment.neighborhood ? `, ${establishment.neighborhood}` : ""}
                 {establishment.city ? ` - ${establishment.city}` : ""}
               </p>
-              {establishment.google_maps_link && (
-                <button
-                  onClick={(e) => { e.stopPropagation(); window.open(establishment.google_maps_link!, '_blank'); }}
-                  className="text-[11px] text-primary hover:underline mt-0.5"
-                >
-                  Ver no Maps →
-                </button>
-              )}
             </div>
           </div>
         </div>
@@ -487,11 +518,47 @@ export default function EstablishmentDetail() {
           </div>
         )}
 
+        {/* ===== LOCALIZAÇÃO ===== */}
+        <EstablishmentMap
+          name={establishment.name}
+          address={[establishment.address, establishment.neighborhood, establishment.city].filter(Boolean).join(", ")}
+          referencePoint={establishment.reference_point}
+          latitude={establishment.latitude}
+          longitude={establishment.longitude}
+          googleMapsLink={establishment.google_maps_link}
+        />
+
         {/* ===== DESCRIPTION ===== */}
         {establishment.description && (
           <div className="bg-card border border-border rounded-xl p-4 mb-6">
             <p className="text-sm text-muted-foreground leading-relaxed">{establishment.description}</p>
           </div>
+        )}
+
+        {/* ===== PROMOÇÕES (só as que estão valendo) ===== */}
+        {activePromotions.length > 0 && (
+          <section className="mb-6" aria-labelledby="promocoes-titulo">
+            <h2 id="promocoes-titulo" className="text-sm font-semibold mb-2 flex items-center gap-1.5">
+              <Tag className="h-4 w-4 text-primary" aria-hidden="true" />
+              Promoções ({activePromotions.length})
+            </h2>
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+              {activePromotions.map((product) => (
+                <ProductCard
+                  key={`promo-${product.id}`}
+                  id={product.id}
+                  name={product.name}
+                  description={product.description}
+                  price={product.price}
+                  image={product.image}
+                  images={product.images as string[] | null}
+                  unit={product.unit}
+                  isPromotion
+                  promotionDescription={promoOf(product).description}
+                />
+              ))}
+            </div>
+          </section>
         )}
 
         {/* ===== TABS: FOTOS / PRODUTOS ===== */}
@@ -580,6 +647,14 @@ export default function EstablishmentDetail() {
           </p>
         </div>
       </main>
+
+      <ReportDialog
+        open={reportOpen}
+        onOpenChange={setReportOpen}
+        targetType="establishment"
+        targetId={establishment.id}
+        targetName={establishment.name}
+      />
     </div>
   );
 }

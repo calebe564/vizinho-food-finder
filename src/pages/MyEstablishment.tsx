@@ -59,6 +59,7 @@ import { useEstablishmentPhotos, useAddPhotos, useSetMainPhoto, useDeletePhoto }
 import { ReviewSection } from '@/components/ReviewSection';
 import { ratingOf } from "@/lib/dbFields";
 import { categoryLabels } from "@/config/categories";
+import { MERCHANT_HOME } from '@/config/areas';
 
 interface EstablishmentData {
   id: string;
@@ -70,6 +71,7 @@ interface EstablishmentData {
   website?: string | null;
   instagram?: string | null;
   contact_email?: string | null;
+  has_pickup?: boolean | null;
   schedule: string | null;
   profile_image: string | null;
   category: string;
@@ -129,6 +131,7 @@ export default function MyEstablishment() {
             website: estData.website,
             instagram: estData.instagram,
             contact_email: estData.contact_email,
+            has_pickup: (estData as { has_pickup?: boolean | null }).has_pickup,
             schedule: estData.schedule,
             profile_image: estData.profile_image,
             category: estData.category,
@@ -168,6 +171,7 @@ export default function MyEstablishment() {
               website: estData.website,
               instagram: estData.instagram,
               contact_email: estData.contact_email,
+              has_pickup: (estData as { has_pickup?: boolean | null }).has_pickup,
               schedule: estData.schedule,
               profile_image: estData.profile_image,
               category: estData.category,
@@ -310,7 +314,7 @@ export default function MyEstablishment() {
   }
 
   if (!user) {
-    navigate('/auth', { state: { from: '/minha-empresa' } });
+    navigate('/auth', { state: { from: MERCHANT_HOME } });
     return null;
   }
 
@@ -1083,6 +1087,7 @@ export default function MyEstablishment() {
           website: establishmentData.website,
           instagram: establishmentData.instagram,
           contact_email: establishmentData.contact_email,
+          has_pickup: establishmentData.has_pickup,
           schedule: establishmentData.schedule,
           address: establishmentData.address,
         }}
