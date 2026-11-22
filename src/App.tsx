@@ -37,6 +37,7 @@ const About = lazy(() => import("./pages/About"));
 const TermsOfUse = lazy(() => import("./pages/TermsOfUse"));
 const PrivacyPolicy = lazy(() => import("./pages/PrivacyPolicy"));
 const ProhibitedProducts = lazy(() => import("./pages/ProhibitedProducts"));
+const MerchantDashboard = lazy(() => import("./pages/merchant/MerchantDashboard"));
 const Favorites = lazy(() => import("./pages/Favorites"));
 const ProductDetail = lazy(() => import("./pages/ProductDetail"));
 const Auth = lazy(() => import("./pages/Auth"));
@@ -91,7 +92,7 @@ function App() {
                               <Route path="/estabelecimentos" element={<AllEstablishments />} />
                               <Route path="/favoritos" element={<Favorites />} />
                               {/* Área do comerciante (separada do site do consumidor) */}
-                              <Route path="/painel" element={<Navigate to="/painel/empresa" replace />} />
+                              <Route path="/painel" element={<AreaRoute area="comerciante"><MerchantDashboard /></AreaRoute>} />
                               <Route path="/painel/empresa" element={<AreaRoute area="comerciante"><MyEstablishment /></AreaRoute>} />
                               <Route path="/painel/planos" element={<AreaRoute area="comerciante"><Plans /></AreaRoute>} />
                               <Route path="/minha-empresa" element={<Navigate to="/painel/empresa" replace />} />

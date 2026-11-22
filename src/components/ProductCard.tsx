@@ -21,6 +21,8 @@ interface ProductCardProps {
   maxPrice?: number;
   isPromotion?: boolean;
   promotionDescription?: string | null;
+  /** Produto marcado como indisponível pela empresa: aparece esmaecido e com aviso. */
+  unavailable?: boolean;
 }
 
 export function ProductCard({
@@ -37,6 +39,7 @@ export function ProductCard({
   maxPrice,
   isPromotion,
   promotionDescription,
+  unavailable,
 }: ProductCardProps) {
   const { isProductFavorite, toggleProductFavorite } = useFavorites();
   const { isAdmin } = useUserRole();
@@ -65,7 +68,7 @@ export function ProductCard({
 
   return (
     <Link to={`/produto/${id}`} className="block">
-      <Card className="overflow-hidden bg-card border-0 shadow-sm hover:shadow-md transition-all duration-200 rounded-xl cursor-pointer">
+      <Card className={`overflow-hidden bg-card border-0 shadow-sm hover:shadow-md transition-all duration-200 rounded-xl cursor-pointer ${unavailable ? "opacity-70" : ""}`}>
         {/* Image container - compact aspect ratio */}
         <div className="relative aspect-square bg-muted">
           {displayImage ? (
@@ -81,8 +84,15 @@ export function ProductCard({
             </div>
           )}
 
+          {/* Indisponível - faixa na base da foto */}
+          {unavailable && (
+            <div className="absolute inset-x-0 bottom-0 z-10 bg-foreground/80 text-background text-[10px] md:text-xs font-medium text-center py-1">
+              Indisponível no momento
+            </div>
+          )}
+
           {/* Promotion badge - top left */}
-          {isPromotion && (
+          {isPromotion && !unavailable && (
             <div className="absolute top-1.5 left-1.5 z-10">
               <Badge className="bg-red-600 text-white text-[9px] md:text-[10px] px-1.5 py-0.5 shadow-md animate-pulse">
                 <Flame className="h-2.5 w-2.5 mr-0.5" />

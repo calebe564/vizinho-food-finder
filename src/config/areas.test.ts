@@ -7,6 +7,8 @@ import {
   homeForRole,
   isAdminRole,
   isMerchantPath,
+  MERCHANT_COMPANY,
+  MERCHANT_HOME,
   type AccessProfile,
 } from './areas';
 
@@ -39,11 +41,11 @@ describe('para onde cada um vai', () => {
   it('administração > comerciante > consumidor', () => {
     expect(homeFor(admin)).toBe('/admin/dashboard');
     expect(homeFor({ role: 'admin', hasBusiness: true })).toBe('/admin/dashboard');
-    expect(homeFor(merchantByRole)).toBe('/painel/empresa');
-    expect(homeFor(merchantByBusiness)).toBe('/painel/empresa');
+    expect(homeFor(merchantByRole)).toBe('/painel');
+    expect(homeFor(merchantByBusiness)).toBe('/painel');
     expect(homeFor(consumer)).toBe('/');
     expect(homeForRole('pre_adm')).toBe('/admin/dashboard');
-    expect(homeForRole('empresario')).toBe('/painel/empresa');
+    expect(homeForRole('empresario')).toBe('/painel');
     expect(homeForRole('user')).toBe('/');
   });
   it('reconhece caminhos do painel do comerciante', () => {
@@ -51,6 +53,18 @@ describe('para onde cada um vai', () => {
     expect(isMerchantPath('/painel/planos')).toBe(true);
     expect(isMerchantPath('/painelzinho')).toBe(false);
     expect(isMerchantPath('/planos')).toBe(false);
+  });
+});
+
+describe('painel do comerciante', () => {
+  it('a visão geral é a página inicial e a página da empresa fica em /painel/empresa', () => {
+    expect(MERCHANT_HOME).toBe('/painel');
+    expect(MERCHANT_COMPANY).toBe('/painel/empresa');
+    expect(isMerchantPath(MERCHANT_COMPANY)).toBe(true);
+  });
+  it('"Meu painel" no menu do site leva à visão geral', () => {
+    const entry = consumerMenuEntries(merchantByRole, true).find((e) => e.id === 'painel');
+    expect(entry?.to).toBe('/painel');
   });
 });
 

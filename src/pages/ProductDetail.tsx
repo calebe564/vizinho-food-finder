@@ -15,8 +15,9 @@ import {
 } from "lucide-react";
 import { Helmet } from "react-helmet-async";
 import { ReportDialog } from "@/components/ReportDialog";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { OpenClosedBadge, DeliveryBadge } from "@/components/StatusBadge";
+import { trackEvent } from "@/lib/tracking";
 
 interface Product {
   id: string;
@@ -119,6 +120,13 @@ export default function ProductDetail() {
   });
 
   const isFav = product ? isProductFavorite(product.id) : false;
+
+  // Visualização do produto: registrada pelo servidor (ignora o dono, a equipe, robôs e recarregamentos)
+  useEffect(() => {
+    if (product?.id && product.establishment_id) {
+      trackEvent({ establishmentId: product.establishment_id, type: "product_view", productId: product.id });
+    }
+  }, [product?.id, product?.establishment_id]);
 
   const handleToggleFavorite = () => {
     if (!product) return;
@@ -383,7 +391,7 @@ export default function ProductDetail() {
                     size="lg"
                     className="bg-green-600 hover:bg-green-700 text-white font-semibold"
                   >
-                    <a href={whatsappLink} target="_blank" rel="noopener noreferrer">
+                    <a href={whatsappLink} target="_blank" rel="noopener noreferrer" onClick={() => trackEvent({ establishmentId: product.establishment_id, type: "whatsapp_click", productId: product.id })}>
                       <MessageCircle className="w-5 h-5 mr-2" />
                       Comprar via WhatsApp
                     </a>
@@ -409,7 +417,7 @@ export default function ProductDetail() {
                     variant="outline"
                     className="border-primary text-primary hover:bg-primary hover:text-primary-foreground"
                   >
-                    <a href={mapsLink} target="_blank" rel="noopener noreferrer">
+                    <a href={mapsLink} target="_blank" rel="noopener noreferrer" onClick={() => trackEvent({ establishmentId: product.establishment_id, type: "directions_click" })}>
                       <Navigation className="w-5 h-5 mr-2" />
                       Ver Localização
                     </a>

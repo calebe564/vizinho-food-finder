@@ -10,7 +10,7 @@
     "lint": "eslint .",
     "preview": "vite preview",
     "test": "vitest run",
-    "test:db": "node supabase/tests/planos.dbcheck.mjs && node supabase/tests/denuncias.dbcheck.mjs"
+    "test:db": "node supabase/tests/planos.dbcheck.mjs && node supabase/tests/denuncias.dbcheck.mjs && node supabase/tests/painel.dbcheck.mjs"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.10.0",

@@ -1,5 +1,5 @@
 import { Link, NavLink, useNavigate } from "react-router-dom";
-import { Briefcase, Crown, ExternalLink, LogOut, MapPin, MessageSquare } from "lucide-react";
+import { Briefcase, Crown, ExternalLink, LayoutDashboard, LogOut, MapPin, MessageSquare } from "lucide-react";
 import { ThemeToggle } from "./ThemeToggle";
 import { Button } from "./ui/button";
 import { Avatar, AvatarFallback } from "./ui/avatar";
@@ -12,10 +12,11 @@ import {
 } from "./ui/dropdown-menu";
 import { useAuth } from "@/contexts/AuthContext";
 import { useUnreadConversations } from "@/hooks/useUnreadConversations";
-import { MERCHANT_BASE, MERCHANT_HOME } from "@/config/areas";
+import { MERCHANT_BASE, MERCHANT_COMPANY, MERCHANT_HOME } from "@/config/areas";
 
 const NAV = [
-  { to: MERCHANT_HOME, label: "Minha empresa", icon: Briefcase },
+  { to: MERCHANT_HOME, label: "Visão geral", icon: LayoutDashboard, end: true },
+  { to: MERCHANT_COMPANY, label: "Minha empresa", icon: Briefcase },
   { to: `${MERCHANT_BASE}/planos`, label: "Planos", icon: Crown },
   { to: "/suporte", label: "Suporte", icon: MessageSquare },
 ] as const;
@@ -50,8 +51,8 @@ export function MerchantHeader() {
         </Link>
 
         <nav className="hidden md:flex items-center gap-0.5" aria-label="Painel do comerciante">
-          {NAV.map(({ to, label, icon: Icon }) => (
-            <NavLink key={to} to={to} className={linkClass}>
+          {NAV.map(({ to, label, icon: Icon, ...rest }) => (
+            <NavLink key={to} to={to} end={"end" in rest} className={linkClass}>
               <Icon className="h-4 w-4" aria-hidden="true" />
               {label}
               {to === "/suporte" && unreadCount > 0 && (
@@ -103,8 +104,8 @@ export function MerchantHeader() {
       {/* Celular: o menu do painel fica numa faixa rolável abaixo do cabeçalho */}
       <nav className="md:hidden border-t border-border overflow-x-auto" aria-label="Painel do comerciante">
         <div className="container flex items-center gap-1 px-3 py-1.5">
-          {NAV.map(({ to, label, icon: Icon }) => (
-            <NavLink key={to} to={to} className={linkClass}>
+          {NAV.map(({ to, label, icon: Icon, ...rest }) => (
+            <NavLink key={to} to={to} end={"end" in rest} className={linkClass}>
               <Icon className="h-4 w-4" aria-hidden="true" />
               {label}
               {to === "/suporte" && unreadCount > 0 && (

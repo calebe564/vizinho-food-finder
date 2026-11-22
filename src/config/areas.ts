@@ -11,7 +11,8 @@ import type { UserRole } from '@/hooks/useUserRole';
 export type Area = 'consumidor' | 'comerciante' | 'admin';
 
 export const MERCHANT_BASE = '/painel';
-export const MERCHANT_HOME = '/painel/empresa';
+export const MERCHANT_HOME = '/painel';
+export const MERCHANT_COMPANY = '/painel/empresa';
 export const ADMIN_HOME = '/admin/dashboard';
 
 export const ADMIN_ROLES: readonly UserRole[] = ['adm_master', 'admin', 'pre_adm'];

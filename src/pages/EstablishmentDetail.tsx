@@ -29,6 +29,7 @@ import { Helmet } from "react-helmet-async";
 import { EstablishmentMap } from "@/components/EstablishmentMap";
 import { ReportDialog } from "@/components/ReportDialog";
 import { buildLocalBusinessJsonLd, establishmentMetaDescription, jsonLdScript } from "@/lib/seo";
+import { trackEvent } from "@/lib/tracking";
 
 interface Establishment {
   id: string;
@@ -161,38 +162,13 @@ export default function EstablishmentDetail() {
     return legacyImages;
   }, [photoRecords, legacyImages]);
 
+  // Visita ao perfil: registrada pelo servidor (ignora o dono, a equipe, robôs e recarregamentos)
   useEffect(() => {
-    if (id) {
-      supabase
-        .from("establishment_statistics")
-        .select("page_views")
-        .eq("establishment_id", id)
-        .maybeSingle()
-        .then(({ data: stat }) => {
-          if (stat) {
-            supabase
-              .from("establishment_statistics")
-              .update({ page_views: (stat.page_views || 0) + 1 })
-              .eq("establishment_id", id)
-              .then(() => {});
-          }
-        });
-    }
+    trackEvent({ establishmentId: id, type: "profile_view" });
   }, [id]);
 
-  const handlePhoneClick = async () => {
-    const { data: stat } = await supabase
-      .from("establishment_statistics")
-      .select("phone_clicks")
-      .eq("establishment_id", id)
-      .maybeSingle();
-    if (stat) {
-      await supabase
-        .from("establishment_statistics")
-        .update({ phone_clicks: (stat.phone_clicks || 0) + 1 })
-        .eq("establishment_id", id);
-    }
-  };
+  const handlePhoneClick = () => trackEvent({ establishmentId: id, type: "phone_click" });
+  const handleWhatsAppClick = () => trackEvent({ establishmentId: id, type: "whatsapp_click" });
 
   const formatWhatsApp = (phoneNumber: string) => {
     const cleaned = phoneNumber.replace(/\D/g, "");
@@ -245,7 +221,8 @@ export default function EstablishmentDetail() {
   }
 
   const scheduleStatus = getScheduleStatus(establishment.schedule);
-  const activePromotions = products.filter((p) => promoOf(p).isActive);
+  const isUnavailable = (p: object) => (p as { is_available?: boolean | null }).is_available === false;
+  const activePromotions = products.filter((p) => promoOf(p).isActive && !isUnavailable(p));
   const pageUrl = typeof window !== "undefined" ? window.location.href : "";
   const categoryName = categoryLabels[establishment.category] || establishment.category;
   const metaDescription = establishmentMetaDescription(establishment, categoryName);
@@ -472,8 +449,8 @@ export default function EstablishmentDetail() {
               size="lg"
               className="flex-1 gap-2 rounded-xl h-12 text-base font-semibold shadow-md"
               onClick={() => {
-                window.open(formatWhatsApp(establishment.whatsapp!), '_blank');
-                handlePhoneClick();
+                window.open(formatWhatsApp(establishment.whatsapp!), '_blank', 'noopener,noreferrer');
+                handleWhatsAppClick();
               }}
             >
               <MessageCircle className="h-5 w-5" />
@@ -485,7 +462,7 @@ export default function EstablishmentDetail() {
               variant="outline"
               size="lg"
               className="gap-2 rounded-xl h-12"
-              onClick={() => window.open(siteLink!, '_blank', 'noopener,noreferrer')}
+              onClick={() => { trackEvent({ establishmentId: id, type: "site_click" }); window.open(siteLink!, '_blank', 'noopener,noreferrer'); }}
             >
               <Globe className="h-5 w-5" />
               <span className="hidden sm:inline">Site</span>
@@ -498,13 +475,13 @@ export default function EstablishmentDetail() {
           <div className="bg-card border border-border rounded-xl p-4 mb-6 space-y-2">
             <h2 className="text-sm font-semibold">Contato e links</h2>
             {hasSite && (
-              <a href={siteLink!} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-sm hover:underline">
+              <a href={siteLink!} target="_blank" rel="noopener noreferrer" onClick={() => trackEvent({ establishmentId: id, type: "site_click" })} className="flex items-center gap-2 text-sm hover:underline">
                 <Globe className="h-4 w-4 text-muted-foreground" aria-hidden="true" />
                 {websiteLabel(establishment.website) || websiteLabel(establishment.external_link)}
               </a>
             )}
             {instagramLink && (
-              <a href={instagramLink} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-sm hover:underline">
+              <a href={instagramLink} target="_blank" rel="noopener noreferrer" onClick={() => trackEvent({ establishmentId: id, type: "instagram_click" })} className="flex items-center gap-2 text-sm hover:underline">
                 <Instagram className="h-4 w-4 text-muted-foreground" aria-hidden="true" />
                 {instagramHandle(establishment.instagram)}
               </a>
@@ -526,6 +503,7 @@ export default function EstablishmentDetail() {
           latitude={establishment.latitude}
           longitude={establishment.longitude}
           googleMapsLink={establishment.google_maps_link}
+          onDirectionsClick={() => trackEvent({ establishmentId: id, type: "directions_click" })}
         />
 
         {/* ===== DESCRIPTION ===== */}
@@ -597,7 +575,7 @@ export default function EstablishmentDetail() {
             {products.length > 0 && (
               <TabsContent value="produtos">
                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
-                  {products.map((product) => {
+                  {[...products].sort((a, b) => Number(isUnavailable(a)) - Number(isUnavailable(b))).map((product) => {
                     const productVariations = variations.filter(v => v.product_id === product.id);
                     const hasVariations = productVariations.length > 0;
                     const prices = productVariations.map(v => v.price);
@@ -618,6 +596,7 @@ export default function EstablishmentDetail() {
                         maxPrice={hasVariations ? Math.max(...prices) : undefined}
                         isPromotion={promoOf(product).isPromotion}
                         promotionDescription={promoOf(product).description}
+                        unavailable={isUnavailable(product)}
                       />
                     );
                   })}

@@ -27,6 +27,7 @@ describe('MerchantHeader (área do comerciante)', () => {
 
   it('mostra só as ferramentas da empresa', () => {
     renderHeader();
+    expect(screen.getAllByText('Visão geral').length).toBeGreaterThan(0);
     expect(screen.getAllByText('Minha empresa').length).toBeGreaterThan(0);
     expect(screen.getAllByText('Planos').length).toBeGreaterThan(0);
     expect(screen.getAllByText('Suporte').length).toBeGreaterThan(0);
@@ -49,6 +50,7 @@ describe('MerchantHeader (área do comerciante)', () => {
   it('os links do painel apontam para /painel e /suporte', () => {
     renderHeader();
     const hrefs = screen.getAllByRole('link').map((a) => a.getAttribute('href'));
+    expect(hrefs).toContain('/painel');
     expect(hrefs).toContain('/painel/empresa');
     expect(hrefs).toContain('/painel/planos');
     expect(hrefs).toContain('/suporte');

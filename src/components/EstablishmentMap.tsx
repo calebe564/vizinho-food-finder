@@ -10,6 +10,8 @@ interface EstablishmentMapProps {
   latitude?: number | null;
   longitude?: number | null;
   googleMapsLink?: string | null;
+  /** Avisa quando a pessoa pede a rota (usado nas estatísticas da empresa). */
+  onDirectionsClick?: () => void;
 }
 
 /**
@@ -17,7 +19,7 @@ interface EstablishmentMapProps {
  * O mapa (OpenStreetMap) só é carregado quando a pessoa pede, para a página abrir rápido
  * e para não enviar dados a terceiros sem necessidade.
  */
-export function EstablishmentMap({ name, address, referencePoint, latitude, longitude, googleMapsLink }: EstablishmentMapProps) {
+export function EstablishmentMap({ name, address, referencePoint, latitude, longitude, googleMapsLink, onDirectionsClick }: EstablishmentMapProps) {
   const [showMap, setShowMap] = useState(false);
   const hasCoordinates = validCoordinates(latitude, longitude);
   const embed = hasCoordinates ? osmEmbedUrl(latitude as number, longitude as number) : null;
@@ -35,7 +37,7 @@ export function EstablishmentMap({ name, address, referencePoint, latitude, long
       <div className="flex flex-wrap gap-2 mt-3">
         {directions && (
           <Button asChild size="sm" variant="outline" className="gap-1.5">
-            <a href={directions} target="_blank" rel="noopener noreferrer">
+            <a href={directions} target="_blank" rel="noopener noreferrer" onClick={onDirectionsClick}>
               <Navigation className="h-4 w-4" aria-hidden="true" />
               Como chegar
               <ExternalLink className="h-3 w-3 opacity-60" aria-hidden="true" />
