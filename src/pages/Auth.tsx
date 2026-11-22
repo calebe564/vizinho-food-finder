@@ -16,21 +16,7 @@ import { PasswordStrengthIndicator } from '@/components/PasswordStrengthIndicato
 import { z } from 'zod';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Checkbox } from '@/components/ui/checkbox';
-
-// Função para obter redirecionamento baseado na role
-function getRedirectForRole(role: UserRole): string {
-  switch (role) {
-    case 'adm_master':
-    case 'admin':
-    case 'pre_adm':
-      return '/admin/dashboard';
-    case 'empresario':
-      return '/minha-empresa';
-    case 'user':
-    default:
-      return '/';
-  }
-}
+import { homeForRole } from '@/config/areas';
 
 export default function Auth() {
   const { user, isLoading, signUp, signIn, recoverPassword, userRole } = useAuth();
@@ -86,7 +72,7 @@ export default function Auth() {
   useEffect(() => {
     if (user && userRole) {
       // Redirecionar baseado na role do usuário
-      const redirectPath = getRedirectForRole(userRole);
+      const redirectPath = homeForRole(userRole);
       navigate(redirectPath, { replace: true });
     }
   }, [user, userRole, navigate]);
@@ -125,7 +111,7 @@ export default function Auth() {
       
       // Redirecionar baseado na role retornada
       if (result.role) {
-        const redirectPath = getRedirectForRole(result.role);
+        const redirectPath = homeForRole(result.role);
         navigate(redirectPath, { replace: true });
       }
     } else {

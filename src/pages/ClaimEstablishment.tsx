@@ -36,6 +36,7 @@ import { useOwnershipCheck } from '@/hooks/useOwnershipCheck';
 import { OwnershipBlockDialog } from '@/components/OwnershipBlockDialog';
 import { CategorySelectItems } from "@/components/CategorySelectItems";
 import type { Database } from "@/integrations/supabase/types";
+import { MERCHANT_COMPANY } from '@/config/areas';
 
 type EstablishmentCategory = Database["public"]["Enums"]["establishment_category"];
 
@@ -478,7 +479,7 @@ export default function ClaimEstablishment() {
 
       console.log("Reivindicação enviada com sucesso!");
       toast.success('Reivindicação enviada com sucesso! Aguarde a análise do administrador.');
-      navigate('/minha-empresa');
+      navigate(MERCHANT_COMPANY);
     } catch (err) {
       console.error('Erro real ao enviar reivindicação:', err);
       const msg = err?.message || err?.details || 'Erro desconhecido';
@@ -1025,7 +1026,7 @@ export default function ClaimEstablishment() {
                 {currentStep === 1 && (
                   <Button 
                     variant="outline" 
-                    onClick={() => navigate('/minha-empresa')} 
+                    onClick={() => navigate(MERCHANT_COMPANY)} 
                     className="w-full"
                   >
                     Cancelar

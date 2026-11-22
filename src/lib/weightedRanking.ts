@@ -1,14 +1,14 @@
 /**
- * Weighted probabilistic ranking system for establishments.
- * 
- * Uses plan weights to create a non-deterministic ranking where
- * higher-paying plans have proportionally more visibility,
- * while free plans still get some exposure.
- * 
- * PLAN WEIGHTS (configurable via plan_configurations table):
- * - PRO: 80 (70-80% chance of top positions)
- * - BASIC: 20 (20-40% chance of appearing before free)
- * - FREE: 5 (5-15% chance of high positions)
+ * Rodízio justo de estabelecimentos.
+ *
+ * REGRA DE NEGÓCIO: o plano contratado NÃO dá vantagem na ordem dos resultados.
+ * Todos os itens têm o mesmo peso. O sorteio (que muda a cada 5 minutos) só serve para
+ * dar a todos as mesmas chances de aparecer nas primeiras posições dentro de cada grupo
+ * (aberto/fechado, proximidade etc.). Anúncios pagos ficam em espaços próprios, marcados
+ * como "Patrocinado", e nunca se misturam à classificação orgânica.
+ *
+ * Os campos de peso e de promoção por plano foram mantidos nas assinaturas das funções
+ * apenas por compatibilidade e são ignorados.
  */
 
 export interface WeightedItem {
@@ -30,32 +30,33 @@ const DEFAULT_WEIGHTS: Record<string, PlanWeight> = {
 };
 
 /**
- * Get the effective weight for an item based on its plan and promotion status.
+ * Peso efetivo de um item: igual para todos (o plano e a promoção não alteram a ordem).
  */
+export const EQUAL_WEIGHT = 1;
+
 function getEffectiveWeight(
-  item: WeightedItem,
-  planWeights: Record<string, PlanWeight>
+  _item: WeightedItem,
+  _planWeights: Record<string, PlanWeight>
 ): number {
-  const planConfig = planWeights[item.plan] || DEFAULT_WEIGHTS["gratuito"];
-  let weight = planConfig.visibility_weight;
-
-  // Apply promotion boost if active
-  if (item.is_promotion) {
-    weight *= planConfig.promotion_boost;
-  }
-
-  return weight;
+  return EQUAL_WEIGHT;
 }
 
 /**
- * Seeded pseudo-random number generator for consistent results within a time window.
- * Changes every 5 minutes to create natural rotation.
+ * Gerador pseudoaleatório com semente (mulberry32). A semente passa por uma mistura antes
+ * do uso: o gerador antigo era linear e, em janelas de tempo seguidas, repetia quase a mesma
+ * ordem por horas, favorecendo sempre os mesmos estabelecimentos.
  */
 function seededRandom(seed: number): () => number {
-  let state = seed;
+  let a = (seed ^ 0x9e3779b9) >>> 0;
+  a = Math.imul(a ^ (a >>> 16), 0x85ebca6b);
+  a = Math.imul(a ^ (a >>> 13), 0xc2b2ae35);
+  a = (a ^ (a >>> 16)) >>> 0;
   return () => {
-    state = (state * 1664525 + 1013904223) & 0xffffffff;
-    return (state >>> 0) / 0xffffffff;
+    a = (a + 0x6d2b79f5) >>> 0;
+    let t = a;
+    t = Math.imul(t ^ (t >>> 15), t | 1);
+    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
   };
 }
 
