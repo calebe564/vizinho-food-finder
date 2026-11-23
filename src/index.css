@@ -14,6 +14,8 @@ Design: Azul marinho institucional #0B1E2D, Azul médio #1E6FD9, Fundo #F5F7FA
 
 @layer base {
   :root {
+    /* Azul do logotipo */
+    --brand-blue: #1048E8;
     /* Cores principais - Modo Claro - Design Marketplace */
     /* Fundo principal: #FFFFFF */
     --background: 0 0% 100%;
@@ -45,7 +47,7 @@ Design: Azul marinho institucional #0B1E2D, Azul médio #1E6FD9, Fundo #F5F7FA
     --accent: 212 76% 48%;
     --accent-foreground: 0 0% 100%;
     
-    --destructive: 0 84% 60%;
+    --destructive: 0 84% 50%;
     --destructive-foreground: 0 0% 100%;
     
     /* Bordas: #E5E7EB */
@@ -56,10 +58,10 @@ Design: Azul marinho institucional #0B1E2D, Azul médio #1E6FD9, Fundo #F5F7FA
     --radius: 1rem;
     
     /* Status colors */
-    --success: 142 76% 36%;
+    --success: 142 76% 30%;
     --success-foreground: 0 0% 100%;
     --warning: 38 92% 50%;
-    --warning-foreground: 0 0% 100%;
+    --warning-foreground: 209 61% 11%;
     
     /* Gradientes e efeitos */
     --gradient-primary: linear-gradient(135deg, hsl(209 61% 11%), hsl(209 61% 20%));
@@ -81,6 +83,8 @@ Design: Azul marinho institucional #0B1E2D, Azul médio #1E6FD9, Fundo #F5F7FA
   }
 
   .dark {
+    /* Azul do logotipo, mais claro para ter contraste no fundo escuro */
+    --brand-blue: #4C7DFF;
     /* Cores principais - Modo Escuro */
     --background: 209 40% 8%;
     --foreground: 210 20% 95%;
@@ -93,7 +97,7 @@ Design: Azul marinho institucional #0B1E2D, Azul médio #1E6FD9, Fundo #F5F7FA
     
     /* Azul mais claro para modo escuro */
     --primary: 212 76% 55%;
-    --primary-foreground: 0 0% 100%;
+    --primary-foreground: 209 40% 8%;
     --primary-hover: 212 76% 60%;
     --primary-light: 209 40% 16%;
     
@@ -101,10 +105,10 @@ Design: Azul marinho institucional #0B1E2D, Azul médio #1E6FD9, Fundo #F5F7FA
     --secondary-foreground: 210 20% 95%;
     
     --muted: 209 35% 18%;
-    --muted-foreground: 210 15% 55%;
+    --muted-foreground: 210 15% 59%;
     
     --accent: 212 80% 60%;
-    --accent-foreground: 0 0% 100%;
+    --accent-foreground: 209 40% 8%;
     
     --destructive: 0 62% 50%;
     --destructive-foreground: 0 0% 100%;
@@ -115,9 +119,9 @@ Design: Azul marinho institucional #0B1E2D, Azul médio #1E6FD9, Fundo #F5F7FA
     
     /* Status colors */
     --success: 142 70% 45%;
-    --success-foreground: 0 0% 100%;
+    --success-foreground: 209 40% 8%;
     --warning: 38 85% 55%;
-    --warning-foreground: 0 0% 100%;
+    --warning-foreground: 209 40% 8%;
     
     /* Gradientes e efeitos modo escuro */
     --gradient-primary: linear-gradient(135deg, hsl(212 76% 50%), hsl(212 76% 65%));

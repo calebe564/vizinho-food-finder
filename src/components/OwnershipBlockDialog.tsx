@@ -8,6 +8,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
+import { MERCHANT_COMPANY } from '@/config/areas';
 
 interface OwnershipBlockDialogProps {
   open: boolean;
@@ -33,7 +34,7 @@ export function OwnershipBlockDialog({ open, onOpenChange, message }: OwnershipB
           </DialogDescription>
         </DialogHeader>
         <div className="flex flex-col gap-2 mt-4">
-          <Button onClick={() => { onOpenChange(false); navigate('/minha-empresa'); }} className="w-full">
+          <Button onClick={() => { onOpenChange(false); navigate(MERCHANT_COMPANY); }} className="w-full">
             <Briefcase className="h-4 w-4 mr-2" />
             Ir para minha empresa
           </Button>

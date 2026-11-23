@@ -4,6 +4,20 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0" />
     <meta name="theme-color" content="#0057FF" />
+    <!-- Aplica o tema antes da página aparecer (evita piscar branco no modo escuro). Mesma regra de src/lib/theme.ts -->
+    <script>
+      (function () {
+        try {
+          var p = localStorage.getItem('theme');
+          var dark = p === 'dark' || (p !== 'light' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+          var r = document.documentElement;
+          r.classList.add(dark ? 'dark' : 'light');
+          r.style.colorScheme = dark ? 'dark' : 'light';
+          var m = document.querySelector('meta[name="theme-color"]');
+          if (m) m.setAttribute('content', dark ? '#0c151d' : '#0057FF');
+        } catch (e) {}
+      })();
+    </script>
     
     <title>Comércio Vizinho - Comércio e serviços do seu bairro</title>
     <meta name="description" content="Encontre comércio e serviços perto de você: comida, lojas, salões, oficinas, saúde e muito mais. Veja produtos, locais, preços e promoções.">
@@ -23,6 +37,7 @@
     <meta name="twitter:image" content="https://storage.googleapis.com/gpt-engineer-file-uploads/ovVNOYN7NgQ4AYIxNcDMw0tj8CH3/social-images/social-1766754337851-Untitled design.png">
 
     <!-- PWA -->
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
     <link rel="icon" href="/favicon.png" type="image/png" />
     <link rel="manifest" href="/manifest.json" />
     <link rel="apple-touch-icon" href="/icon-192.png" />

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useUserRole } from '@/hooks/useUserRole';
 import { useEstablishmentRequest } from '@/hooks/useEstablishmentRequest';
@@ -59,6 +59,8 @@ import { useEstablishmentPhotos, useAddPhotos, useSetMainPhoto, useDeletePhoto }
 import { ReviewSection } from '@/components/ReviewSection';
 import { ratingOf } from "@/lib/dbFields";
 import { categoryLabels } from "@/config/categories";
+import { MERCHANT_COMPANY } from '@/config/areas';
+import { ProductsManager } from '@/components/business/ProductsManager';
 
 interface EstablishmentData {
   id: string;
@@ -70,6 +72,8 @@ interface EstablishmentData {
   website?: string | null;
   instagram?: string | null;
   contact_email?: string | null;
+  has_pickup?: boolean | null;
+  banner_image?: string | null;
   schedule: string | null;
   profile_image: string | null;
   category: string;
@@ -101,6 +105,10 @@ export default function MyEstablishment() {
   // Dialog states
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [productDialogOpen, setProductDialogOpen] = useState(false);
+  const [searchParams] = useSearchParams();
+  // atalhos do painel abrem direto na aba certa: /painel/empresa?aba=produtos
+  const TAB_BY_PARAM: Record<string, string> = { produtos: 'products', fotos: 'photos', avaliacoes: 'reviews', funcoes: 'functions', configuracoes: 'settings' };
+  const initialTab = TAB_BY_PARAM[searchParams.get('aba') ?? ''] ?? 'info';
   const [editingProduct, setEditingProduct] = useState<ProductJson | null>(null);
   const [editingProductIndex, setEditingProductIndex] = useState<number | undefined>(undefined);
 
@@ -129,6 +137,8 @@ export default function MyEstablishment() {
             website: estData.website,
             instagram: estData.instagram,
             contact_email: estData.contact_email,
+            has_pickup: (estData as { has_pickup?: boolean | null }).has_pickup,
+            banner_image: estData.banner_image,
             schedule: estData.schedule,
             profile_image: estData.profile_image,
             category: estData.category,
@@ -168,6 +178,8 @@ export default function MyEstablishment() {
               website: estData.website,
               instagram: estData.instagram,
               contact_email: estData.contact_email,
+              has_pickup: (estData as { has_pickup?: boolean | null }).has_pickup,
+              banner_image: estData.banner_image,
               schedule: estData.schedule,
               profile_image: estData.profile_image,
               category: estData.category,
@@ -310,7 +322,7 @@ export default function MyEstablishment() {
   }
 
   if (!user) {
-    navigate('/auth', { state: { from: '/minha-empresa' } });
+    navigate('/auth', { state: { from: MERCHANT_COMPANY } });
     return null;
   }
 
@@ -632,7 +644,7 @@ export default function MyEstablishment() {
             />
 
             {/* ===== MAIN TABS ===== */}
-            <Tabs defaultValue="info" className="space-y-4">
+            <Tabs defaultValue={initialTab} className="space-y-4">
               <TabsList className="grid w-full grid-cols-6 h-12 rounded-2xl bg-muted/80 p-1">
                 <TabsTrigger value="info" className="rounded-xl text-xs md:text-sm data-[state=active]:shadow-md gap-1.5">
                   <Building2 className="h-4 w-4" />
@@ -720,6 +732,10 @@ export default function MyEstablishment() {
 
               {/* ===== TAB: PRODUTOS ===== */}
               <TabsContent value="products">
+                {!establishmentData.isFromRequest ? (
+                  /* Empresa aprovada: produtos ficam na tabela products (com limite do plano e disponibilidade) */
+                  <ProductsManager establishmentId={establishmentData.id} />
+                ) : (
                 <Card className="border border-border rounded-2xl">
                   <CardHeader>
                     <CardTitle className="flex items-center justify-between">
@@ -804,6 +820,7 @@ export default function MyEstablishment() {
                     )}
                   </CardContent>
                 </Card>
+                )}
               </TabsContent>
 
               {/* ===== TAB: AVALIAÇÕES ===== */}
@@ -1083,6 +1100,8 @@ export default function MyEstablishment() {
           website: establishmentData.website,
           instagram: establishmentData.instagram,
           contact_email: establishmentData.contact_email,
+          has_pickup: establishmentData.has_pickup,
+          banner_image: establishmentData.banner_image,
           schedule: establishmentData.schedule,
           address: establishmentData.address,
         }}
