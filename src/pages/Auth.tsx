@@ -17,6 +17,7 @@ import { z } from 'zod';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Checkbox } from '@/components/ui/checkbox';
 import { homeForRole } from '@/config/areas';
+import { BrandLogo } from '@/components/BrandLogo';
 
 export default function Auth() {
   const { user, isLoading, signUp, signIn, recoverPassword, userRole } = useAuth();
@@ -202,7 +203,10 @@ export default function Auth() {
         <main className="flex-1 flex items-center justify-center p-4">
           <Card className="w-full max-w-md border-0 shadow-elevated rounded-3xl">
             <CardHeader className="text-center pb-4">
-              <CardTitle className="text-2xl font-bold">Comércio Vizinho</CardTitle>
+              <div className="flex justify-center mb-3">
+                <BrandLogo size="lg" />
+              </div>
+              <CardTitle className="sr-only">Comércio Vizinho</CardTitle>
               <CardDescription>
                 {mode === 'login' && 'Entre na sua conta'}
                 {mode === 'signup' && 'Crie sua conta'}

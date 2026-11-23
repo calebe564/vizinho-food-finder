@@ -1,5 +1,5 @@
 import { Link, NavLink, useNavigate } from "react-router-dom";
-import { Briefcase, Crown, ExternalLink, LayoutDashboard, LogOut, MapPin, MessageSquare } from "lucide-react";
+import { Briefcase, Crown, ExternalLink, LayoutDashboard, LogOut, MessageSquare } from "lucide-react";
 import { ThemeToggle } from "./ThemeToggle";
 import { Button } from "./ui/button";
 import { Avatar, AvatarFallback } from "./ui/avatar";
@@ -13,6 +13,7 @@ import {
 import { useAuth } from "@/contexts/AuthContext";
 import { useUnreadConversations } from "@/hooks/useUnreadConversations";
 import { MERCHANT_BASE, MERCHANT_COMPANY, MERCHANT_HOME } from "@/config/areas";
+import { BrandLogo } from "./BrandLogo";
 
 const NAV = [
   { to: MERCHANT_HOME, label: "Visão geral", icon: LayoutDashboard, end: true },
@@ -43,11 +44,9 @@ export function MerchantHeader() {
     <header className="sticky top-0 z-50 w-full bg-card/95 backdrop-blur-md border-b border-border">
       <div className="container flex h-14 md:h-16 items-center justify-between px-3 md:px-4">
         <Link to={MERCHANT_HOME} className="flex items-center gap-1.5 hover:opacity-90 transition-opacity" aria-label="Painel do comerciante">
-          <MapPin className="h-5 w-5 md:h-6 md:w-6 text-primary" aria-hidden="true" />
-          <div className="flex flex-col leading-none">
-            <span className="font-bold text-sm md:text-base text-primary tracking-tight">Comércio Vizinho</span>
-            <span className="text-[10px] md:text-xs text-muted-foreground -mt-0.5">Painel do comerciante</span>
-          </div>
+          <BrandLogo size="md" />
+          <span className="hidden md:block h-8 w-px bg-border mx-1" aria-hidden="true" />
+          <span className="hidden md:block w-[5.5rem] text-xs font-medium text-muted-foreground leading-tight">Painel do comerciante</span>
         </Link>
 
         <nav className="hidden md:flex items-center gap-0.5" aria-label="Painel do comerciante">

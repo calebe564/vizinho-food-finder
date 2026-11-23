@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom";
-import { MessageCircle, Mail, MapPin } from "lucide-react";
+import { MessageCircle, Mail } from "lucide-react";
+import { BrandLogo } from "./BrandLogo";
 
 export function Footer() {
   const currentYear = new Date().getFullYear();
@@ -11,8 +12,7 @@ export function Footer() {
           {/* Logo e Sobre */}
           <div className="col-span-2">
             <Link to="/" className="flex items-center gap-1.5 mb-3">
-              <MapPin className="h-5 w-5 text-primary" />
-              <span className="font-bold text-base">Comércio Vizinho</span>
+              <BrandLogo size="md" />
             </Link>
             <p className="text-xs md:text-sm text-muted-foreground mb-3 max-w-sm leading-relaxed">
               Conectando você aos melhores estabelecimentos do seu bairro. 

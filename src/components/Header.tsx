@@ -1,11 +1,10 @@
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { Home, Building2, Store, Menu, Heart, LogIn, LogOut, User, Briefcase, UserPlus, X, MapPin, MoreVertical, MessageSquare, ClipboardCheck, Bot, Crown, ShieldCheck } from "lucide-react";
+import { Home, Building2, Store, Menu, Heart, LogIn, LogOut, User, Briefcase, UserPlus, X, MoreVertical, MessageSquare, ClipboardCheck, Bot, Crown, ShieldCheck } from "lucide-react";
 import { ThemeToggle } from "./ThemeToggle";
 import { Button } from "./ui/button";
 import { Sheet, SheetContent, SheetTrigger, SheetClose } from "./ui/sheet";
 import { useState } from "react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "./ui/dropdown-menu";
-import logo from "@/assets/logo.png";
 import { useFavorites } from "@/hooks/useFavorites";
 import { useAuth } from "@/contexts/AuthContext";
 import { useUserRole } from "@/hooks/useUserRole";
@@ -16,6 +15,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
 import { useUnreadConversations } from "@/hooks/useUnreadConversations";
 import { AIChatSheet } from "./AIChatSheet";
 import { useAdminNotifications } from "@/hooks/useAdminNotifications";
+import { BrandLogo } from "./BrandLogo";
 
 const ENTRY_ICONS: Record<MenuEntryId, typeof Briefcase> = {
   cadastrar: UserPlus,
@@ -61,11 +61,7 @@ function ConsumerHeader() {
       <div className="container flex h-14 md:h-16 items-center justify-between px-3 md:px-4">
         {/* Logo */}
         <Link to="/informacoes" className="flex items-center gap-1.5 hover:opacity-90 transition-opacity">
-          <MapPin className="h-5 w-5 md:h-6 md:w-6 text-primary" />
-          <div className="flex flex-col leading-none">
-            <span className="font-bold text-sm md:text-base text-primary tracking-tight">Comércio</span>
-            <span className="font-bold text-sm md:text-base text-foreground -mt-0.5 tracking-tight">Vizinho</span>
-          </div>
+          <BrandLogo size="md" />
         </Link>
 
         {/* Desktop Navigation - Clean horizontal */}
@@ -197,11 +193,7 @@ function ConsumerHeader() {
               {/* Mobile menu header */}
               <div className="flex items-center justify-between p-3 border-b border-border">
                 <div className="flex items-center gap-1.5">
-                  <MapPin className="h-4 w-4 text-primary" />
-                  <div className="flex flex-col leading-none">
-                    <span className="font-bold text-xs text-primary">Comércio</span>
-                    <span className="font-bold text-xs text-foreground -mt-0.5">Vizinho</span>
-                  </div>
+                  <BrandLogo size="sm" />
                 </div>
                 <SheetClose asChild>
                   <Button variant="ghost" size="icon" className="rounded-full h-8 w-8">

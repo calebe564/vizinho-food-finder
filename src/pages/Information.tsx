@@ -3,7 +3,7 @@ import { Footer } from "@/components/Footer";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { FileText, Shield, Info, ArrowRight } from "lucide-react";
 import { Link } from "react-router-dom";
-import logo from "@/assets/logo.png";
+import { BrandLogo } from "@/components/BrandLogo";
 
 export default function Information() {
   return (
@@ -12,7 +12,7 @@ export default function Information() {
       <main className="flex-1 container px-4 py-8">
         <div className="max-w-2xl mx-auto">
           <div className="flex flex-col items-center mb-8">
-            <img src={logo} alt="Comércio Vizinho" className="h-20 w-20 rounded-full object-cover mb-4" />
+            <BrandLogo size="lg" className="mb-4" />
             <h1 className="text-2xl font-bold text-center">Comércio Vizinho</h1>
             <p className="text-muted-foreground text-center mt-2">
               Informações institucionais e documentos legais

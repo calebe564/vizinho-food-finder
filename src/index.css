@@ -14,6 +14,8 @@ Design: Azul marinho institucional #0B1E2D, Azul médio #1E6FD9, Fundo #F5F7FA
 
 @layer base {
   :root {
+    /* Azul do logotipo */
+    --brand-blue: #1048E8;
     /* Cores principais - Modo Claro - Design Marketplace */
     /* Fundo principal: #FFFFFF */
     --background: 0 0% 100%;
@@ -81,6 +83,8 @@ Design: Azul marinho institucional #0B1E2D, Azul médio #1E6FD9, Fundo #F5F7FA
   }
 
   .dark {
+    /* Azul do logotipo, mais claro para ter contraste no fundo escuro */
+    --brand-blue: #4C7DFF;
     /* Cores principais - Modo Escuro */
     --background: 209 40% 8%;
     --foreground: 210 20% 95%;
