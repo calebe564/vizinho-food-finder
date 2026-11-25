@@ -30,6 +30,10 @@ import { EstablishmentMap } from "@/components/EstablishmentMap";
 import { ReportDialog } from "@/components/ReportDialog";
 import { buildLocalBusinessJsonLd, establishmentMetaDescription, jsonLdScript } from "@/lib/seo";
 import { trackEvent } from "@/lib/tracking";
+import { useTheme } from "@/contexts/ThemeContext";
+import { getPlanConfig, usePlanConfigs } from "@/hooks/usePlanConfig";
+import { toThemeInput, useEstablishmentTheme } from "@/hooks/useEstablishmentTheme";
+import { buildMerchantTheme, themeStyle } from "@/lib/themeColors";
 
 interface Establishment {
   id: string;
@@ -52,6 +56,7 @@ interface Establishment {
   images: unknown;
   is_paid: boolean;
   has_delivery: boolean | null;
+  plan?: string | null;
   reference_point?: string | null;
   state?: string | null;
   cep?: string | null;
@@ -95,6 +100,9 @@ export default function EstablishmentDetail() {
   const { isFavorite, toggleFavorite } = useFavorites();
   const isFav = id ? isFavorite(id) : false;
   const [reportOpen, setReportOpen] = useState(false);
+  const { theme: themeMode } = useTheme();
+  const { data: planConfigs = [] } = usePlanConfigs();
+  const { data: themeRow } = useEstablishmentTheme(id);
 
   const { data: establishment, isLoading: establishmentLoading, isError } = useQuery({
     queryKey: ["establishment", id],
@@ -222,6 +230,9 @@ export default function EstablishmentDetail() {
 
   const scheduleStatus = getScheduleStatus(establishment.schedule);
   const isUnavailable = (p: object) => (p as { is_available?: boolean | null }).is_available === false;
+  // Cores da empresa: só valem o que o plano atual permite, e só dentro de <main> (o cabeçalho e o resto do site não mudam)
+  const customizationLevel = getPlanConfig(planConfigs, establishment.plan ?? "gratuito").customization_level;
+  const merchantTheme = buildMerchantTheme(toThemeInput(themeRow), customizationLevel);
   const activePromotions = products.filter((p) => promoOf(p).isActive && !isUnavailable(p));
   const pageUrl = typeof window !== "undefined" ? window.location.href : "";
   const categoryName = categoryLabels[establishment.category] || establishment.category;
@@ -308,7 +319,7 @@ export default function EstablishmentDetail() {
         </div>
       </header>
 
-      <main className="container mx-auto px-4 pb-8">
+      <main className="container mx-auto px-4 pb-8" style={themeStyle(merchantTheme, themeMode)} data-merchant-theme={merchantTheme ? "on" : undefined}>
         {/* ===== CAPA ===== */}
         {establishment.banner_image && /^https?:\/\//i.test(establishment.banner_image) && (
           <div className="-mx-4 md:mx-0 md:mt-4 md:rounded-2xl overflow-hidden bg-muted h-32 sm:h-44 md:h-56">

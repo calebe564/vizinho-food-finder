@@ -2,6 +2,8 @@
 // administrador pode alterá-los; esta lista é só o "plano B" quando o banco não responde,
 // e deve refletir o que foi definido como proposta inicial do negócio.
 
+import type { CustomizationLevel } from '@/lib/themeColors';
+
 export interface PlanDefinition {
   plan_name: string;
   display_label: string;
@@ -12,6 +14,8 @@ export interface PlanDefinition {
   sort_order: number;
   is_active: boolean;
   is_public: boolean;
+  /** Personalização visual da página: none = tema padrão, basic = cor principal, advanced = + secundária e cantos. */
+  customization_level: CustomizationLevel;
 }
 
 export const DEFAULT_PLANS: PlanDefinition[] = [
@@ -34,6 +38,7 @@ export const DEFAULT_PLANS: PlanDefinition[] = [
     sort_order: 1,
     is_active: true,
     is_public: true,
+    customization_level: 'none',
   },
   {
     plan_name: 'pro',
@@ -51,6 +56,7 @@ export const DEFAULT_PLANS: PlanDefinition[] = [
     sort_order: 2,
     is_active: true,
     is_public: true,
+    customization_level: 'basic',
   },
   {
     plan_name: 'max',
@@ -68,6 +74,7 @@ export const DEFAULT_PLANS: PlanDefinition[] = [
     sort_order: 3,
     is_active: true,
     is_public: true,
+    customization_level: 'advanced',
   },
   {
     plan_name: 'gratuito',
@@ -79,6 +86,7 @@ export const DEFAULT_PLANS: PlanDefinition[] = [
     sort_order: 0,
     is_active: true,
     is_public: false,
+    customization_level: 'none',
   },
 ];
 

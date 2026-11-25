@@ -13,8 +13,10 @@ const withNeutralWeights = (p: PlanDefinition): PlanConfig => ({ ...p, visibilit
 
 export const DEFAULT_CONFIGS: PlanConfig[] = DEFAULT_PLANS.map(withNeutralWeights);
 
-const COLUMNS =
+const BASE_COLUMNS =
   "plan_name, display_label, price_cents, max_products, description, benefits, sort_order, is_active, is_public, visibility_weight, promotion_boost";
+const COLUMNS = `${BASE_COLUMNS}, customization_level`;
+const DEFAULT_LEVEL: Record<string, PlanConfig["customization_level"]> = { pro: "basic", max: "advanced" };
 
 export const PLAN_CONFIGS_KEY = ["plan-configurations"] as const;
 
@@ -22,7 +24,11 @@ export function usePlanConfigs() {
   return useQuery({
     queryKey: PLAN_CONFIGS_KEY,
     queryFn: async (): Promise<PlanConfig[]> => {
-      const { data, error } = await supabaseUntyped.from("plan_configurations").select(COLUMNS);
+      let { data, error } = await supabaseUntyped.from("plan_configurations").select(COLUMNS);
+      if (error) {
+        // a migration da personalização ainda não foi aplicada: busca sem a coluna nova
+        ({ data, error } = await supabaseUntyped.from("plan_configurations").select(BASE_COLUMNS));
+      }
       if (error || !data || data.length === 0) return DEFAULT_CONFIGS;
       return (data as PlanConfig[]).map((row) => ({
         ...row,
@@ -32,6 +38,7 @@ export function usePlanConfigs() {
         sort_order: row.sort_order ?? 0,
         is_active: row.is_active ?? true,
         is_public: row.is_public ?? true,
+        customization_level: row.customization_level ?? DEFAULT_LEVEL[row.plan_name] ?? "none",
       }));
     },
     staleTime: 1000 * 60 * 5,

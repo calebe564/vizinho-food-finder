@@ -15,32 +15,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
 import { Helmet } from 'react-helmet-async';
-import { 
-  Building2, 
-  Package, 
-  Clock, 
-  XCircle, 
-  Edit, 
-  Loader2,
-  Store,
-  Phone,
-  MapPin,
-  Image,
-  Trash2,
-  Camera,
-  ImagePlus,
-  Settings,
-  User,
-  Star,
-  CheckCircle2,
-  ArrowLeftRight,
-  Megaphone,
-  Sparkles,
-  BarChart3,
-  StickyNote,
-  ChevronRight,
-  Crown
-} from 'lucide-react';
+import { Building2, Package, Clock, XCircle, Edit, Loader2, Store, Phone, MapPin, Image, Trash2, Camera, ImagePlus, Settings, User, Star, CheckCircle2, ArrowLeftRight, Megaphone, Sparkles, BarChart3, StickyNote, ChevronRight, Crown, Palette } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -61,6 +36,7 @@ import { ratingOf } from "@/lib/dbFields";
 import { categoryLabels } from "@/config/categories";
 import { MERCHANT_COMPANY } from '@/config/areas';
 import { ProductsManager } from '@/components/business/ProductsManager';
+import { AppearanceEditor } from '@/components/business/AppearanceEditor';
 
 interface EstablishmentData {
   id: string;
@@ -107,7 +83,7 @@ export default function MyEstablishment() {
   const [productDialogOpen, setProductDialogOpen] = useState(false);
   const [searchParams] = useSearchParams();
   // atalhos do painel abrem direto na aba certa: /painel/empresa?aba=produtos
-  const TAB_BY_PARAM: Record<string, string> = { produtos: 'products', fotos: 'photos', avaliacoes: 'reviews', funcoes: 'functions', configuracoes: 'settings' };
+  const TAB_BY_PARAM: Record<string, string> = { produtos: 'products', fotos: 'photos', avaliacoes: 'reviews', funcoes: 'functions', configuracoes: 'settings', aparencia: 'appearance' };
   const initialTab = TAB_BY_PARAM[searchParams.get('aba') ?? ''] ?? 'info';
   const [editingProduct, setEditingProduct] = useState<ProductJson | null>(null);
   const [editingProductIndex, setEditingProductIndex] = useState<number | undefined>(undefined);
@@ -645,7 +621,7 @@ export default function MyEstablishment() {
 
             {/* ===== MAIN TABS ===== */}
             <Tabs defaultValue={initialTab} className="space-y-4">
-              <TabsList className="grid w-full grid-cols-6 h-12 rounded-2xl bg-muted/80 p-1">
+              <TabsList className={`grid w-full ${establishmentData.isFromRequest ? "grid-cols-6" : "grid-cols-7"} h-12 rounded-2xl bg-muted/80 p-1`}>
                 <TabsTrigger value="info" className="rounded-xl text-xs md:text-sm data-[state=active]:shadow-md gap-1.5">
                   <Building2 className="h-4 w-4" />
                   <span className="hidden md:inline">Info</span>
@@ -666,6 +642,12 @@ export default function MyEstablishment() {
                   <Image className="h-4 w-4" />
                   <span className="hidden md:inline">Fotos</span>
                 </TabsTrigger>
+                {!establishmentData.isFromRequest && (
+                  <TabsTrigger value="appearance" className="rounded-xl text-xs md:text-sm data-[state=active]:shadow-md gap-1.5">
+                    <Palette className="h-4 w-4" />
+                    <span className="hidden md:inline">Aparência</span>
+                  </TabsTrigger>
+                )}
                 <TabsTrigger value="settings" className="rounded-xl text-xs md:text-sm data-[state=active]:shadow-md gap-1.5">
                   <Settings className="h-4 w-4" />
                   <span className="hidden md:inline">Config</span>
@@ -822,6 +804,13 @@ export default function MyEstablishment() {
                 </Card>
                 )}
               </TabsContent>
+
+              {/* ===== TAB: APARÊNCIA ===== */}
+              {!establishmentData.isFromRequest && (
+                <TabsContent value="appearance">
+                  <AppearanceEditor establishmentId={establishmentData.id} establishmentName={establishmentData.name} />
+                </TabsContent>
+              )}
 
               {/* ===== TAB: AVALIAÇÕES ===== */}
               <TabsContent value="reviews">

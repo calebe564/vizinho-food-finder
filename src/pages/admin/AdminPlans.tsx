@@ -28,6 +28,7 @@ function PlanEditor({ plan }: { plan: PlanConfig }) {
   const [order, setOrder] = useState(String(plan.sort_order));
   const [isActive, setIsActive] = useState(plan.is_active);
   const [isPublic, setIsPublic] = useState(plan.is_public);
+  const [level, setLevel] = useState(plan.customization_level);
 
   const save = useMutation({
     mutationFn: async () => {
@@ -50,6 +51,7 @@ function PlanEditor({ plan }: { plan: PlanConfig }) {
           sort_order: sortOrder,
           is_active: isActive,
           is_public: isPublic,
+          customization_level: level,
           updated_at: new Date().toISOString(),
         })
         .eq("plan_name", plan.plan_name);
@@ -95,6 +97,19 @@ function PlanEditor({ plan }: { plan: PlanConfig }) {
         <div>
           <Label htmlFor={`ben-${plan.plan_name}`}>Benefícios (um por linha)</Label>
           <Textarea id={`ben-${plan.plan_name}`} rows={6} value={benefits} onChange={(e) => setBenefits(e.target.value)} />
+        </div>
+        <div>
+          <Label htmlFor={`lvl-${plan.plan_name}`}>Personalização visual da página</Label>
+          <select
+            id={`lvl-${plan.plan_name}`}
+            value={level}
+            onChange={(e) => setLevel(e.target.value as typeof level)}
+            className="mt-1 h-10 w-full rounded-md border border-input bg-background px-3 text-sm sm:w-80"
+          >
+            <option value="none">Nenhuma (tema padrão)</option>
+            <option value="basic">Básica (cor principal)</option>
+            <option value="advanced">Avançada (cor principal, secundária e cantos)</option>
+          </select>
         </div>
         <div className="flex flex-wrap items-center gap-6">
           <div className="flex items-center gap-2">

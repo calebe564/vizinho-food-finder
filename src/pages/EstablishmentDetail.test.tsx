@@ -8,7 +8,7 @@ import { HelmetProvider } from 'react-helmet-async';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 
 type Row = Record<string, unknown>;
-const db = vi.hoisted(() => ({ tables: {} as Record<string, Row[]> }));
+const db = vi.hoisted(() => ({ tables: {} as Record<string, Row[]>, theme: null as null | Record<string, unknown> }));
 
 // banco de mentira: .from(t).select().eq()... devolve as linhas da tabela, filtradas pelos .eq()
 vi.mock('@/integrations/supabase/client', () => {
@@ -35,11 +35,21 @@ vi.mock('@/hooks/useUserRole', () => ({ useUserRole: () => ({ isAdmin: false, is
 vi.mock('@/hooks/useFavorites', () => ({ useFavorites: () => ({ isFavorite: () => false, toggleFavorite: vi.fn() }) }));
 vi.mock('@/hooks/useEstablishmentPhotos', () => ({ useEstablishmentPhotos: () => ({ data: [] }) }));
 vi.mock('@/components/ThemeToggle', () => ({ ThemeToggle: () => null }));
+vi.mock('@/contexts/ThemeContext', () => ({ useTheme: () => ({ theme: 'light' }) }));
+vi.mock('@/hooks/usePlanConfig', async (orig) => ({
+  ...(await orig<typeof import('@/hooks/usePlanConfig')>()),
+  usePlanConfigs: () => ({ data: DEFAULT_CONFIGS }),
+}));
+vi.mock('@/hooks/useEstablishmentTheme', async (orig) => ({
+  ...(await orig<typeof import('@/hooks/useEstablishmentTheme')>()),
+  useEstablishmentTheme: () => ({ data: db.theme }),
+}));
 vi.mock('@/components/ReviewSection', () => ({ ReviewSection: () => <div>avaliações</div> }));
 vi.mock('@/components/ProductCard', () => ({
   ProductCard: (p: { name: string; isPromotion?: boolean }) => <div data-testid="produto">{p.name}{p.isPromotion ? ' (promo)' : ''}</div>,
 }));
 
+import { DEFAULT_CONFIGS } from '@/hooks/usePlanConfig';
 import EstablishmentDetail from './EstablishmentDetail';
 
 const ID = 'e-1';
@@ -54,7 +64,7 @@ const establishment = {
   profile_image: null, banner_image: 'https://img.exemplo.com/capa.jpg', images: [],
   has_delivery: true, delivery_type: 'proprio', delivery_other: null, has_pickup: true,
   website: 'www.padariadoze.com.br', instagram: '@padariadoze', contact_email: 'contato@padariadoze.com.br',
-  external_link: null, rating_average: 4.5, rating_count: 8, cnpj: null,
+  external_link: null, rating_average: 4.5, rating_count: 8, cnpj: null, plan: 'gratuito',
 };
 
 function renderPage() {
@@ -73,6 +83,7 @@ function renderPage() {
 }
 
 beforeEach(() => {
+  db.theme = null;
   db.tables = {
     establishments: [establishment],
     products: [
@@ -150,5 +161,66 @@ describe('Página da empresa', () => {
     const item = await screen.findByText('Denunciar');
     fireEvent.click(item);
     expect(await screen.findByText('Denunciar empresa')).toBeTruthy();
+  });
+
+  describe('cores da empresa (personalização)', () => {
+    const row = { establishment_id: ID, primary_color: '#DB2777', secondary_color: '#0EA5E9', corner_style: 'arredondado' };
+    const main = () => document.querySelector('main') as HTMLElement;
+    const withPlan = (plan: string) => { db.tables.establishments = [{ ...establishment, plan }]; };
+
+    it('Max: aplica cor principal, secundária e cantos, só dentro de <main>', async () => {
+      withPlan('max'); db.theme = row;
+      renderPage();
+      await screen.findByText('Padaria do Zé');
+      expect(main().dataset.merchantTheme).toBe('on');
+      const style = main().style;
+      expect(style.getPropertyValue('--primary')).toMatch(/^\d+(\.\d)? \d+(\.\d)?% \d+(\.\d)?%$/);
+      expect(style.getPropertyValue('--accent')).not.toBe('');
+      expect(style.getPropertyValue('--radius')).toBe('1.5rem');
+    });
+
+    it('o cabeçalho do site e o resto da página NÃO recebem as cores', async () => {
+      withPlan('max'); db.theme = row;
+      renderPage();
+      await screen.findByText('Padaria do Zé');
+      document.querySelectorAll('header').forEach((h) => {
+        expect((h as HTMLElement).style.getPropertyValue('--primary')).toBe('');
+        expect(h.closest('main')).toBeNull();
+      });
+      expect(document.body.style.getPropertyValue('--primary')).toBe('');
+      expect(document.documentElement.style.getPropertyValue('--primary')).toBe('');
+    });
+
+    it('Pro: só a cor principal (secundária e cantos do tema salvo são ignorados)', async () => {
+      withPlan('pro'); db.theme = row;
+      renderPage();
+      await screen.findByText('Padaria do Zé');
+      expect(main().style.getPropertyValue('--primary')).not.toBe('');
+      expect(main().style.getPropertyValue('--accent')).toBe('');
+      expect(main().style.getPropertyValue('--radius')).toBe('');
+    });
+
+    it('plano sem personalização (ex.: rebaixado a Start): tema salvo é ignorado', async () => {
+      withPlan('start'); db.theme = row;
+      renderPage();
+      await screen.findByText('Padaria do Zé');
+      expect(main().dataset.merchantTheme).toBeUndefined();
+      expect(main().style.getPropertyValue('--primary')).toBe('');
+    });
+
+    it('sem tema salvo: tema padrão do site', async () => {
+      withPlan('max'); db.theme = null;
+      renderPage();
+      await screen.findByText('Padaria do Zé');
+      expect(main().dataset.merchantTheme).toBeUndefined();
+    });
+
+    it('um valor malicioso salvo no lugar da cor não vira estilo', async () => {
+      withPlan('max'); db.theme = { ...row, primary_color: '#fff; background:url(http://x)', secondary_color: 'red', corner_style: 'padrao' };
+      renderPage();
+      await screen.findByText('Padaria do Zé');
+      expect(main().dataset.merchantTheme).toBeUndefined();
+      expect(main().getAttribute('style') ?? '').not.toMatch(/url|http/);
+    });
   });
 });
