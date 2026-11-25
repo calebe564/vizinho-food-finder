@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Helmet } from 'react-helmet-async';
 import { ArrowLeft, ShieldCheck, Loader2, AlertTriangle } from 'lucide-react';
-import logo from '@/assets/logo.png';
+import { BrandMark } from '@/components/BrandLogo';
 
 export default function AdminLogin() {
   const navigate = useNavigate();
@@ -36,7 +36,7 @@ export default function AdminLogin() {
         <div className="min-h-screen flex items-center justify-center bg-background p-4">
           <Card className="w-full max-w-md border-0 shadow-elevated rounded-3xl">
             <CardHeader className="text-center">
-              <img src={logo} alt="Logo" className="h-16 w-16 rounded-2xl mx-auto mb-4" />
+              <BrandMark className="h-16 w-auto mx-auto mb-4" />
               <CardTitle>Painel Administrativo</CardTitle>
               <CardDescription className="flex items-center justify-center gap-2 text-amber-600">
                 <AlertTriangle className="h-4 w-4" />
@@ -65,7 +65,7 @@ export default function AdminLogin() {
         <div className="min-h-screen flex items-center justify-center bg-background p-4">
           <Card className="w-full max-w-md border-0 shadow-elevated rounded-3xl">
             <CardHeader className="text-center">
-              <img src={logo} alt="Logo" className="h-16 w-16 rounded-2xl mx-auto mb-4" />
+              <BrandMark className="h-16 w-auto mx-auto mb-4" />
               <CardTitle>Acesso Restrito</CardTitle>
               <CardDescription className="text-destructive flex items-center justify-center gap-2">
                 <AlertTriangle className="h-4 w-4" />
@@ -90,7 +90,7 @@ export default function AdminLogin() {
       <div className="min-h-screen flex items-center justify-center bg-background p-4">
         <Card className="w-full max-w-md border-0 shadow-elevated rounded-3xl">
           <CardHeader className="text-center">
-            <img src={logo} alt="Logo" className="h-16 w-16 rounded-2xl mx-auto mb-4" />
+            <BrandMark className="h-16 w-auto mx-auto mb-4" />
             <CardTitle className="flex items-center justify-center gap-2">
               <ShieldCheck className="h-6 w-6 text-primary" />
               Painel Administrativo

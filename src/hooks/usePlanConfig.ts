@@ -1,49 +1,56 @@
 import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+import { supabaseUntyped } from "@/integrations/supabase/untyped";
+import { DEFAULT_PLANS, type PlanDefinition } from "@/config/plans";
 
-export interface PlanConfig {
-  plan_name: string;
-  max_products: number;
+/** Configuração de um plano (vinda do banco; usa o plano padrão se o banco não responder). */
+export interface PlanConfig extends PlanDefinition {
+  // Mantidos por compatibilidade. O plano NÃO influencia a ordem dos resultados.
   visibility_weight: number;
   promotion_boost: number;
-  display_label: string;
 }
 
-// Default fallback configs
-const DEFAULT_CONFIGS: PlanConfig[] = [
-  { plan_name: "gratuito", max_products: 5, visibility_weight: 5, promotion_boost: 1.0, display_label: "Free" },
-  { plan_name: "basico", max_products: 20, visibility_weight: 20, promotion_boost: 1.5, display_label: "Basic" },
-  { plan_name: "pro", max_products: -1, visibility_weight: 80, promotion_boost: 2.5, display_label: "Pro" },
-];
+const withNeutralWeights = (p: PlanDefinition): PlanConfig => ({ ...p, visibility_weight: 1, promotion_boost: 1 });
+
+export const DEFAULT_CONFIGS: PlanConfig[] = DEFAULT_PLANS.map(withNeutralWeights);
+
+const BASE_COLUMNS =
+  "plan_name, display_label, price_cents, max_products, description, benefits, sort_order, is_active, is_public, visibility_weight, promotion_boost";
+const COLUMNS = `${BASE_COLUMNS}, customization_level`;
+const DEFAULT_LEVEL: Record<string, PlanConfig["customization_level"]> = { pro: "basic", max: "advanced" };
+
+export const PLAN_CONFIGS_KEY = ["plan-configurations"] as const;
 
 export function usePlanConfigs() {
   return useQuery({
-    queryKey: ["plan-configurations"],
+    queryKey: PLAN_CONFIGS_KEY,
     queryFn: async (): Promise<PlanConfig[]> => {
-      const { data, error } = await supabase
-        .from("plan_configurations")
-        .select("plan_name, max_products, visibility_weight, promotion_boost, display_label");
-
-      if (error || !data || data.length === 0) {
-        return DEFAULT_CONFIGS;
+      let { data, error } = await supabaseUntyped.from("plan_configurations").select(COLUMNS);
+      if (error) {
+        // a migration da personalização ainda não foi aplicada: busca sem a coluna nova
+        ({ data, error } = await supabaseUntyped.from("plan_configurations").select(BASE_COLUMNS));
       }
-
-      return data as unknown as PlanConfig[];
+      if (error || !data || data.length === 0) return DEFAULT_CONFIGS;
+      return (data as PlanConfig[]).map((row) => ({
+        ...row,
+        price_cents: row.price_cents ?? 0,
+        benefits: row.benefits ?? [],
+        description: row.description ?? "",
+        sort_order: row.sort_order ?? 0,
+        is_active: row.is_active ?? true,
+        is_public: row.is_public ?? true,
+        customization_level: row.customization_level ?? DEFAULT_LEVEL[row.plan_name] ?? "none",
+      }));
     },
-    staleTime: 1000 * 60 * 30, // 30 minutes cache
+    staleTime: 1000 * 60 * 5,
   });
 }
 
 export function getPlanConfig(configs: PlanConfig[], planName: string): PlanConfig {
-  return configs.find(c => c.plan_name === planName) || DEFAULT_CONFIGS[0];
-}
-
-export function getVisibilityWeight(configs: PlanConfig[], planName: string): number {
-  return getPlanConfig(configs, planName).visibility_weight;
-}
-
-export function getPromotionBoost(configs: PlanConfig[], planName: string): number {
-  return getPlanConfig(configs, planName).promotion_boost;
+  return (
+    configs.find((c) => c.plan_name === planName) ||
+    DEFAULT_CONFIGS.find((c) => c.plan_name === "gratuito") ||
+    DEFAULT_CONFIGS[0]
+  );
 }
 
 export function getMaxProducts(configs: PlanConfig[], planName: string): number {

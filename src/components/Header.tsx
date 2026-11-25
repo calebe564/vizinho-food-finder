@@ -1,34 +1,46 @@
-import { Link, useNavigate } from "react-router-dom";
-import { Home, Building2, Store, Menu, Heart, LogIn, LogOut, User, Briefcase, UserPlus, X, MapPin, MoreVertical, MessageSquare, ClipboardCheck, Bot, Crown } from "lucide-react";
+import { Link, useLocation, useNavigate } from "react-router-dom";
+import { Home, Building2, Store, Menu, Heart, LogIn, LogOut, User, Briefcase, UserPlus, X, MoreVertical, MessageSquare, ClipboardCheck, Bot, Crown, ShieldCheck } from "lucide-react";
 import { ThemeToggle } from "./ThemeToggle";
 import { Button } from "./ui/button";
 import { Sheet, SheetContent, SheetTrigger, SheetClose } from "./ui/sheet";
 import { useState } from "react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "./ui/dropdown-menu";
-import logo from "@/assets/logo.png";
 import { useFavorites } from "@/hooks/useFavorites";
 import { useAuth } from "@/contexts/AuthContext";
 import { useUserRole } from "@/hooks/useUserRole";
-import { useEstablishmentRequest } from "@/hooks/useEstablishmentRequest";
-import { useActiveEstablishment } from "@/contexts/ActiveEstablishmentContext";
+import { useAccess } from "@/hooks/useAccess";
+import { consumerMenuEntries, isMerchantPath, type MenuEntryId } from "@/config/areas";
+import { MerchantHeader } from "./MerchantHeader";
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
 import { useUnreadConversations } from "@/hooks/useUnreadConversations";
 import { AIChatSheet } from "./AIChatSheet";
 import { useAdminNotifications } from "@/hooks/useAdminNotifications";
+import { BrandLogo } from "./BrandLogo";
 
+const ENTRY_ICONS: Record<MenuEntryId, typeof Briefcase> = {
+  cadastrar: UserPlus,
+  reivindicar: ClipboardCheck,
+  painel: Briefcase,
+  suporte: MessageSquare,
+  admin: ShieldCheck,
+};
+
+/** Na área do comerciante (/painel) o cabeçalho é outro; no resto do site, o do consumidor. */
 export function Header() {
+  const { pathname } = useLocation();
+  return isMerchantPath(pathname) ? <MerchantHeader /> : <ConsumerHeader />;
+}
+
+function ConsumerHeader() {
   const [isOpen, setIsOpen] = useState(false);
   const { totalFavorites } = useFavorites();
   const { user, profile, signOut, isAdmin } = useAuth();
-  const { isEmpresario, isAdmin: isAdminRole, isLoading: roleLoading } = useUserRole();
-  const { hasApprovedRequest, isLoading: requestLoading } = useEstablishmentRequest();
-  const { count: establishmentCount, isLoading: estLoading } = useActiveEstablishment();
+  const { profile: accessProfile } = useAccess();
   const navigate = useNavigate();
   const hasFavorites = totalFavorites > 0;
-  
-  const showMyEstablishment = user && (isEmpresario || hasApprovedRequest || establishmentCount > 0) && !isAdminRole && !roleLoading && !requestLoading;
-  const businessMenuLabel = establishmentCount > 1 ? "Empresas" : "Minha Empresa";
-  const showClaimButton = user && !isAdminRole && !roleLoading;
+
+  // Itens do menu: um só lugar para computador e celular (nada de comerciante/admin vaza para o consumidor)
+  const menuEntries = consumerMenuEntries(accessProfile, !!user);
 
   const handleSignOut = async () => {
     await signOut();
@@ -49,11 +61,7 @@ export function Header() {
       <div className="container flex h-14 md:h-16 items-center justify-between px-3 md:px-4">
         {/* Logo */}
         <Link to="/informacoes" className="flex items-center gap-1.5 hover:opacity-90 transition-opacity">
-          <MapPin className="h-5 w-5 md:h-6 md:w-6 text-primary" />
-          <div className="flex flex-col leading-none">
-            <span className="font-bold text-sm md:text-base text-primary tracking-tight">Comércio</span>
-            <span className="font-bold text-sm md:text-base text-foreground -mt-0.5 tracking-tight">Vizinho</span>
-          </div>
+          <BrandLogo size="md" />
         </Link>
 
         {/* Desktop Navigation - Clean horizontal */}
@@ -113,54 +121,27 @@ export function Header() {
                 </>
               ) : null}
               
-              {showMyEstablishment ? (
-                <DropdownMenuItem asChild>
-                  <Link to="/minha-empresa" className="flex items-center gap-2 cursor-pointer">
-                    <Briefcase className="h-4 w-4" />
-                    {businessMenuLabel}
-                  </Link>
-                </DropdownMenuItem>
-              ) : (
-                <DropdownMenuItem asChild>
-                  <Link to="/cadastrar" className="flex items-center gap-2 cursor-pointer">
-                    <UserPlus className="h-4 w-4" />
-                    Cadastrar Empresa
-                  </Link>
-                </DropdownMenuItem>
-              )}
-              
-              {showClaimButton && (
-                <DropdownMenuItem asChild>
-                  <Link to="/reivindicar-empresa" className="flex items-center gap-2 cursor-pointer">
-                    <ClipboardCheck className="h-4 w-4" />
-                    Reivindicar Empresa
-                  </Link>
-                </DropdownMenuItem>
-              )}
-              
-              {user && (
-                <DropdownMenuItem asChild>
-                  <Link to="/suporte" className="flex items-center gap-2 cursor-pointer relative">
-                    <MessageSquare className="h-4 w-4" />
-                    Suporte
-                    {unreadCount > 0 && (
-                      <span className="ml-auto bg-primary text-primary-foreground text-xs font-bold px-2 py-0.5 rounded-full">
-                        {unreadCount > 9 ? "9+" : unreadCount}
-                      </span>
-                    )}
-                  </Link>
-                </DropdownMenuItem>
-              )}
+              {menuEntries.map((entry) => {
+                const EntryIcon = ENTRY_ICONS[entry.id];
+                const badge = entry.id === "suporte" ? unreadCount : entry.id === "admin" ? adminNotifCounts.total : 0;
+                return (
+                  <DropdownMenuItem asChild key={entry.id}>
+                    <Link
+                      to={entry.to}
+                      className={`flex items-center gap-2 cursor-pointer ${entry.id === "admin" ? "text-primary font-medium" : ""}`}
+                    >
+                      <EntryIcon className="h-4 w-4" />
+                      {entry.label}
+                      {badge > 0 && (
+                        <span className={`ml-auto text-xs font-bold px-2 py-0.5 rounded-full ${entry.id === "admin" ? "bg-destructive text-destructive-foreground" : "bg-primary text-primary-foreground"}`}>
+                          {badge > 9 ? "9+" : badge}
+                        </span>
+                      )}
+                    </Link>
+                  </DropdownMenuItem>
+                );
+              })}
 
-              {user && (
-                <DropdownMenuItem asChild>
-                  <Link to="/planos" className="flex items-center gap-2 cursor-pointer">
-                    <Crown className="h-4 w-4" />
-                    Meu Plano
-                  </Link>
-                </DropdownMenuItem>
-              )}
-              
               <DropdownMenuItem asChild onSelect={(e) => e.preventDefault()}>
                 <AIChatSheet trigger={
                   <button className="flex items-center gap-2 w-full text-left cursor-pointer px-2 py-1.5 text-sm">
@@ -174,18 +155,6 @@ export function Header() {
               
               {user ? (
                 <>
-                  {isAdmin && (
-                    <DropdownMenuItem asChild>
-                      <Link to="/admin/dashboard" className="flex items-center gap-2 cursor-pointer text-primary font-medium">
-                        Painel Administrativo
-                        {adminNotifCounts.total > 0 && (
-                          <span className="ml-auto bg-destructive text-destructive-foreground text-xs font-bold px-2 py-0.5 rounded-full">
-                            {adminNotifCounts.total > 9 ? "9+" : adminNotifCounts.total}
-                          </span>
-                        )}
-                      </Link>
-                    </DropdownMenuItem>
-                  )}
                   <DropdownMenuItem onClick={handleSignOut} className="flex items-center gap-2 cursor-pointer text-destructive">
                     <LogOut className="h-4 w-4" />
                     Sair
@@ -224,11 +193,7 @@ export function Header() {
               {/* Mobile menu header */}
               <div className="flex items-center justify-between p-3 border-b border-border">
                 <div className="flex items-center gap-1.5">
-                  <MapPin className="h-4 w-4 text-primary" />
-                  <div className="flex flex-col leading-none">
-                    <span className="font-bold text-xs text-primary">Comércio</span>
-                    <span className="font-bold text-xs text-foreground -mt-0.5">Vizinho</span>
-                  </div>
+                  <BrandLogo size="sm" />
                 </div>
                 <SheetClose asChild>
                   <Button variant="ghost" size="icon" className="rounded-full h-8 w-8">
@@ -286,64 +251,27 @@ export function Header() {
                   )}
                 </Link>
                 
-                {showMyEstablishment ? (
-                  <Link
-                    to="/minha-empresa"
-                    onClick={() => setIsOpen(false)}
-                    className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-secondary transition-colors"
-                  >
-                    <Briefcase className="h-4 w-4 text-muted-foreground" />
-                    <span className="text-sm font-medium">{businessMenuLabel}</span>
-                  </Link>
-                ) : (
-                  <Link
-                    to="/cadastrar"
-                    onClick={() => setIsOpen(false)}
-                    className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-secondary transition-colors"
-                  >
-                    <UserPlus className="h-4 w-4 text-muted-foreground" />
-                    <span className="text-sm font-medium">Cadastrar Empresa</span>
-                  </Link>
-                )}
+                {menuEntries.map((entry) => {
+                  const EntryIcon = ENTRY_ICONS[entry.id];
+                  const badge = entry.id === "suporte" ? unreadCount : entry.id === "admin" ? adminNotifCounts.total : 0;
+                  return (
+                    <Link
+                      key={entry.id}
+                      to={entry.to}
+                      onClick={() => setIsOpen(false)}
+                      className={`flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-secondary transition-colors ${entry.id === "admin" ? "text-primary" : ""}`}
+                    >
+                      <EntryIcon className={`h-4 w-4 ${entry.id === "admin" ? "" : "text-muted-foreground"}`} />
+                      <span className="text-sm font-medium">{entry.label}</span>
+                      {badge > 0 && (
+                        <span className={`ml-auto text-xs font-bold px-1.5 py-0.5 rounded-full ${entry.id === "admin" ? "bg-destructive text-destructive-foreground" : "bg-primary text-primary-foreground"}`}>
+                          {badge > 9 ? "9+" : badge}
+                        </span>
+                      )}
+                    </Link>
+                  );
+                })}
 
-                {user && (
-                  <Link
-                    to="/suporte"
-                    onClick={() => setIsOpen(false)}
-                    className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-secondary transition-colors relative"
-                  >
-                    <MessageSquare className="h-4 w-4 text-muted-foreground" />
-                    <span className="text-sm font-medium">Suporte</span>
-                    {unreadCount > 0 && (
-                      <span className="ml-auto bg-primary text-primary-foreground text-xs font-bold px-1.5 py-0.5 rounded-full">
-                        {unreadCount}
-                      </span>
-                    )}
-                  </Link>
-                )}
-                
-                {showClaimButton && (
-                  <Link
-                    to="/reivindicar-empresa"
-                    onClick={() => setIsOpen(false)}
-                    className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-secondary transition-colors"
-                  >
-                    <ClipboardCheck className="h-4 w-4 text-muted-foreground" />
-                    <span className="text-sm font-medium">Reivindicar Empresa</span>
-                  </Link>
-                )}
-
-                {user && (
-                  <Link
-                    to="/planos"
-                    onClick={() => setIsOpen(false)}
-                    className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-secondary transition-colors"
-                  >
-                    <Crown className="h-4 w-4 text-muted-foreground" />
-                    <span className="text-sm font-medium">Meu Plano</span>
-                  </Link>
-                )}
-                
                 {/* AI Assistant - Mobile */}
                 <AIChatSheet trigger={
                   <button className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-secondary transition-colors w-full text-left">
@@ -358,20 +286,6 @@ export function Header() {
                 
                 {user ? (
                   <>
-                    {isAdmin && (
-                      <Link
-                        to="/admin/dashboard"
-                        onClick={() => setIsOpen(false)}
-                        className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-secondary transition-colors text-primary"
-                      >
-                        <span className="text-sm font-medium">Painel Admin</span>
-                        {adminNotifCounts.total > 0 && (
-                          <span className="ml-auto bg-destructive text-destructive-foreground text-xs font-bold px-1.5 py-0.5 rounded-full">
-                            {adminNotifCounts.total > 9 ? "9+" : adminNotifCounts.total}
-                          </span>
-                        )}
-                      </Link>
-                    )}
                     <button
                       onClick={() => { handleSignOut(); setIsOpen(false); }}
                       className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-destructive/10 transition-colors w-full text-left text-destructive"

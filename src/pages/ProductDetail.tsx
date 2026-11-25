@@ -11,11 +11,13 @@ import { toast } from "sonner";
 import { 
   ArrowLeft, Heart, Store, ImageIcon, Loader2, 
   MessageCircle, Navigation, Clock, Phone, MapPin,
-  Truck, ShieldCheck, ShieldAlert, Flame
+  Truck, ShieldCheck, ShieldAlert, Flame, Flag
 } from "lucide-react";
 import { Helmet } from "react-helmet-async";
-import { useState } from "react";
+import { ReportDialog } from "@/components/ReportDialog";
+import { useEffect, useState } from "react";
 import { OpenClosedBadge, DeliveryBadge } from "@/components/StatusBadge";
+import { trackEvent } from "@/lib/tracking";
 
 interface Product {
   id: string;
@@ -60,6 +62,7 @@ export default function ProductDetail() {
   const { id } = useParams<{ id: string }>();
   const { isProductFavorite, toggleProductFavorite } = useFavorites();
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
+  const [reportOpen, setReportOpen] = useState(false);
 
   const { data: product, isLoading: productLoading } = useQuery({
     queryKey: ["product", id],
@@ -117,6 +120,13 @@ export default function ProductDetail() {
   });
 
   const isFav = product ? isProductFavorite(product.id) : false;
+
+  // Visualização do produto: registrada pelo servidor (ignora o dono, a equipe, robôs e recarregamentos)
+  useEffect(() => {
+    if (product?.id && product.establishment_id) {
+      trackEvent({ establishmentId: product.establishment_id, type: "product_view", productId: product.id });
+    }
+  }, [product?.id, product?.establishment_id]);
 
   const handleToggleFavorite = () => {
     if (!product) return;
@@ -381,7 +391,7 @@ export default function ProductDetail() {
                     size="lg"
                     className="bg-green-600 hover:bg-green-700 text-white font-semibold"
                   >
-                    <a href={whatsappLink} target="_blank" rel="noopener noreferrer">
+                    <a href={whatsappLink} target="_blank" rel="noopener noreferrer" onClick={() => trackEvent({ establishmentId: product.establishment_id, type: "whatsapp_click", productId: product.id })}>
                       <MessageCircle className="w-5 h-5 mr-2" />
                       Comprar via WhatsApp
                     </a>
@@ -407,7 +417,7 @@ export default function ProductDetail() {
                     variant="outline"
                     className="border-primary text-primary hover:bg-primary hover:text-primary-foreground"
                   >
-                    <a href={mapsLink} target="_blank" rel="noopener noreferrer">
+                    <a href={mapsLink} target="_blank" rel="noopener noreferrer" onClick={() => trackEvent({ establishmentId: product.establishment_id, type: "directions_click" })}>
                       <Navigation className="w-5 h-5 mr-2" />
                       Ver Localização
                     </a>
@@ -532,7 +542,21 @@ export default function ProductDetail() {
             </div>
           </div>
         </div>
+        <div className="container mx-auto px-4 pb-6 text-center">
+          <Button variant="link" size="sm" className="text-xs text-muted-foreground gap-1.5" onClick={() => setReportOpen(true)}>
+            <Flag className="h-3.5 w-3.5" aria-hidden="true" />
+            Denunciar este produto
+          </Button>
+        </div>
       </main>
+
+      <ReportDialog
+        open={reportOpen}
+        onOpenChange={setReportOpen}
+        targetType="product"
+        targetId={product.id}
+        targetName={product.name}
+      />
 
       <Footer />
     </div>
